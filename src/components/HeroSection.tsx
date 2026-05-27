@@ -926,6 +926,19 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
           className="w-full h-full object-cover pointer-events-none z-0 filter brightness-100"
         />
 
+        {/* PREMIUM BRANDING LOGO (Top Left) */}
+        <div className="absolute top-6 left-6 z-40 flex items-center gap-3 pointer-events-auto select-none">
+          <motion.div
+            whileHover={{ scale: 1.08, rotate: 5 }}
+            className="w-10 h-10 rounded-full border border-white/10 bg-black/40 backdrop-blur-md overflow-hidden flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.3)] hover:border-[#ff0050]/40 hover:shadow-[0_0_15px_rgba(255,0,80,0.4)] transition-all cursor-pointer"
+          >
+            <img src="/f.png" alt="Logo" className="w-7 h-7 object-contain" />
+          </motion.div>
+          <span className="hidden sm:inline-block font-outfit uppercase tracking-[0.2em] text-[10px] text-white/70 font-semibold drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+            Our Memories
+          </span>
+        </div>
+
         {/* PREMIUM NAVIGATION & MUSIC CONTROL TOOLBAR (Top Right) */}
         <div className="absolute top-6 right-6 z-40 flex items-center gap-2.5 pointer-events-auto select-none">
           {/* Mute/Unmute toggle */}
