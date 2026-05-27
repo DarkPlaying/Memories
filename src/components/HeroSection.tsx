@@ -509,7 +509,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
       scrollAccumulatorRef.current += e.deltaY;
 
       // Lower threshold = faster/more frames advanced per scroll
-      const threshold = 100;
+      const threshold = 40;
 
       if (Math.abs(scrollAccumulatorRef.current) >= threshold) {
         const deltaFrames = Math.sign(scrollAccumulatorRef.current) * Math.floor(Math.abs(scrollAccumulatorRef.current) / threshold);
@@ -557,7 +557,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
       const diffY = touchStartY - touchY; // Swipe up moves forward (diffY > 0)
 
       if (Math.abs(diffY) > 8) {
-        const frameDelta = Math.round(diffY * 0.04); // Balanced touch swipe scrubbing
+        const frameDelta = Math.round(diffY * 0.10); // Faster touch swipe scrubbing
         setVirtualFrame(prev => {
           const next = prev + frameDelta;
           if (next >= TOTAL_FRAMES) {

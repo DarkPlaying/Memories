@@ -141,11 +141,15 @@ const LocationHeartUnion: React.FC = () => {
         transition={{ duration: 0.7 }}
         className="text-xl md:text-2xl font-playfair font-black text-white text-center mb-10 tracking-wide"
       >
-        Bridging Our Hearts Across Distance 📍
+        Our Story &apos;26 📍
       </motion.h3>
 
-      {/* Meet in Center Container */}
-      <div className="relative w-full h-[38rem] flex items-center justify-center">
+      {/* Meet in Center Container — heartbeat float animation */}
+      <motion.div
+        animate={{ y: [0, -22, 0, -14, 0, -22, 0] }}
+        transition={{ duration: 1.4, repeat: Infinity, ease: [0.25, 0.46, 0.45, 0.94], repeatDelay: 0.6 }}
+        className="relative w-full h-[38rem] flex items-center justify-center"
+      >
         {/* Her Location (Avadi) - Slides from Left */}
         <motion.div
           initial={{ x: -350, opacity: 0 }}
@@ -214,7 +218,7 @@ const LocationHeartUnion: React.FC = () => {
         >
           <Heart size={28} fill="currentColor" className="animate-pulse" />
         </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
 };
@@ -564,10 +568,10 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
             className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-4.5"
           >
             <Heart size={12} className="text-rose-500 fill-current" />
-            <span className="text-[10px] font-outfit uppercase tracking-[0.2em] text-pink-200">Our Timeline of Love</span>
+            <span className="text-[10px] font-outfit uppercase tracking-[0.2em] text-pink-200">Our Story &apos;26</span>
           </motion.div>
-          <h2 className="text-2xl md:text-4xl font-playfair font-black text-white mb-3.5 tracking-tight leading-tight">
-            From First Spark to 2031 Forever
+          <h2 className="text-3xl md:text-5xl font-playfair font-black text-white mb-3.5 tracking-tight leading-tight">
+            Our Story &apos;26
           </h2>
           <p className="text-xs md:text-sm font-outfit text-gray-300 font-light leading-relaxed">
             Every sweet memory we built, every promise we made, charted along the gorgeous arc of our beautiful lives.
@@ -618,12 +622,12 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
       </div>
 
       {/* GORGEOUS MARRIAGE TIMELINE LISTING */}
-      <div className="w-full max-w-4xl px-6 mt-12 z-20 relative flex flex-col items-center">
+      <div className="w-full max-w-6xl px-4 mt-16 z-20 relative flex flex-col items-center">
 
         {/* Vertical Timeline spine */}
-        <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-rose-500/80 via-pink-500/20 to-rose-500/80 -translate-x-1/2 hidden md:block" />
+        <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-rose-500/90 via-pink-500/40 to-rose-500/90 -translate-x-1/2 hidden md:block rounded-full" />
 
-        <div className="w-full flex flex-col gap-8 md:gap-12 relative">
+        <div className="w-full flex flex-col gap-12 md:gap-16 relative">
 
           {timelineData.map((item, index) => {
             const isLeft = index % 2 === 0;
@@ -640,57 +644,57 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
               >
 
                 {/* Central Pulse Heart Node */}
-                <div className="absolute left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-[#1c1c1e] border border-pink-500/30 flex items-center justify-center z-30 hidden md:flex">
+                <div className="absolute left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-[#1c1c1e] border-2 border-pink-500/50 flex items-center justify-center z-30 hidden md:flex shadow-[0_0_12px_rgba(244,63,94,0.5)]">
                   <motion.div
-                    animate={{ scale: [1, 1.25, 1] }}
-                    transition={{ duration: 1.8, repeat: Infinity, delay: index * 0.15 }}
+                    animate={{ scale: [1, 1.4, 1] }}
+                    transition={{ duration: 1.6, repeat: Infinity, delay: index * 0.12 }}
                     className="text-rose-500"
                   >
-                    <Heart size={10} fill="currentColor" />
+                    <Heart size={14} fill="currentColor" />
                   </motion.div>
                 </div>
 
                 {/* Left/Right content wrappers */}
-                <div className="w-full md:w-1/2 px-0 md:px-8 flex justify-center">
+                <div className="w-full md:w-1/2 px-0 md:px-10 flex justify-center">
                   <div
-                    className="w-full max-w-md p-6 rounded-3xl bg-white/[0.02] border border-white/10 shadow-[0_15px_35px_rgba(0,0,0,0.4)] hover:border-pink-500/20 transition-all backdrop-blur-md relative overflow-hidden group"
+                    className="w-full max-w-xl p-8 rounded-3xl bg-white/[0.03] border border-white/10 shadow-[0_20px_45px_rgba(0,0,0,0.5)] hover:border-pink-500/30 hover:shadow-[0_20px_50px_rgba(244,63,94,0.08)] transition-all duration-300 backdrop-blur-md relative overflow-hidden group"
                     style={{
                       boxShadow: item.category === 'Future'
-                        ? '0 15px 40px rgba(244,63,94,0.06), inset 0 0 15px rgba(255,255,255,0.02)'
-                        : '0 15px 35px rgba(0,0,0,0.4)'
+                        ? '0 20px 50px rgba(244,63,94,0.10), inset 0 0 20px rgba(255,255,255,0.03)'
+                        : '0 20px 45px rgba(0,0,0,0.5)'
                     }}
                   >
                     {item.category === 'Future' && (
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-rose-500/[0.04] rounded-full blur-xl pointer-events-none" />
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/[0.06] rounded-full blur-2xl pointer-events-none" />
                     )}
 
                     {/* Badge */}
-                    <div className="flex items-center justify-between mb-3.5">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-outfit uppercase tracking-widest font-semibold ${item.category === 'Future'
-                        ? 'bg-rose-500/10 text-rose-300 border border-rose-500/20'
+                    <div className="flex items-center justify-between mb-4">
+                      <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-outfit uppercase tracking-widest font-semibold ${item.category === 'Future'
+                        ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
                         : 'bg-white/5 text-pink-300 border border-white/10'
                         }`}>
-                        <Calendar size={10} />
+                        <Calendar size={11} />
                         {item.date}
                       </span>
-                      <span className="text-lg select-none filter drop-shadow-[0_0_4px_rgba(244,63,94,0.4)]">
+                      <span className="text-2xl select-none filter drop-shadow-[0_0_6px_rgba(244,63,94,0.5)]">
                         {item.emoji}
                       </span>
                     </div>
 
                     {/* Text Title */}
-                    <p className={`font-outfit text-sm leading-relaxed ${item.category === 'Future'
-                      ? 'text-white font-bold text-[15px]'
-                      : 'text-gray-200'
+                    <p className={`font-outfit leading-relaxed ${item.category === 'Future'
+                      ? 'text-white font-bold text-lg'
+                      : 'text-gray-100 text-base'
                       }`}>
                       {item.title}
                     </p>
 
                     {/* Decorative star for future items */}
                     {item.category === 'Future' && (
-                      <div className="mt-3 flex items-center gap-1 text-rose-300/40">
-                        <Sparkles size={10} />
-                        <span className="text-[8px] font-outfit uppercase tracking-widest font-medium">MILESTONE FOREVER</span>
+                      <div className="mt-4 flex items-center gap-1.5 text-rose-300/50">
+                        <Sparkles size={12} />
+                        <span className="text-[9px] font-outfit uppercase tracking-widest font-medium">MILESTONE FOREVER</span>
                       </div>
                     )}
                   </div>
@@ -715,7 +719,7 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
           <Sparkles size={16} className="text-pink-300 animate-spin" style={{ animationDuration: '8s' }} />
           <Heart size={20} fill="#ff0543" className="text-[#ff0543] animate-pulse" />
         </div>
-        <h3 className="text-2xl font-playfair font-black text-white mb-3">Our Promise of Eternity</h3>
+        <h3 className="text-2xl font-playfair font-black text-white mb-3">Our Story &apos;26</h3>
         <p className="text-xs font-outfit text-gray-400 leading-relaxed tracking-wider uppercase max-w-xs">
           From first touch to forever vows in 2031, my heart beat will always belong to you.
         </p>

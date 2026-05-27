@@ -16,7 +16,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Our Story | Captured Memories",
+  title: "Our Story '26",
   description: "A beautiful gallery of our sweetest moments and cherished memories together.",
   icons: {
     icon: "/f.png",
