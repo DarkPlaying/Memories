@@ -146,8 +146,8 @@ const LocationHeartUnion: React.FC = () => {
 
       {/* Meet in Center Container — heartbeat float animation */}
       <motion.div
-        animate={{ y: [0, -22, 0, -14, 0, -22, 0] }}
-        transition={{ duration: 1.4, repeat: Infinity, ease: [0.25, 0.46, 0.45, 0.94], repeatDelay: 0.6 }}
+        animate={{ scale: [1, 1.08, 1, 1.05, 1] }}
+        transition={{ duration: 0.8, repeat: Infinity, ease: [0.25, 0.46, 0.45, 0.94], repeatDelay: 0.9 }}
         className="relative w-full h-[38rem] flex items-center justify-center"
       >
         {/* Her Location (Avadi) - Slides from Left */}
