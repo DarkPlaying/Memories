@@ -321,6 +321,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
 
   const [cache, setCache] = useState<Record<string, HTMLImageElement[]>>({});
   const [virtualFrame, setVirtualFrame] = useState(1);
+  const [activeFolder, setActiveFolder] = useState("f1");
   const [activeChapterIndex, setActiveChapterIndex] = useState(0);
   const [activeFrameIndex, setActiveFrameIndex] = useState(1);
   const [loadedPercent, setLoadedPercent] = useState(0);
@@ -402,17 +403,34 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
   useEffect(() => {
     let vf = virtualFrame;
 
-    // Find active chapter based on global frame range
-    const activeChIdx = CHAPTERS.findIndex(c => vf >= c.startFrame && vf <= c.endFrame);
-    const chapterIdx = activeChIdx !== -1 ? activeChIdx : 0;
-    const chapter = CHAPTERS[chapterIdx];
+    // 1. Calculate folder and local frame index directly and robustly
+    let folder = "f1";
+    let localFrame = 1;
 
-    // Calculate local frame index in the folder
-    const offset = vf - chapter.startFrame;
-    const frameIdx = chapter.localStart + offset;
+    if (vf <= 300) {
+      folder = "f1";
+      localFrame = vf;
+    } else if (vf <= 590) {
+      folder = "f2";
+      localFrame = vf - 300;
+    } else if (vf <= 880) {
+      folder = "f3";
+      localFrame = vf - 590;
+    } else if (vf <= 1180) {
+      folder = "f4";
+      localFrame = vf - 880;
+    } else {
+      folder = "f5";
+      localFrame = vf - 1180;
+    }
 
-    setActiveChapterIndex(chapterIdx);
-    setActiveFrameIndex(frameIdx);
+    // 2. Find active chapter index for dialogue box text (stays in place till next box comes)
+    const chapterIdx = CHAPTERS.findLastIndex(c => vf >= c.startFrame);
+    const activeChIdx = chapterIdx !== -1 ? chapterIdx : 0;
+
+    setActiveFolder(folder);
+    setActiveFrameIndex(localFrame);
+    setActiveChapterIndex(activeChIdx);
 
     // Trigger birthday celebrations at the very end of virtual scrubbing!
     if (vf >= 1470 && !hasCelebrated) {
@@ -704,7 +722,6 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
     if (!ctx) return;
 
     const render = () => {
-      const activeFolder = CHAPTERS[activeChapterIndex].folder;
       const imgList = cache[activeFolder];
       if (!imgList) return;
 
@@ -765,7 +782,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [activeChapterIndex, activeFrameIndex, cache]);
+  }, [activeFolder, activeFrameIndex, cache]);
 
   // Confetti celebrations
   const triggerBigCelebration = () => {
