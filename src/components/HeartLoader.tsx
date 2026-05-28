@@ -57,8 +57,11 @@ export default function HeartLoader({ onComplete }: HeartLoaderProps) {
   // Update progress bar with organic sloshing water surges (up and down motion)
   useEffect(() => {
     if (progress >= 100) {
-      triggerMagicalTransition();
-      return;
+      // Pause briefly at 100% so the user clearly sees it complete before the transition triggers
+      const delayTimeout = setTimeout(() => {
+        triggerMagicalTransition();
+      }, 350);
+      return () => clearTimeout(delayTimeout);
     }
 
     const interval = setInterval(() => {
@@ -536,7 +539,7 @@ export default function HeartLoader({ onComplete }: HeartLoaderProps) {
 
             {/* Loading Percentage */}
             <AnimatePresence>
-              {progress < 100 && (
+              {!heartDisappeared && (
                 <motion.div
                   className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-widest mb-4 select-none"
                   style={{ fontFamily: "var(--font-outfit)" }}
@@ -549,7 +552,7 @@ export default function HeartLoader({ onComplete }: HeartLoaderProps) {
 
             {/* Staggered Animated loaderText */}
             <div className="h-6 flex items-center justify-center select-none overflow-visible">
-              {progress < 100 && (
+              {!heartDisappeared && (
                 <motion.p
                   className="text-[9px] sm:text-xs font-semibold text-pink-200/60 uppercase tracking-[0.15em] sm:tracking-[0.25em] text-center flex flex-wrap justify-center gap-x-[0.2em]"
                   style={{ fontFamily: "var(--font-outfit)" }}
