@@ -53,14 +53,22 @@ function CardProvider({ children }: { children: React.ReactNode }) {
         const res = await fetch("/api/memories")
         const data = await res.json()
         if (Array.isArray(data)) {
-          // Map the first 20 memories dynamically to avoid any missing frames!
-          const mappedCards = data.slice(0, 20).map((img, idx) => {
+          // Map all 50 memories dynamically to display them in our floating spherical constellation
+          const mappedCards = data.slice(0, 51).map((img, idx) => {
             const cardTitles = [
               "Sweet Smile", "Precious Moments", "Warm Embraces", "Timeless Talk",
               "Late Nights", "Joyous Smiles", "Our Adventure", "A Sparkling Sight",
               "Grand Gallery", "Pure Heart", "Deep Cozy Dialogs", "Stardust Chapters",
               "Future Dreams", "My Whole Heart", "Beautiful Glow", "Infinite Love",
-              "Magical Light", "Sweet Comfy Vibes", "Sweet Companion", "Birthday Delight"
+              "Magical Light", "Sweet Comfy Vibes", "Sweet Companion", "Birthday Delight",
+              "Charming Glances", "Cherished Laughs", "College Days", "Secret Glances",
+              "Shared Secrets", "Classroom Sparks", "Jimiki Whispers", "Midnight Surprise",
+              "First Gift Joy", "Magic Coffee Date", "Teardrop Promise", "First Sweet Kiss",
+              "Rose Garden Walk", "Wanderlust Bus", "Keychain Keeper", "Our First Story",
+              "Wedding Dreams", "First Home Visit", "Funny Movie Edit", "Carnival Screams",
+              "Saree Serenade", "Melody Dedication", "Cake & Candles", "Kitchen Adventure",
+              "Future Nesting", "Eternal Devotion", "Two Souls Connected", "Butterfly Pathway",
+              "Cosmic Destiny", "Our Forever Vow", "Lovely Birds"
             ]
             const title = cardTitles[idx % cardTitles.length]
             return {
@@ -259,7 +267,7 @@ function CardModal() {
     cardRef.current.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`
   }
 
-  const handleMouseEnter = () => {}
+  const handleMouseEnter = () => { }
   const handleMouseLeave = () => {
     if (cardRef.current) {
       cardRef.current.style.transition = "transform 0.5s ease-out"

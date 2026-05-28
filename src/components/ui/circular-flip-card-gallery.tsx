@@ -136,7 +136,7 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
 
   return (
     <div className="w-full font-sans text-[#F5F5F5] min-h-[90vh] flex flex-col items-center justify-center p-4 overflow-hidden relative">
-      
+
       {/* Decorative ambient glowing grids */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,0,80,0.05)_0%,transparent_70%)] pointer-events-none" />
 
@@ -149,8 +149,8 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
           <h2 className="text-pink-300/80 font-outfit uppercase tracking-[0.2em] sm:tracking-[0.3em] text-[7px] sm:text-[10px] md:text-xs mb-1 sm:mb-3 font-semibold">
             Our Sweetest Chapters
           </h2>
-          
-          <h1 className="text-[10px] sm:text-xl md:text-3xl font-playfair font-black text-white text-center text-balance mb-2.5 sm:mb-6 leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] max-w-[130px] sm:max-w-xs md:max-w-md">
+
+          <h1 className="text-[14px] sm:text-xl md:text-2xl font-playfair font-black text-white text-center text-balance mb-2.5 sm:mb-6 leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] max-w-[130px] sm:max-w-xs md:max-w-md">
             A Circular Gallery of Our Beautiful Memories
           </h1>
 
