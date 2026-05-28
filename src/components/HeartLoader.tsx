@@ -538,7 +538,7 @@ export default function HeartLoader({ onComplete }: HeartLoaderProps) {
             <AnimatePresence>
               {progress < 100 && (
                 <motion.div
-                  className="text-5xl font-black text-white tracking-widest mb-4 select-none"
+                  className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-widest mb-4 select-none"
                   style={{ fontFamily: "var(--font-outfit)" }}
                   exit={{ scale: 0.5, opacity: 0, transition: { duration: 0.3 } }}
                 >
@@ -551,7 +551,7 @@ export default function HeartLoader({ onComplete }: HeartLoaderProps) {
             <div className="h-6 flex items-center justify-center select-none overflow-visible">
               {progress < 100 && (
                 <motion.p
-                  className="text-xs font-semibold text-pink-200/60 uppercase tracking-[0.25em] text-center flex flex-wrap justify-center gap-x-[0.2em]"
+                  className="text-[9px] sm:text-xs font-semibold text-pink-200/60 uppercase tracking-[0.15em] sm:tracking-[0.25em] text-center flex flex-wrap justify-center gap-x-[0.2em]"
                   style={{ fontFamily: "var(--font-outfit)" }}
                   exit={{ opacity: 0, y: -10, filter: "blur(4px)", transition: { duration: 0.3 } }}
                 >

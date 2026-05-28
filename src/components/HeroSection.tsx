@@ -341,12 +341,12 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
 
   // Auto-start music once preloading completes and page loader is lifted
   useEffect(() => {
-    if (!isPreloading && !isParentLoading && audioRef.current && isAutoplay && !isMutedByUser) {
+    if (!isPreloading && !isParentLoading && audioRef.current && !isPlayingMusic && !isMutedByUser) {
       audioRef.current.play()
         .then(() => setIsPlayingMusic(true))
         .catch((err) => console.log("Audio autoplay waiting for user interaction:", err));
     }
-  }, [isPreloading, isParentLoading, isAutoplay, isMutedByUser]);
+  }, [isPreloading, isParentLoading, isMutedByUser]);
 
   // Watch for story complete (virtualFrame reaches TOTAL_FRAMES = 1475)
   useEffect(() => {
@@ -762,13 +762,20 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
       // Scale in CSS layout coordinates
       const cssWidth = window.innerWidth;
       const cssHeight = window.innerHeight;
-      const scale = Math.max(cssWidth / img.width, cssHeight / img.height);
+      
+      // On mobile viewports, fit the landscape image horizontally (like a movie screen)
+      const scale = cssWidth < 640 
+        ? cssWidth / img.width 
+        : Math.max(cssWidth / img.width, cssHeight / img.height);
+        
       const w = img.width * scale;
       const h = img.height * scale;
 
       const x = (cssWidth - w) / 2;
-      // Offset downwards by 12% to leave space for cloud dialogue bubble
-      const y = (cssHeight - h) / 2 + cssHeight * 0.12;
+      // On mobile, center it vertically but shift slightly downwards to balance the layout with top dialogue box
+      const y = cssWidth < 640
+        ? (cssHeight - h) / 2 + cssHeight * 0.08
+        : (cssHeight - h) / 2 + cssHeight * 0.12;
 
       ctx.clearRect(0, 0, cssWidth, cssHeight);
       ctx.drawImage(img, x, y, w, h);
@@ -944,12 +951,12 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
         />
 
         {/* PREMIUM BRANDING LOGO (Top Left) */}
-        <div className="absolute top-6 left-6 z-40 flex items-center gap-3 pointer-events-auto select-none">
+        <div className="absolute top-3 left-3 sm:top-6 sm:left-6 z-40 flex items-center gap-2 sm:gap-3 pointer-events-auto select-none">
           <motion.div
             whileHover={{ scale: 1.08, rotate: 5 }}
-            className="w-10 h-10 rounded-full border border-white/10 bg-black/40 backdrop-blur-md overflow-hidden flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.3)] hover:border-[#ff0050]/40 hover:shadow-[0_0_15px_rgba(255,0,80,0.4)] transition-all cursor-pointer"
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-white/10 bg-black/40 backdrop-blur-md overflow-hidden flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.3)] hover:border-[#ff0050]/40 hover:shadow-[0_0_15px_rgba(255,0,80,0.4)] transition-all cursor-pointer"
           >
-            <img src="/f.png" alt="Logo" className="w-7 h-7 object-contain" />
+            <img src="/f.png" alt="Logo" className="w-5 h-5 sm:w-7 sm:h-7 object-contain" />
           </motion.div>
           <span className="hidden sm:inline-block font-outfit uppercase tracking-[0.2em] text-[10px] text-white/70 font-semibold drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
             Our Memories
@@ -957,17 +964,17 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
         </div>
 
         {/* PREMIUM NAVIGATION & MUSIC CONTROL TOOLBAR (Top Right) */}
-        <div className="absolute top-6 right-6 z-40 flex items-center gap-2.5 pointer-events-auto select-none">
+        <div className="absolute top-3 right-3 sm:top-6 sm:right-6 z-40 flex items-center gap-1.5 sm:gap-2.5 pointer-events-auto select-none">
           {/* Mute/Unmute toggle */}
           <button
             onClick={toggleMusic}
             title={isPlayingMusic ? "Mute Music" : "Unmute Music"}
-            className="w-9 h-9 rounded-full bg-black/40 border border-white/10 flex items-center justify-center text-white backdrop-blur-md hover:bg-[#ff0050] hover:text-white hover:border-[#ff0050] hover:shadow-[0_0_15px_rgba(255,0,80,0.6)] hover:scale-105 transition-all cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/40 border border-white/10 flex items-center justify-center text-white backdrop-blur-md hover:bg-[#ff0050] hover:text-white hover:border-[#ff0050] hover:shadow-[0_0_15px_rgba(255,0,80,0.6)] hover:scale-105 transition-all cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
           >
             {isPlayingMusic ? (
-              <Volume2 size={15} className="animate-pulse text-pink-300" />
+              <Volume2 size={13} className="animate-pulse text-pink-300" />
             ) : (
-              <VolumeX size={15} className="text-white/60" />
+              <VolumeX size={13} className="text-white/60" />
             )}
           </button>
 
@@ -978,9 +985,9 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
               setIsAutoplay(true);
             }}
             title="Jump to Start"
-            className="px-3 py-1.5 rounded-full bg-black/40 border border-white/10 flex items-center gap-1.5 text-[10px] font-outfit uppercase tracking-wider text-white backdrop-blur-md hover:bg-[#ff0050] hover:text-white hover:border-[#ff0050] hover:shadow-[0_0_15px_rgba(255,0,80,0.6)] hover:scale-105 transition-all cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
+            className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full bg-black/40 border border-white/10 flex items-center gap-1 text-[9px] sm:text-[10px] font-outfit uppercase tracking-wider text-white backdrop-blur-md hover:bg-[#ff0050] hover:text-white hover:border-[#ff0050] hover:shadow-[0_0_15px_rgba(255,0,80,0.6)] hover:scale-105 transition-all cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
           >
-            <SkipBack size={10} />
+            <SkipBack size={9} />
             Start
           </button>
 
@@ -990,10 +997,10 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
               setVirtualFrame(1475);
             }}
             title="Jump to End"
-            className="px-3 py-1.5 rounded-full bg-black/40 border border-white/10 flex items-center gap-1.5 text-[10px] font-outfit uppercase tracking-wider text-white backdrop-blur-md hover:bg-[#ff0050] hover:text-white hover:border-[#ff0050] hover:shadow-[0_0_15px_rgba(255,0,80,0.6)] hover:scale-105 transition-all cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
+            className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full bg-black/40 border border-white/10 flex items-center gap-1 text-[9px] sm:text-[10px] font-outfit uppercase tracking-wider text-white backdrop-blur-md hover:bg-[#ff0050] hover:text-white hover:border-[#ff0050] hover:shadow-[0_0_15px_rgba(255,0,80,0.6)] hover:scale-105 transition-all cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
           >
             End
-            <SkipForward size={10} />
+            <SkipForward size={9} />
           </button>
         </div>
 
@@ -1001,26 +1008,26 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
         {!isUnlocked && (
           <>
             {/* Left Chevron (Previous Chapter) */}
-            <div className="absolute left-6 top-1/2 -translate-y-1/2 z-40 pointer-events-auto select-none">
+            <div className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-40 pointer-events-auto select-none">
               <button
                 onClick={handlePrevChapter}
                 disabled={activeChapterIndex === 0}
                 title="Previous Chapter"
-                className="w-12 h-12 rounded-full bg-black/40 border border-white/10 flex items-center justify-center text-white backdrop-blur-md hover:bg-[#ff0050] hover:text-white hover:border-[#ff0050] hover:shadow-[0_0_20px_rgba(255,0,80,0.8)] hover:scale-110 active:scale-95 transition-all cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.4)] disabled:opacity-30 disabled:pointer-events-none"
+                className="w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-black/40 border border-white/10 flex items-center justify-center text-white backdrop-blur-md hover:bg-[#ff0050] hover:text-white hover:border-[#ff0050] hover:shadow-[0_0_20px_rgba(255,0,80,0.8)] hover:scale-110 active:scale-95 transition-all cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.4)] disabled:opacity-30 disabled:pointer-events-none"
               >
-                <ChevronLeft size={24} className="mr-0.5" />
+                <ChevronLeft size={16} className="mr-0.5 sm:size-6" />
               </button>
             </div>
 
             {/* Right Chevron (Next Chapter) */}
-            <div className="absolute right-6 top-1/2 -translate-y-1/2 z-40 pointer-events-auto select-none">
+            <div className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-40 pointer-events-auto select-none">
               <button
                 onClick={handleNextChapter}
                 disabled={activeChapterIndex === CHAPTERS.length - 1}
                 title="Next Chapter"
-                className="w-12 h-12 rounded-full bg-black/40 border border-white/10 flex items-center justify-center text-white backdrop-blur-md hover:bg-[#ff0050] hover:text-white hover:border-[#ff0050] hover:shadow-[0_0_20px_rgba(255,0,80,0.8)] hover:scale-110 active:scale-95 transition-all cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.4)] disabled:opacity-30 disabled:pointer-events-none"
+                className="w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-black/40 border border-white/10 flex items-center justify-center text-white backdrop-blur-md hover:bg-[#ff0050] hover:text-white hover:border-[#ff0050] hover:shadow-[0_0_20px_rgba(255,0,80,0.8)] hover:scale-110 active:scale-95 transition-all cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.4)] disabled:opacity-30 disabled:pointer-events-none"
               >
-                <ChevronRight size={24} className="ml-0.5" />
+                <ChevronRight size={16} className="ml-0.5 sm:size-6" />
               </button>
             </div>
           </>
@@ -1028,9 +1035,9 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
 
         {/* PREMIUM CLOUD DIALOGUE BOX (Fixed top-center, leaving beautiful space below, instant updates without fades) */}
         {!isUnlocked && (
-          <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[90%] max-w-xl z-30 pointer-events-none">
+          <div className="absolute top-16 sm:top-20 md:top-24 left-1/2 -translate-x-1/2 w-[92%] sm:w-[90%] max-w-xl z-30 pointer-events-none">
             <div
-              className="relative pointer-events-auto w-full px-8 py-6 rounded-[35px] bg-white/[0.03] border border-white/10 shadow-[0_20px_60px_rgba(255,0,80,0.12),inset_0_0_20px_rgba(255,255,255,0.05)] backdrop-blur-2xl flex flex-col items-center text-center overflow-hidden"
+              className="relative pointer-events-auto w-full px-5 py-4 sm:px-8 sm:py-6 rounded-[24px] sm:rounded-[35px] bg-white/[0.03] border border-white/10 shadow-[0_20px_60px_rgba(255,0,80,0.12),inset_0_0_20px_rgba(255,255,255,0.05)] backdrop-blur-2xl flex flex-col items-center text-center overflow-hidden"
             >
               {/* Cloud styling fluffy accents using background circles */}
               <div className="absolute -top-12 -left-12 w-24 h-24 bg-pink-500/[0.04] rounded-full blur-2xl pointer-events-none" />
@@ -1062,21 +1069,21 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
         {/* BOTTOM PROGRESS METER */}
         {!isUnlocked && (
           <>
-            <div className="absolute bottom-8 inset-x-0 z-30 flex flex-col items-center gap-3 pointer-events-none">
-              <div className="flex gap-2.5">
+            <div className="absolute bottom-20 sm:bottom-8 inset-x-0 z-30 flex flex-col items-center gap-2.5 sm:gap-3 pointer-events-none px-4">
+              <div className="flex gap-1 sm:gap-2.5 flex-wrap justify-center max-w-[90%]">
                 {CHAPTERS.map((c, i) => (
                   <div
                     key={c.id}
-                    className={`h-1.5 rounded-full transition-all duration-500 ${activeChapterIndex === i
-                      ? "w-8 bg-[#ff0050] shadow-[0_0_8px_#ff0050]"
-                      : "w-2 bg-white/20"
+                    className={`h-1 sm:h-1.5 rounded-full transition-all duration-500 ${activeChapterIndex === i
+                      ? "w-4 sm:w-8 bg-[#ff0050] shadow-[0_0_8px_#ff0050]"
+                      : "w-1 sm:w-2 bg-white/20"
                       }`}
                   />
                 ))}
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-outfit uppercase tracking-[0.35em] text-pink-300/60 drop-shadow-[0_0_8px_rgba(244,63,94,0.3)]">
+                <span className="text-[8px] sm:text-[10px] font-outfit uppercase tracking-[0.2em] sm:tracking-[0.35em] text-pink-300/60 drop-shadow-[0_0_8px_rgba(244,63,94,0.3)] text-center">
                   {virtualFrame >= 1470
                     ? "Happy Birthday, My Love! 🎉"
                     : `${isAutoplay ? "PLAYING" : "PAUSED"} • OUR STORY UNFOLDING • ${overallProgressPercent}%`
@@ -1087,11 +1094,11 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
 
             {/* Beautiful dedicated Autoplay On / Off button in the bottom-right corner */}
             {virtualFrame < 1475 && (
-              <div className="absolute bottom-8 right-8 z-40 pointer-events-auto select-none">
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-8 sm:bottom-8 z-40 pointer-events-auto select-none">
                 <button
                   onClick={() => setIsAutoplay(prev => !prev)}
                   title={isAutoplay ? "Pause Autoplay" : "Resume Autoplay"}
-                  className={`px-4 py-2.5 rounded-full border flex items-center gap-2 text-xs font-outfit uppercase tracking-widest font-black shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all duration-300 hover:scale-105 cursor-pointer backdrop-blur-md ${isAutoplay
+                  className={`px-3 py-2 sm:px-4 sm:py-2.5 rounded-full border flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-outfit uppercase tracking-widest font-black shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all duration-300 hover:scale-105 cursor-pointer backdrop-blur-md whitespace-nowrap ${isAutoplay
                     ? "bg-[#ff0050]/20 border-[#ff0050]/40 text-pink-300 shadow-[0_0_20px_rgba(255,0,80,0.4)]"
                     : "bg-black/60 border-white/20 text-white hover:border-[#ff0050] hover:text-[#ff0050] hover:shadow-[0_0_20px_rgba(255,0,80,0.2)]"
                     }`}
@@ -1154,10 +1161,10 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
                 </motion.div>
 
                 <div className="flex flex-col items-center gap-2">
-                  <p className="font-outfit uppercase tracking-[0.3em] text-xs text-white font-semibold">
+                  <p className="font-outfit uppercase tracking-[0.3em] text-[10px] sm:text-xs text-white font-semibold">
                     Unlocking Our Story...
                   </p>
-                  <p className="font-outfit text-[10px] tracking-[0.15em] text-pink-200/50 uppercase">
+                  <p className="font-outfit text-[8px] sm:text-[10px] tracking-[0.15em] text-pink-200/50 uppercase">
                     Preparing beautiful frames ({loadedPercent}%)
                   </p>
                 </div>

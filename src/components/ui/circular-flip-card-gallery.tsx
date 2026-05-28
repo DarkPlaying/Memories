@@ -20,7 +20,7 @@ function FlipCard({ image, title, description, className, style }: FlipCardProps
   return (
     <div
       className={cn(
-        "group w-24 h-32 md:w-28 md:h-36 rounded-xl [perspective:1000px] transition-transform duration-300 ease-in-out hover:scale-110",
+        "group w-16 h-22 sm:w-22 sm:h-28 md:w-28 md:h-36 rounded-lg sm:rounded-xl [perspective:1000px] transition-transform duration-300 ease-in-out hover:scale-110",
         className
       )}
       style={style}
@@ -40,9 +40,9 @@ function FlipCard({ image, title, description, className, style }: FlipCardProps
           />
         </div>
         {/* Back side - Title and Description */}
-        <div className="absolute inset-0 rounded-xl bg-neutral-950 border border-pink-500/20 flex flex-col items-center justify-center p-3 text-center [transform:rotateY(180deg)] [backface-visibility:hidden]">
-          <h3 className="font-outfit font-bold text-xs md:text-sm text-pink-300 mb-1 text-balance">{title}</h3>
-          <p className="text-[10px] md:text-xs text-neutral-400 font-outfit text-pretty leading-snug">{description}</p>
+        <div className="absolute inset-0 rounded-lg sm:rounded-xl bg-neutral-950 border border-pink-500/20 flex flex-col items-center justify-center p-1.5 sm:p-2 md:p-3 text-center [transform:rotateY(180deg)] [backface-visibility:hidden]">
+          <h3 className="font-outfit font-bold text-[8px] sm:text-xs md:text-sm text-pink-300 mb-0.5 sm:mb-1 text-balance">{title}</h3>
+          <p className="text-[7px] sm:text-[10px] md:text-xs text-neutral-400 font-outfit text-pretty leading-snug">{description}</p>
         </div>
       </div>
     </div>
@@ -89,7 +89,8 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
     return () => cancelAnimationFrame(animationFrameId)
   }, [])
 
-  const radius = size * 0.38 // 38% of the container size for gorgeous spacing
+  const isMobileWidth = typeof window !== "undefined" ? window.innerWidth < 640 : false
+  const radius = size * (isMobileWidth ? 0.43 : 0.38) // Wider spacing on mobile to leave elegant gaps between cards
   const centerX = size / 2
   const centerY = size / 2
 
@@ -140,26 +141,26 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
 
       <div
         ref={galleryRef}
-        className="relative w-full max-w-[340px] sm:max-w-[480px] md:max-w-[600px] aspect-square flex items-center justify-center"
+        className="relative w-full max-w-[280px] xs:max-w-[340px] sm:max-w-[480px] md:max-w-[600px] aspect-square flex items-center justify-center"
       >
         {/* Central text & Magical View My World Button */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none p-4 text-center">
-          <h2 className="text-pink-300/80 font-outfit uppercase tracking-[0.3em] text-[10px] md:text-xs mb-3 font-semibold">
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none p-2 sm:p-4 text-center">
+          <h2 className="text-pink-300/80 font-outfit uppercase tracking-[0.2em] sm:tracking-[0.3em] text-[7px] sm:text-[10px] md:text-xs mb-1 sm:mb-3 font-semibold">
             Our Sweetest Chapters
           </h2>
           
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-playfair font-black text-white text-center text-balance mb-6 leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] max-w-xs md:max-w-md">
+          <h1 className="text-[10px] sm:text-xl md:text-3xl font-playfair font-black text-white text-center text-balance mb-2.5 sm:mb-6 leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] max-w-[130px] sm:max-w-xs md:max-w-md">
             A Circular Gallery of Our Beautiful Memories
           </h1>
 
           {/* VIEW MY WORLD ACTION BUTTON */}
           <Link
             href="/my-world"
-            className="group pointer-events-auto inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-black font-extrabold font-outfit text-xs uppercase tracking-widest hover:bg-[#ff0050] hover:text-white transition-all shadow-[0_10px_25px_rgba(255,255,255,0.08)] hover:shadow-[0_15px_30px_rgba(255,0,80,0.4)] hover:scale-105 active:scale-95 transition-all"
+            className="group pointer-events-auto inline-flex items-center gap-1 sm:gap-2 px-2.5 py-1.5 sm:px-6 sm:py-3 rounded-full bg-white text-black font-extrabold font-outfit text-[8px] sm:text-xs uppercase tracking-widest hover:bg-[#ff0050] hover:text-white transition-all shadow-[0_10px_25px_rgba(255,255,255,0.08)] hover:shadow-[0_15px_30px_rgba(255,0,80,0.4)] hover:scale-105 active:scale-95 transition-all"
           >
-            <span className="relative z-10 flex items-center gap-2">
+            <span className="relative z-10 flex items-center gap-1 sm:gap-2">
               View My World
-              <Globe size={14} className="group-hover:rotate-45 transition-transform duration-500" />
+              <Globe size={9} className="group-hover:rotate-45 transition-transform duration-500 sm:size-[14px]" />
             </span>
           </Link>
         </div>
