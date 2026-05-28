@@ -58,6 +58,7 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
   const galleryRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState(0)
   const [rotation, setRotation] = useState(0)
+  const [isMobileWidth, setIsMobileWidth] = useState(false)
 
   // Effect for responsive sizing
   useEffect(() => {
@@ -66,6 +67,7 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
         const gallerySize = galleryRef.current.offsetWidth
         setSize(gallerySize)
       }
+      setIsMobileWidth(window.innerWidth < 640)
     }
 
     updateSize() // Initial size
@@ -89,7 +91,6 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
     return () => cancelAnimationFrame(animationFrameId)
   }, [])
 
-  const isMobileWidth = typeof window !== "undefined" ? window.innerWidth < 640 : false
   const radius = size * (isMobileWidth ? 0.43 : 0.38) // Wider spacing on mobile to leave elegant gaps between cards
   const centerX = size / 2
   const centerY = size / 2
