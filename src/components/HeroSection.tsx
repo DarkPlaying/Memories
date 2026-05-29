@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { Heart, Sparkles, Volume2, VolumeX, SkipBack, SkipForward, Play, Pause, ChevronLeft, ChevronRight } from "lucide-react";
 import confetti from "canvas-confetti";
 import CircularGallery from "@/components/ui/circular-flip-card-gallery";
@@ -339,6 +339,11 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
   const [isAutoplay, setIsAutoplay] = useState(true);
   const dragStartRef = useRef({ x: 0, y: 0, time: 0 });
 
+  const { scrollY } = useScroll();
+  // Extremely smooth, slow-motion scroll mapping (requires more scroll distance to reveal the circular gallery section!)
+  const sectionY = useTransform(scrollY, [0, 1000], [500, 0]);
+  const sectionOpacity = useTransform(scrollY, [0, 750], [0, 1]);
+
   // Auto-start music once preloading completes and page loader is lifted
   useEffect(() => {
     if (!isPreloading && !isParentLoading && audioRef.current && !isPlayingMusic && !isMutedByUser) {
@@ -348,13 +353,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
     }
   }, [isPreloading, isParentLoading, isMutedByUser]);
 
-  // Watch for story complete (virtualFrame reaches TOTAL_FRAMES = 1475)
-  useEffect(() => {
-    if (virtualFrame >= TOTAL_FRAMES && !isUnlocked) {
-      setIsUnlocked(true);
-      setIsAutoplay(false); // Stop autoplay when finished
-    }
-  }, [virtualFrame, isUnlocked]);
+  // Watch for story complete removed to support manual scroll gesture detent unlock at final frame
 
   // Fetch memory photos from recursive API
   useEffect(() => {
@@ -519,7 +518,11 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
         setVirtualFrame(prev => {
           const next = prev + deltaFrames;
           if (next >= TOTAL_FRAMES) {
-            setIsUnlocked(true);
+            if (prev < TOTAL_FRAMES) {
+              return TOTAL_FRAMES; // Stop at end first!
+            } else if (deltaFrames > 0) {
+              setIsUnlocked(true); // On next scroll down, unlock!
+            }
             return TOTAL_FRAMES;
           }
           return Math.max(1, next);
@@ -561,7 +564,11 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
         setVirtualFrame(prev => {
           const next = prev + frameDelta;
           if (next >= TOTAL_FRAMES) {
-            setIsUnlocked(true);
+            if (prev < TOTAL_FRAMES) {
+              return TOTAL_FRAMES; // Stop at end first!
+            } else if (frameDelta > 0) {
+              setIsUnlocked(true); // On next swipe up, unlock!
+            }
             return TOTAL_FRAMES;
           }
           return Math.max(1, next);
@@ -959,7 +966,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
       <div
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
-        className={`w-full h-screen ${isUnlocked ? 'relative' : 'fixed inset-0'} overflow-hidden z-0 bg-black cursor-pointer`}
+        className="w-full h-screen fixed inset-0 overflow-hidden z-0 bg-black cursor-pointer"
       >
 
         {/* Softer Ambient Overlays for brighter viewing and less black in corners */}
@@ -1055,36 +1062,48 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
           </>
         )}
 
-        {/* PREMIUM CLOUD DIALOGUE BOX (Fixed top-center, leaving beautiful space below, instant updates without fades) */}
+        {/* PREMIUM THOUGHT SPEECH BUBBLE (Dreamy thought bubble shapes, infinite floating animation, positioned at top-right on desktop) */}
         {!isUnlocked && (
-          <div className="absolute top-16 sm:top-20 md:top-24 left-1/2 -translate-x-1/2 w-[92%] sm:w-[90%] max-w-xl z-30 pointer-events-none">
-            <div
-              className="relative pointer-events-auto w-full px-5 py-4 sm:px-8 sm:py-6 rounded-[24px] sm:rounded-[35px] bg-white/[0.03] border border-white/10 shadow-[0_20px_60px_rgba(255,0,80,0.12),inset_0_0_20px_rgba(255,255,255,0.05)] backdrop-blur-2xl flex flex-col items-center text-center overflow-hidden"
+          <div className="absolute top-16 sm:top-20 left-1/2 -translate-x-1/2 w-[92%] sm:w-[85%] md:left-auto md:translate-x-0 md:right-8 md:top-8 lg:right-12 lg:top-10 md:w-[380px] lg:w-[440px] z-30 pointer-events-none">
+            <motion.div
+              animate={{ y: [-6, 6, -6], rotate: [-0.5, 0.5, -0.5] }}
+              transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+              className="relative pointer-events-auto w-full px-7 py-5 sm:px-9 sm:py-7 rounded-[36px_36px_36px_8px] sm:rounded-[48px_48px_48px_12px] bg-white/[0.03] border border-white/10 shadow-[0_20px_60px_rgba(255,0,80,0.08),inset_0_0_20px_rgba(255,255,255,0.05)] backdrop-blur-2xl flex flex-col items-center text-center"
             >
-              {/* Cloud styling fluffy accents using background circles */}
-              <div className="absolute -top-12 -left-12 w-24 h-24 bg-pink-500/[0.04] rounded-full blur-2xl pointer-events-none" />
-              <div className="absolute -top-16 -right-12 w-28 h-28 bg-rose-500/[0.04] rounded-full blur-2xl pointer-events-none" />
-              <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
+              {/* Dreamy Thought Bubble smaller floating circles (pointing down-left towards Sanjay & Divya) */}
+              <div className="absolute -bottom-5 left-10 w-6 h-6 rounded-full bg-white/[0.03] border border-white/10 backdrop-blur-2xl pointer-events-none" />
+              <div className="absolute -bottom-9 left-5 w-3.5 h-3.5 rounded-full bg-white/[0.03] border border-white/10 backdrop-blur-2xl pointer-events-none" />
 
               {/* Glowing Heart Icon */}
               <motion.div
-                className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-rose-500 mb-3"
+                className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-rose-500 mb-3 relative z-10"
                 animate={{ scale: [1, 1.15, 1] }}
                 transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
               >
                 <Heart size={14} fill="currentColor" />
               </motion.div>
 
-              {/* Chapter Title */}
-              <h2 className="text-pink-300 font-outfit font-semibold uppercase tracking-[0.25em] text-[10px] md:text-xs mb-2">
-                {currentChapter.title}
-              </h2>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentChapter.id}
+                  initial={{ opacity: 0, y: 12, filter: "blur(4px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  exit={{ opacity: 0, y: -12, filter: "blur(4px)" }}
+                  transition={{ duration: 0.35, ease: "easeInOut" }}
+                  className="flex flex-col items-center w-full relative z-10"
+                >
+                  {/* Chapter Title */}
+                  <h2 className="text-pink-300 font-outfit font-semibold uppercase tracking-[0.25em] text-[10px] md:text-xs mb-2">
+                    {currentChapter.title}
+                  </h2>
 
-              {/* Story Dialogue Text updated instantly */}
-              <p className="text-white text-sm md:text-base font-playfair font-light italic leading-relaxed max-w-md">
-                "{renderTextWithBigEmojis(currentChapter.text)}"
-              </p>
-            </div>
+                  {/* Story Dialogue Text */}
+                  <p className="text-white text-xs sm:text-sm md:text-base font-playfair font-light italic leading-relaxed max-w-md">
+                    "{renderTextWithBigEmojis(currentChapter.text)}"
+                  </p>
+                </motion.div>
+              </AnimatePresence>
+            </motion.div>
           </div>
         )}
 
@@ -1211,9 +1230,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
           <motion.section
             ref={galleryRef}
             id="circular-gallery-section"
-            initial={{ opacity: 0, y: 80 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.2, ease: "easeOut" }}
+            style={{ marginTop: "100vh", y: sectionY, opacity: sectionOpacity }}
             className="relative w-full pt-16 md:pt-24 pb-0 bg-black z-10 overflow-hidden flex flex-col gap-8 md:gap-12"
           >
             {/* Circular gallery — 16 unique images (indices 10 to 25) */}
@@ -1227,7 +1244,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
               <CircularGallery images={memories.slice(10, 26)} />
             </motion.div>
 
-            {/* Arc timeline gallery — 12 unique images (indices 25 to 36) */}
+            {/* Arc timeline gallery — all dynamic memories for infinite showing */}
             <motion.div
               initial={{ opacity: 0, y: 60 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -1235,7 +1252,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
               transition={{ duration: 1.0, ease: "easeOut" }}
               className="w-full relative z-10"
             >
-              <ArcGalleryHero images={memories.slice(25, 37).map(img => `/memories/${img}`)} />
+              <ArcGalleryHero images={memories.map(img => `/memories/${img}`)} />
             </motion.div>
 
           </motion.section>

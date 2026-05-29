@@ -591,6 +591,23 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
     cardSize: cardSizeLg,
   });
   const [angles, setAngles] = useState({ start: startAngle, end: endAngle });
+  const [timeOffset, setTimeOffset] = useState(0);
+
+  useEffect(() => {
+    let animationFrameId: number;
+    const speed = 0.018; // Elegant slow continuous scrolling along the arc path
+    let lastTime = performance.now();
+
+    const update = (time: number) => {
+      const delta = (time - lastTime) / 1000;
+      lastTime = time;
+      setTimeOffset((prev) => (prev + speed * delta) % 1);
+      animationFrameId = requestAnimationFrame(update);
+    };
+
+    animationFrameId = requestAnimationFrame(update);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, []);
 
   // Responsive resizing of the arc and cards
   useEffect(() => {
@@ -623,7 +640,13 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
   const step = (angles.end - angles.start) / (count - 1);
 
   return (
-    <section className={`relative overflow-hidden bg-black text-white flex flex-col items-center pt-8 sm:pt-12 pb-0 ${className}`}>
+    <motion.section
+      initial={{ opacity: 0, y: 55 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-100px" }}
+      transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+      className={`relative overflow-hidden bg-black text-white flex flex-col items-center pt-8 sm:pt-12 pb-0 ${className}`}
+    >
 
       {/* SVG ClipPath Definitions for Heart Halves - placed at the top for reliable rendering on mobile devices */}
       <svg className="absolute w-0 h-0 opacity-0 pointer-events-none" aria-hidden="true">
@@ -655,7 +678,11 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
       </div>
 
       {/* Background ring container distributing memory photos along the curve */}
-      <div
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ duration: 0.9, ease: "easeOut" }}
         className="relative w-full max-w-[1200px] z-10 select-none pointer-events-none mt-4 sm:mt-8"
         style={{
           height: dimensions.radius * 1.05,
@@ -684,9 +711,40 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
 
         <div className="absolute left-1/2 bottom-0 -translate-x-1/2">
           {images.map((src, i) => {
-            const angle = angles.start + step * i;
-            const angleRad = (angle * Math.PI) / 180;
+            // Elegant fixed angular spacing for spacious visual rhythm
+            const spacing = 23; // Spacing in degrees between images (adjustable for perfect gaps)
+            const beltWidth = count * spacing;
+            
+            // Continuous travel position along the infinite virtual belt
+            const cardAngle = ((i * spacing) + (timeOffset * beltWidth)) % beltWidth;
+            
+            // Circular wrap-around distance relative to the visible arc center
+            let diff = cardAngle - angles.start;
+            if (diff > beltWidth / 2) diff -= beltWidth;
+            if (diff < -beltWidth / 2) diff += beltWidth;
+            
+            const normalizedAngle = angles.start + diff;
+            
+            // Define visible window boundaries (with comfortable buffer for boundary transitions)
+            const windowStart = angles.start - 15;
+            const windowEnd = angles.end + 15;
+            const windowSpan = windowEnd - windowStart;
+            
+            const progress = (normalizedAngle - windowStart) / windowSpan;
+            
+            // Render only cards currently traversing the active window
+            const isVisible = progress >= 0 && progress <= 1;
+            if (!isVisible) return null;
 
+            // Beautiful boundary transparency scaling
+            let cardOpacity = 1;
+            if (progress < 0.15) {
+              cardOpacity = progress / 0.15;
+            } else if (progress > 0.85) {
+              cardOpacity = (1 - progress) / 0.15;
+            }
+
+            const angleRad = (normalizedAngle * Math.PI) / 180;
             const x = Math.cos(angleRad) * dimensions.radius;
             const y = Math.sin(angleRad) * dimensions.radius;
 
@@ -694,43 +752,46 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
             const cardY = y - dimensions.cardSize / 2;
 
             return (
-              <motion.div
+              <div
                 key={i}
-                initial={{ opacity: 0, scale: 0.6, rotate: angle - 90 - 15, y: 40 }}
-                whileInView={{ opacity: 1, scale: 1, rotate: angle - 90, y: 0 }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={{
-                  duration: 0.7,
-                  delay: i * 0.07,
-                  type: "spring",
-                  stiffness: 85,
-                  damping: 14
-                }}
-                className="absolute"
+                className="absolute transition-opacity duration-300 pointer-events-auto"
                 style={{
                   width: dimensions.cardSize,
                   height: dimensions.cardSize,
                   left: `${cardX}px`,
                   bottom: `${cardY}px`,
-                  zIndex: count - i,
+                  transform: `rotate(${normalizedAngle - 90}deg)`,
+                  opacity: cardOpacity,
+                  zIndex: Math.round(cardOpacity * 100), // Layer centered cards on top
                 }}
               >
-                <div className="rounded-[20px] shadow-2xl overflow-hidden border border-white/10 bg-neutral-900 transition-transform hover:scale-105 w-full h-full">
-                  <img
-                    src={src}
-                    alt={`Memory ${i + 1}`}
-                    className="block w-full h-full object-cover filter brightness-95"
-                    draggable={false}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = `https://placehold.co/400x400/1c1c1e/e2e8f0?text=Memory`;
-                    }}
-                  />
-                </div>
-              </motion.div>
+                {/* Beautiful hover scaling for close-up viewing */}
+                <motion.div
+                  className="w-full h-full"
+                  whileHover={{ scale: 1.3, zIndex: 200 }}
+                  transition={{ 
+                    type: "spring",
+                    stiffness: 350,
+                    damping: 18
+                  }}
+                >
+                  <div className="rounded-[20px] shadow-2xl overflow-hidden border border-white/10 bg-neutral-900 w-full h-full">
+                    <img
+                      src={src}
+                      alt={`Memory ${i + 1}`}
+                      className="block w-full h-full object-cover filter brightness-95 hover:brightness-100 transition-all duration-300"
+                      draggable={false}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = `https://placehold.co/400x400/1c1c1e/e2e8f0?text=Memory`;
+                      }}
+                    />
+                  </div>
+                </motion.div>
+              </div>
             );
           })}
         </div>
-      </div>
+      </motion.div>
 
 
 
@@ -921,6 +982,6 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
           animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
         }
       `}</style>
-    </section>
+    </motion.section>
   );
 };

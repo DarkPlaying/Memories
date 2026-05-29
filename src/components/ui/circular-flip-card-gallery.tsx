@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { Globe, Heart } from "lucide-react"
+import { motion, useScroll, useTransform } from "framer-motion"
 
 // A simple utility for conditional class names
 const cn = (...classes: any[]) => classes.filter(Boolean).join(" ")
@@ -59,6 +60,9 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
   const [size, setSize] = useState(0)
   const [rotation, setRotation] = useState(0)
   const [isMobileWidth, setIsMobileWidth] = useState(false)
+
+  const { scrollY } = useScroll()
+  const scrollRotation = useTransform(scrollY, [600, 3600], [0, 160])
 
   // Effect for responsive sizing
   useEffect(() => {
@@ -195,26 +199,32 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
           </Link>
         </div>
 
-        {/* Circular arrangement of cards */}
-        {size > 0 &&
-          dynamicCardData.map((card, index) => {
-            const angle = (index / dynamicCardData.length) * 2 * Math.PI - Math.PI / 2 + rotation
-            const x = centerX + radius * Math.cos(angle)
-            const y = centerY + radius * Math.sin(angle)
+        {/* Circular arrangement of cards fanning out and rotating on scroll */}
+        {size > 0 && (
+          <motion.div
+            style={{ rotate: scrollRotation }}
+            className="absolute inset-0 pointer-events-none"
+          >
+            {dynamicCardData.map((card, index) => {
+              const angle = (index / dynamicCardData.length) * 2 * Math.PI - Math.PI / 2 + rotation
+              const x = centerX + radius * Math.cos(angle)
+              const y = centerY + radius * Math.sin(angle)
 
-            return (
-              <FlipCard
-                key={index}
-                {...card}
-                className="absolute hover:z-20"
-                style={{
-                  left: `${x}px`,
-                  top: `${y}px`,
-                  transform: `translate(-50%, -50%) rotate(${(angle + Math.PI / 2) * (180 / Math.PI)}deg)`,
-                }}
-              />
-            )
-          })}
+              return (
+                <FlipCard
+                  key={index}
+                  {...card}
+                  className="absolute hover:z-20 pointer-events-auto"
+                  style={{
+                    left: `${x}px`,
+                    top: `${y}px`,
+                    transform: `translate(-50%, -50%) rotate(${(angle + Math.PI / 2) * (180 / Math.PI)}deg)`,
+                  }}
+                />
+              )
+            })}
+          </motion.div>
+        )}
       </div>
     </div>
   )
