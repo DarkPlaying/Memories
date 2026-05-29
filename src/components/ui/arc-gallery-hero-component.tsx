@@ -662,22 +662,22 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
         }}
       >
         {/* HEADER SEGMENT PLACED BEAUTIFULLY INSIDE THE ARC (Responsive for both desktop and mobile) */}
-        <div className="absolute left-1/2 bottom-2 xs:bottom-4 sm:bottom-6 md:bottom-8 -translate-x-1/2 text-center w-full max-w-[220px] xs:max-w-[260px] sm:max-w-md md:max-w-2xl px-2 sm:px-6 z-20 pointer-events-auto flex flex-col items-center">
+        <div className="absolute left-1/2 bottom-2 xs:bottom-4 sm:bottom-6 md:bottom-8 -translate-x-1/2 text-center w-full max-w-[260px] xs:max-w-[300px] sm:max-w-md md:max-w-2xl px-2 sm:px-6 z-20 pointer-events-auto flex flex-col items-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full bg-white/5 border border-white/10 mb-1.5 sm:mb-3 shadow-[inset_0_0_10px_rgba(255,0,80,0.05)]"
+            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-white/5 border border-white/10 mb-2 sm:mb-3 shadow-[inset_0_0_10px_rgba(255,0,80,0.05)]"
           >
-            <Heart size={8} className="text-rose-500 fill-current animate-pulse sm:size-[12px]" />
-            <span className="text-[8px] sm:text-[10px] font-outfit uppercase tracking-[0.15em] sm:tracking-[0.2em] text-pink-200">
+            <Heart size={10} className="text-rose-500 fill-current animate-pulse sm:size-[12px]" />
+            <span className="text-[9px] xs:text-[10px] sm:text-[10px] font-outfit uppercase tracking-[0.15em] sm:tracking-[0.2em] text-pink-200">
               Act III: Our Love Chronicles
             </span>
           </motion.div>
-          <h2 className="text-xs xs:text-sm sm:text-2xl md:text-4xl lg:text-5xl font-playfair font-black text-white mb-1 sm:mb-3 tracking-tight leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
+          <h2 className="text-base xs:text-lg sm:text-2xl md:text-4xl lg:text-5xl font-playfair font-black text-white mb-2 sm:mb-3 tracking-tight leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
             Our Love Timeline
           </h2>
-          <p className="text-[8px] xs:text-[9.5px] sm:text-xs md:text-sm font-outfit text-gray-300 font-light leading-relaxed drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
+          <p className="text-[10px] xs:text-[11.5px] sm:text-xs md:text-sm font-outfit text-gray-300 font-light leading-relaxed drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
             Every text, every gift, every milestone we shared charted along the beautiful chronological path of our destiny.
           </p>
         </div>
@@ -690,25 +690,32 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
             const x = Math.cos(angleRad) * dimensions.radius;
             const y = Math.sin(angleRad) * dimensions.radius;
 
+            const cardX = x - dimensions.cardSize / 2;
+            const cardY = y - dimensions.cardSize / 2;
+
             return (
-              <div
+              <motion.div
                 key={i}
-                className="absolute opacity-0 animate-fade-in-up"
+                initial={{ opacity: 0, scale: 0.6, rotate: angle - 90 - 15, y: 40 }}
+                whileInView={{ opacity: 1, scale: 1, rotate: angle - 90, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{
+                  duration: 0.7,
+                  delay: i * 0.07,
+                  type: "spring",
+                  stiffness: 85,
+                  damping: 14
+                }}
+                className="absolute"
                 style={{
                   width: dimensions.cardSize,
                   height: dimensions.cardSize,
-                  left: `calc(50% + ${x}px)`,
-                  bottom: `${y}px`,
-                  transform: `translate(-50%, 50%)`,
-                  animationDelay: `${i * 90}ms`,
-                  animationFillMode: 'forwards',
+                  left: `${cardX}px`,
+                  bottom: `${cardY}px`,
                   zIndex: count - i,
                 }}
               >
-                <div
-                  className="rounded-[20px] shadow-2xl overflow-hidden border border-white/10 bg-neutral-900 transition-transform hover:scale-105 w-full h-full"
-                  style={{ transform: `rotate(${angle - 90}deg)` }}
-                >
+                <div className="rounded-[20px] shadow-2xl overflow-hidden border border-white/10 bg-neutral-900 transition-transform hover:scale-105 w-full h-full">
                   <img
                     src={src}
                     alt={`Memory ${i + 1}`}
@@ -719,7 +726,7 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
                     }}
                   />
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
