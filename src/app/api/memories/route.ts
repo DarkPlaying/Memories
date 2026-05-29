@@ -6,8 +6,6 @@ export async function GET() {
   try {
     const baseDir = path.join(process.cwd(), "public", "memories");
     let images: string[] = [];
-    const seenSizes = new Set<number>();
-    const seenNames = new Set<string>();
 
     const scanDirectory = (dir: string, prefix = "") => {
       if (!fs.existsSync(dir)) return;
@@ -23,13 +21,7 @@ export async function GET() {
         } else {
           const ext = path.extname(file).toLowerCase();
           if (imageExtensions.includes(ext)) {
-            const cleanName = file.replace(/\s*\(\d+\)/g, "").toLowerCase();
-            // Deduplicate based on both file size and clean filename to filter out all copies
-            if (!seenSizes.has(stat.size) && !seenNames.has(cleanName)) {
-              seenSizes.add(stat.size);
-              seenNames.add(cleanName);
-              images.push(prefix ? `${prefix}/${file}` : file);
-            }
+            images.push(prefix ? `${prefix}/${file}` : file);
           }
         }
       });
