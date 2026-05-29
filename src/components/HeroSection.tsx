@@ -100,7 +100,7 @@ const CHAPTERS: Chapter[] = [
     endFrame: 559,
     localStart: 182,
     title: "Chapter 9: The Confession 🥺📞✨🤍",
-    text: "We talked for hours that night. At 4 AM, she confessed she had a crush on me. A feeling beyond words. 🥺📞✨"
+    text: "We talked for hours that night. At 4 AM, I confessed , I had a crush her . A feeling beyond words. 🥺📞✨"
   },
   {
     id: 10,
@@ -147,7 +147,7 @@ const CHAPTERS: Chapter[] = [
     endFrame: 859,
     localStart: 190,
     title: "Chapter 14: The Gift Proposal 🎁⏳✨",
-    text: "I gave her a gift: \"Open it only at midnight on Feb 14.\" And exactly at 12:00 AM... 🎁⏳✨"
+    text: "I gave her a gift: i said to her \"Open it only at midnight on Feb 14.\" And exactly at 12:00 AM... 🎁⏳✨"
   },
   {
     id: 15,
@@ -268,7 +268,7 @@ const CHAPTERS: Chapter[] = [
     endFrame: 1376,
     localStart: 170,
     title: "Chapter 27: Prepared 💌🍫✨💍",
-    text: "I had prepared everything. Chocolates, a ring, and a heart full of love. 💌🍫✨💍"
+    text: "I had prepared everything. Chocolates, what to speak and a heart full of love. 💌🍫✨💍"
   },
   {
     id: 28,
@@ -762,12 +762,12 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
       // Scale in CSS layout coordinates
       const cssWidth = window.innerWidth;
       const cssHeight = window.innerHeight;
-      
+
       // On mobile viewports, fit the landscape image horizontally (like a movie screen)
-      const scale = cssWidth < 640 
-        ? cssWidth / img.width 
+      const scale = cssWidth < 640
+        ? cssWidth / img.width
         : Math.max(cssWidth / img.width, cssHeight / img.height);
-        
+
       const w = img.width * scale;
       const h = img.height * scale;
 
