@@ -634,8 +634,8 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
       {/* ambient glows */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,0,80,0.03)_0%,transparent_80%)] pointer-events-none" />
 
-      {/* ACT II: THE ARC OF LIFE Section Title (placed above the arc image) */}
-      <div className="w-[90%] max-w-xl text-center px-4 z-20 pointer-events-auto flex flex-col items-center mb-6 sm:mb-10 mt-6">
+      {/* ACT II: THE ARC OF LIFE Section Title (placed above the arc image like in the circular image) */}
+      <div className="w-[90%] max-w-xl text-center px-4 z-20 pointer-events-auto flex flex-col items-center mb-10 md:mb-16 mt-6">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-3 shadow-[inset_0_0_10px_rgba(255,0,80,0.05)]">
           <Heart size={10} className="text-rose-500 fill-current animate-pulse" />
           <span className="text-[9px] font-outfit uppercase tracking-[0.2em] text-pink-200">✦ Act II ✦</span>
@@ -655,21 +655,23 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
           height: dimensions.radius * 1.05,
         }}
       >
-        {/* HEADER SEGMENT PLACED BEAUTIFULLY INSIDE THE ARC (Desktop only) */}
-        <div className="absolute left-1/2 bottom-4 md:bottom-8 -translate-x-1/2 text-center w-[90%] max-w-xl px-6 z-20 pointer-events-auto hidden md:flex flex-col items-center">
+        {/* HEADER SEGMENT PLACED BEAUTIFULLY INSIDE THE ARC (Responsive for both desktop and mobile) */}
+        <div className="absolute left-1/2 bottom-2 xs:bottom-4 sm:bottom-6 md:bottom-8 -translate-x-1/2 text-center w-[95%] sm:w-[90%] max-w-2xl px-2 sm:px-6 z-20 pointer-events-auto flex flex-col items-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-4.5"
+            className="inline-flex items-center gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full bg-white/5 border border-white/10 mb-1.5 sm:mb-3 shadow-[inset_0_0_10px_rgba(255,0,80,0.05)]"
           >
-            <Heart size={12} className="text-rose-500 fill-current" />
-            <span className="text-[10px] font-outfit uppercase tracking-[0.2em] text-pink-200">Act III: Our Love Chronicles</span>
+            <Heart size={8} className="text-rose-500 fill-current animate-pulse sm:size-[12px]" />
+            <span className="text-[8px] sm:text-[10px] font-outfit uppercase tracking-[0.15em] sm:tracking-[0.2em] text-pink-200">
+              Act III: Our Love Chronicles
+            </span>
           </motion.div>
-          <h2 className="text-3xl md:text-5xl font-playfair font-black text-white mb-3.5 tracking-tight leading-tight">
+          <h2 className="text-xs xs:text-sm sm:text-2xl md:text-4xl lg:text-5xl font-playfair font-black text-white mb-1 sm:mb-3 tracking-tight leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
             Our Love Timeline
           </h2>
-          <p className="text-xs md:text-sm font-outfit text-gray-300 font-light leading-relaxed">
+          <p className="text-[8px] xs:text-[9px] sm:text-xs md:text-sm font-outfit text-gray-300 font-light leading-relaxed max-w-[200px] xs:max-w-[260px] sm:max-w-md md:max-w-xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
             Every text, every gift, every milestone we shared charted along the beautiful chronological path of our destiny.
           </p>
         </div>
@@ -717,24 +719,7 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
         </div>
       </div>
 
-      {/* HEADER SEGMENT PLACED BEAUTIFULLY UNDER THE ARC (Mobile only) */}
-      <div className="w-[90%] max-w-sm text-center px-4 z-20 pointer-events-auto flex flex-col items-center mt-6 mb-2 md:hidden">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 mb-2"
-        >
-          <Heart size={10} className="text-rose-500 fill-current" />
-          <span className="text-[8px] font-outfit uppercase tracking-[0.2em] text-pink-200">Act III: Our Love Chronicles</span>
-        </motion.div>
-        <h2 className="text-xl font-playfair font-black text-white mb-1.5 tracking-tight leading-tight">
-          Our Love Timeline
-        </h2>
-        <p className="text-[10px] font-outfit text-gray-300 font-light leading-relaxed">
-          Every text, every gift, every milestone we shared charted along the beautiful chronological path of our destiny.
-        </p>
-      </div>
+
 
       {/* GORGEOUS MARRIAGE TIMELINE LISTING */}
       <div className="w-full max-w-6xl px-4 mt-8 sm:mt-12 z-20 relative flex flex-col items-center">
