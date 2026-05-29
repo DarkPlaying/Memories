@@ -634,9 +634,23 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
       {/* ambient glows */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,0,80,0.03)_0%,transparent_80%)] pointer-events-none" />
 
+      {/* ACT II: THE ARC OF LIFE Section Title (placed above the arc image) */}
+      <div className="w-[90%] max-w-xl text-center px-4 z-20 pointer-events-auto flex flex-col items-center mb-6 sm:mb-10 mt-6">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-3 shadow-[inset_0_0_10px_rgba(255,0,80,0.05)]">
+          <Heart size={10} className="text-rose-500 fill-current animate-pulse" />
+          <span className="text-[9px] font-outfit uppercase tracking-[0.2em] text-pink-200">✦ Act II ✦</span>
+        </div>
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-playfair font-black text-white mb-3.5 tracking-tight leading-tight">
+          The Arc of Life
+        </h2>
+        <p className="text-xs sm:text-sm font-outfit text-gray-400 font-light leading-relaxed max-w-md">
+          Every sweet memory we built, every promise we made, charted along the gorgeous arc of our beautiful lives.
+        </p>
+      </div>
+
       {/* Background ring container distributing memory photos along the curve */}
       <div
-        className="relative w-full max-w-[1200px] z-10 select-none pointer-events-none mt-6 sm:mt-12"
+        className="relative w-full max-w-[1200px] z-10 select-none pointer-events-none mt-4 sm:mt-8"
         style={{
           height: dimensions.radius * 1.05,
         }}
@@ -650,13 +664,13 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
             className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-4.5"
           >
             <Heart size={12} className="text-rose-500 fill-current" />
-            <span className="text-[10px] font-outfit uppercase tracking-[0.2em] text-pink-200">Act II: The Arc of Life</span>
+            <span className="text-[10px] font-outfit uppercase tracking-[0.2em] text-pink-200">Act III: Our Love Chronicles</span>
           </motion.div>
           <h2 className="text-3xl md:text-5xl font-playfair font-black text-white mb-3.5 tracking-tight leading-tight">
-            Our Story &apos;26
+            Our Love Timeline
           </h2>
           <p className="text-xs md:text-sm font-outfit text-gray-300 font-light leading-relaxed">
-            Every sweet memory we built, every promise we made, charted along the gorgeous arc of our beautiful lives.
+            Every text, every gift, every milestone we shared charted along the beautiful chronological path of our destiny.
           </p>
         </div>
 
@@ -712,31 +726,17 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
           className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 mb-2"
         >
           <Heart size={10} className="text-rose-500 fill-current" />
-          <span className="text-[8px] font-outfit uppercase tracking-[0.2em] text-pink-200">Act II: The Arc of Life</span>
+          <span className="text-[8px] font-outfit uppercase tracking-[0.2em] text-pink-200">Act III: Our Love Chronicles</span>
         </motion.div>
         <h2 className="text-xl font-playfair font-black text-white mb-1.5 tracking-tight leading-tight">
-          Our Story &apos;26
-        </h2>
-        <p className="text-[10px] font-outfit text-gray-300 font-light leading-relaxed">
-          Every sweet memory we built, every promise we made, charted along the gorgeous arc of our beautiful lives.
-        </p>
-      </div>
-
-      {/* GORGEOUS MARRIAGE TIMELINE LISTING */}
-      {/* THEMED SECTION HEADER FOR TIMELINE */}
-      <div className="w-[90%] max-w-xl text-center px-4 z-20 pointer-events-auto flex flex-col items-center mb-6 sm:mb-10 mt-16 md:mt-24">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-3 shadow-[inset_0_0_10px_rgba(255,0,80,0.05)]">
-          <Heart size={10} className="text-rose-500 fill-current animate-pulse" />
-          <span className="text-[9px] font-outfit uppercase tracking-[0.2em] text-pink-200">Act III: Our Love Chronicles</span>
-        </div>
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-playfair font-black text-white mb-3.5 tracking-tight leading-tight">
           Our Love Timeline
         </h2>
-        <p className="text-xs sm:text-sm font-outfit text-gray-400 font-light leading-relaxed max-w-md">
+        <p className="text-[10px] font-outfit text-gray-300 font-light leading-relaxed">
           Every text, every gift, every milestone we shared charted along the beautiful chronological path of our destiny.
         </p>
       </div>
 
+      {/* GORGEOUS MARRIAGE TIMELINE LISTING */}
       <div className="w-full max-w-6xl px-4 mt-8 sm:mt-12 z-20 relative flex flex-col items-center">
 
         {/* Vertical Timeline spine */}
