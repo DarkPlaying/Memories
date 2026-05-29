@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import { Globe } from "lucide-react"
+import { Globe, Heart } from "lucide-react"
 
 // A simple utility for conditional class names
 const cn = (...classes: any[]) => classes.filter(Boolean).join(" ")
@@ -149,25 +149,34 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
       description: textTemplates[index % textTemplates.length]
     }
   })
-
   return (
-    <div className="w-full font-sans text-[#F5F5F5] min-h-[90vh] flex flex-col items-center justify-center p-4 overflow-hidden relative">
+    <div className="w-full font-sans text-[#F5F5F5] min-h-0 py-8 md:py-12 flex flex-col items-center justify-center p-4 overflow-hidden relative">
 
       {/* Decorative ambient glowing grids */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,0,80,0.05)_0%,transparent_70%)] pointer-events-none" />
+
+      {/* ACT I: THE Orbit of Memories Section Title (placed above the circle image) */}
+      <div className="w-[90%] max-w-xl text-center px-4 z-20 pointer-events-auto flex flex-col items-center mb-10 md:mb-16">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-3 shadow-[inset_0_0_10px_rgba(255,0,80,0.05)]">
+          <Heart size={10} className="text-rose-500 fill-current animate-pulse" />
+          <span className="text-[9px] font-outfit uppercase tracking-[0.2em] text-pink-200">✦ Act I: The Orbit of Memories ✦</span>
+        </div>
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-playfair font-black text-white mb-3.5 tracking-tight leading-tight">
+          Our Sweetest Chapters
+        </h2>
+        <p className="text-xs sm:text-sm font-outfit text-gray-400 font-light leading-relaxed max-w-md">
+          A gorgeous interactive sphere of our most precious moments. Spin the circle or step inside our cosmic 3D world.
+        </p>
+      </div>
 
       <div
         ref={galleryRef}
         className="relative w-full max-w-[280px] xs:max-w-[340px] sm:max-w-[480px] md:max-w-[600px] aspect-square flex items-center justify-center"
       >
-        {/* Central text & Magical View My World Button */}
+        {/* Central text & Magical View My World Button inside the circle */}
         <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none p-2 sm:p-4 text-center">
-          <h2 className="text-pink-300/80 font-outfit uppercase tracking-[0.2em] sm:tracking-[0.3em] text-[7px] sm:text-[10px] md:text-xs mb-1 sm:mb-3 font-semibold">
-            Our Sweetest Chapters
-          </h2>
-
-          <h1 className="text-[14px] sm:text-xl md:text-2xl font-playfair font-black text-white text-center text-balance mb-2.5 sm:mb-6 leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] max-w-[130px] sm:max-w-xs md:max-w-md">
-            A Circular Gallery of Our Beautiful Memories
+          <h1 className="text-[12px] sm:text-lg md:text-xl font-playfair font-bold text-white text-center text-balance mb-2 sm:mb-4 leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] max-w-[130px] sm:max-w-[200px]">
+            Our Memories
           </h1>
 
           {/* VIEW MY WORLD ACTION BUTTON */}

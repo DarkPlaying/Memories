@@ -131,19 +131,7 @@ const LocationHeartUnion: React.FC = () => {
   }, []);
 
   return (
-    <div className="w-full max-w-5xl mx-auto py-6 sm:py-16 flex flex-col items-center z-20 relative overflow-visible">
-
-      {/* Title */}
-      <motion.h3
-        initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-        animate={isMobile ? { opacity: 1, y: 0 } : undefined}
-        whileInView={isMobile ? undefined : { opacity: 1, y: 0 }}
-        viewport={isMobile ? undefined : { once: true }}
-        transition={{ duration: 0.7 }}
-        className="text-xl md:text-2xl font-playfair font-black text-white text-center mb-6 sm:mb-10 tracking-wide"
-      >
-        Our Story &apos;26 📍
-      </motion.h3>
+    <div className="w-full max-w-5xl mx-auto py-4 sm:py-8 flex flex-col items-center z-20 relative overflow-visible">
 
       {/* Meet in Center Container — heartbeat float animation */}
       <motion.div
@@ -247,7 +235,7 @@ const AvatarConnection: React.FC = () => {
       whileInView={isMobile ? undefined : { opacity: 1, y: 0 }}
       viewport={isMobile ? undefined : { once: true, margin: "-80px" }}
       transition={{ duration: 0.8, ease: "easeOut" }}
-      className="w-full min-h-0 md:min-h-screen max-w-3xl mx-auto py-6 md:py-24 flex flex-col items-center justify-center z-20 relative px-4 overflow-hidden"
+      className="w-full min-h-0 max-w-3xl mx-auto py-6 md:py-12 flex flex-col items-center justify-center z-20 relative px-4 overflow-hidden"
     >
       {/* Title */}
       <h3 className="text-xl sm:text-2xl md:text-3xl font-playfair font-black text-white text-center mb-6 tracking-wide px-4">
@@ -408,8 +396,22 @@ const WeddingInvitationFooter: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center justify-center py-16 bg-black z-20 relative">
-      <div className="w-full max-w-4xl mx-auto px-4 flex flex-col items-center gap-10 md:gap-16 z-20 relative">
+    <div className="w-full min-h-0 flex flex-col items-center justify-center py-4 md:py-6 bg-black z-20 relative">
+      <div className="w-full max-w-4xl mx-auto px-4 flex flex-col items-center gap-6 md:gap-10 z-20 relative">
+
+        {/* THEMED SECTION HEADER FOR INVITATION */}
+        <div className="w-[90%] max-w-xl text-center px-4 z-20 pointer-events-auto flex flex-col items-center mb-6 sm:mb-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-3 shadow-[inset_0_0_10px_rgba(255,0,80,0.05)]">
+            <Heart size={10} className="text-rose-500 fill-current animate-pulse" />
+            <span className="text-[9px] font-outfit uppercase tracking-[0.2em] text-pink-200">Act IV: The Promise of Forever</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-playfair font-black text-white mb-3.5 tracking-tight leading-tight">
+            Our Wedding Invitations
+          </h2>
+          <p className="text-xs sm:text-sm font-outfit text-gray-400 font-light leading-relaxed max-w-md">
+            Click any of our gorgeous invitation cards to view them in fullscreen. An invite to witness our eternal love story.
+          </p>
+        </div>
 
         {/* Section 1: From This */}
         <motion.div
@@ -615,7 +617,7 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
   const step = (endAngle - startAngle) / (count - 1);
 
   return (
-    <section className={`relative overflow-hidden bg-black text-white flex flex-col items-center pt-28 sm:pt-32 pb-0 ${className}`}>
+    <section className={`relative overflow-hidden bg-black text-white flex flex-col items-center pt-8 sm:pt-12 pb-0 ${className}`}>
 
       {/* SVG ClipPath Definitions for Heart Halves - placed at the top for reliable rendering on mobile devices */}
       <svg className="absolute w-0 h-0 opacity-0 pointer-events-none" aria-hidden="true">
@@ -648,7 +650,7 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
             className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-4.5"
           >
             <Heart size={12} className="text-rose-500 fill-current" />
-            <span className="text-[10px] font-outfit uppercase tracking-[0.2em] text-pink-200">Our Story &apos;26</span>
+            <span className="text-[10px] font-outfit uppercase tracking-[0.2em] text-pink-200">Act II: The Arc of Life</span>
           </motion.div>
           <h2 className="text-3xl md:text-5xl font-playfair font-black text-white mb-3.5 tracking-tight leading-tight">
             Our Story &apos;26
@@ -710,7 +712,7 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
           className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 mb-2"
         >
           <Heart size={10} className="text-rose-500 fill-current" />
-          <span className="text-[8px] font-outfit uppercase tracking-[0.2em] text-pink-200">Our Story &apos;26</span>
+          <span className="text-[8px] font-outfit uppercase tracking-[0.2em] text-pink-200">Act II: The Arc of Life</span>
         </motion.div>
         <h2 className="text-xl font-playfair font-black text-white mb-1.5 tracking-tight leading-tight">
           Our Story &apos;26
@@ -721,7 +723,21 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
       </div>
 
       {/* GORGEOUS MARRIAGE TIMELINE LISTING */}
-      <div className="w-full max-w-6xl px-4 mt-16 z-20 relative flex flex-col items-center">
+      {/* THEMED SECTION HEADER FOR TIMELINE */}
+      <div className="w-[90%] max-w-xl text-center px-4 z-20 pointer-events-auto flex flex-col items-center mb-6 sm:mb-10 mt-16 md:mt-24">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-3 shadow-[inset_0_0_10px_rgba(255,0,80,0.05)]">
+          <Heart size={10} className="text-rose-500 fill-current animate-pulse" />
+          <span className="text-[9px] font-outfit uppercase tracking-[0.2em] text-pink-200">Act III: Our Love Chronicles</span>
+        </div>
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-playfair font-black text-white mb-3.5 tracking-tight leading-tight">
+          Our Love Timeline
+        </h2>
+        <p className="text-xs sm:text-sm font-outfit text-gray-400 font-light leading-relaxed max-w-md">
+          Every text, every gift, every milestone we shared charted along the beautiful chronological path of our destiny.
+        </p>
+      </div>
+
+      <div className="w-full max-w-6xl px-4 mt-8 sm:mt-12 z-20 relative flex flex-col items-center">
 
         {/* Vertical Timeline spine */}
         <div className="absolute left-1/2 top-0 bottom-0 w-0.5 md:w-1 bg-gradient-to-b from-rose-500/90 via-pink-500/40 to-rose-500/90 -translate-x-1/2 rounded-full" />
@@ -826,11 +842,68 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
       </div>
 
       {/* CLIMAX WEDDING UNION SECTIONS */}
-      <CountdownTimer />
-      <LocationHeartUnion />
-      <AvatarConnection />
-      <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-pink-500/20 to-transparent my-6 sm:my-16" />
-      <WeddingInvitationFooter />
+
+      {/* ACT IV: TWO HEARTS, ONE DESTINY (MAPS & CONNECTION) */}
+      <motion.div
+        initial={{ opacity: 0, y: 55 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="w-full flex flex-col items-center mt-12 sm:mt-20"
+      >
+        {/* THEMED SECTION HEADER FOR MAPS */}
+        <div className="w-[90%] max-w-xl text-center px-4 z-20 pointer-events-auto flex flex-col items-center mb-6 sm:mb-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-3 shadow-[inset_0_0_10px_rgba(255,0,80,0.05)]">
+            <Heart size={10} className="text-rose-500 fill-current animate-pulse" />
+            <span className="text-[9px] font-outfit uppercase tracking-[0.2em] text-pink-200">Act IV: Two Hearts, One Destiny</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-playfair font-black text-white mb-3.5 tracking-tight leading-tight">
+            Avadi to Puzhal Connection
+          </h2>
+          <p className="text-xs sm:text-sm font-outfit text-gray-400 font-light leading-relaxed max-w-md">
+            Distance was just a number. Our hearts found their perfect alignment, spanning maps and boundaries to unite forever.
+          </p>
+        </div>
+
+        <LocationHeartUnion />
+        <AvatarConnection />
+      </motion.div>
+
+      {/* ACT V: THE PROMISE OF FOREVER (INVITATIONS) */}
+      <motion.div
+        initial={{ opacity: 0, y: 55 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="w-full flex flex-col items-center mt-2 sm:mt-4"
+      >
+        <WeddingInvitationFooter />
+      </motion.div>
+
+      {/* THE GRAND CLIMAX: THE FOREVER COUNTDOWN */}
+      <motion.div
+        initial={{ opacity: 0, y: 55 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="w-full flex flex-col items-center mt-12 sm:mt-20 mb-16 sm:mb-24"
+      >
+        {/* THEMED SECTION HEADER FOR COUNTDOWN */}
+        <div className="w-[90%] max-w-xl text-center px-4 z-20 pointer-events-auto flex flex-col items-center mb-6 sm:mb-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-3 shadow-[inset_0_0_10px_rgba(255,0,80,0.05)]">
+            <Heart size={10} className="text-rose-500 fill-current animate-pulse" />
+            <span className="text-[9px] font-outfit uppercase tracking-[0.2em] text-pink-200">The Forever Climax</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-playfair font-black text-white mb-3.5 tracking-tight leading-tight">
+            The Wedding Countdown
+          </h2>
+          <p className="text-xs sm:text-sm font-outfit text-gray-400 font-light leading-relaxed max-w-md">
+            Counting down the seconds to May 23, 2031, when our beautiful journey turns into our eternal wedding vow.
+          </p>
+        </div>
+
+        <CountdownTimer />
+      </motion.div>
 
       {/* Embedded local keyframes animations style */}
       <style>{`

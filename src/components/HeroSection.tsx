@@ -1211,20 +1211,32 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
           <motion.section
             ref={galleryRef}
             id="circular-gallery-section"
-            initial={{ opacity: 0, y: 100 }}
+            initial={{ opacity: 0, y: 80 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.2, ease: "easeOut" }}
-            className="relative w-full pt-32 md:pt-48 pb-0 bg-black z-10 overflow-hidden flex flex-col gap-24 md:gap-36"
+            className="relative w-full pt-16 md:pt-24 pb-0 bg-black z-10 overflow-hidden flex flex-col gap-8 md:gap-12"
           >
             {/* Circular gallery — 16 unique images (indices 10 to 25) */}
-            <div className="relative max-w-7xl mx-auto w-full flex flex-col items-center z-10">
+            <motion.div
+              initial={{ opacity: 0, y: 60 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 1.0, ease: "easeOut" }}
+              className="relative max-w-7xl mx-auto w-full flex flex-col items-center z-10"
+            >
               <CircularGallery images={memories.slice(10, 26)} />
-            </div>
+            </motion.div>
 
             {/* Arc timeline gallery — 12 unique images (indices 25 to 36) */}
-            <div className="w-full relative z-10">
+            <motion.div
+              initial={{ opacity: 0, y: 60 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 1.0, ease: "easeOut" }}
+              className="w-full relative z-10"
+            >
               <ArcGalleryHero images={memories.slice(25, 37).map(img => `/memories/${img}`)} />
-            </div>
+            </motion.div>
 
           </motion.section>
         )}
