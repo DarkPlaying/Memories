@@ -106,31 +106,47 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
   ]
 
   // Map dynamic images with beautiful narrative cards
-  const dynamicCardData = (images.length > 0 ? images.slice(0, 16).map(img => `/memories/${img}`) : defaultImages).map((image, index) => {
+  const dynamicCardData = (images.length > 0 ? images.slice(0, 16).map(img => ({ path: img, isDynamic: true })) : defaultImages.map(img => ({ path: img, isDynamic: false }))).map((item, index) => {
+    let cleanTitle = ""
+    if (item.isDynamic) {
+      const filenameWithExt = item.path.split("/").pop() || item.path
+      const filenameWithoutExt = filenameWithExt.substring(0, filenameWithExt.lastIndexOf('.')) || filenameWithExt
+      cleanTitle = filenameWithoutExt
+        .replace(/\s+/g, ' ')
+        .trim()
+        .split(' ')
+        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
+    } else {
+      const defaultTitles = [
+        "Sweet Smiles", "Beautiful Moments", "Warm Embraces", "Pure Radiant Joy", "Endless Talks", "Perfect Memories"
+      ]
+      cleanTitle = defaultTitles[index % defaultTitles.length]
+    }
+
     const textTemplates = [
-      { title: "Sweet Smiles", desc: "Your laughter makes my entire universe light up." },
-      { title: "Beautiful Moments", desc: "Every second with you is a treasure I cherish." },
-      { title: "Warm Embraces", desc: "In your warm embrace, I found my favorite home." },
-      { title: "Pure Radiant Joy", desc: "Sharing our deep thoughts under the evening sky." },
-      { title: "Endless Talks", desc: "Late nights, hours talking about everything and nothing." },
-      { title: "Perfect Memories", desc: "Building a grand gallery of smiles together." },
-      { title: "Our Journey", desc: "Every single day by your side is my favorite memory." },
-      { title: "A Beautiful Spark", desc: "Timeless elegance and a spark that warmed my world." },
-      { title: "Sweet Surprises", desc: "Every adventure we took became a gorgeous canvas." },
-      { title: "Precious Gift", desc: "You are the sweetest melody that plays in my heart." },
-      { title: "Infinite Comfort", desc: "Finding absolute comfort in your words, every night." },
-      { title: "Endless Sunshine", desc: "To the endless chapters we are writing together." },
-      { title: "Timeless Grace", desc: "Side by side, ready to embrace whatever the future holds." },
-      { title: "My Beautiful Forever", desc: "I love you today, tomorrow, and for all the days to come." },
-      { title: "Natural Sparks", desc: "A single smile, a moment frozen in beautiful time." },
-      { title: "Stardust Bond", desc: "Exploring the infinite beauty of our shared universe." },
+      "Your laughter makes my entire universe light up.",
+      "Every second with you is a treasure I cherish.",
+      "In your warm embrace, I found my favorite home.",
+      "Sharing our deep thoughts under the evening sky.",
+      "Late nights, hours talking about everything and nothing.",
+      "Building a grand gallery of smiles together.",
+      "Every single day by your side is my favorite memory.",
+      "Timeless elegance and a spark that warmed my world.",
+      "Every adventure we took became a gorgeous canvas.",
+      "You are the sweetest melody that plays in my heart.",
+      "Finding absolute comfort in your words, every night.",
+      "To the endless chapters we are writing together.",
+      "Side by side, ready to embrace whatever the future holds.",
+      "I love you today, tomorrow, and for all the days to come.",
+      "A single smile, a moment frozen in beautiful time.",
+      "Exploring the infinite beauty of our shared universe."
     ]
 
-    const template = textTemplates[index % textTemplates.length]
     return {
-      image,
-      title: template.title,
-      description: template.desc
+      image: item.isDynamic ? `/memories/${item.path}` : item.path,
+      title: cleanTitle,
+      description: textTemplates[index % textTemplates.length]
     }
   })
 

@@ -54,23 +54,17 @@ function CardProvider({ children }: { children: React.ReactNode }) {
         const data = await res.json()
         if (Array.isArray(data)) {
           // Map all 50 memories dynamically to display them in our floating spherical constellation
-          const mappedCards = data.slice(0, 51).map((img, idx) => {
-            const cardTitles = [
-              "Sweet Smile", "Precious Moments", "Warm Embraces", "Timeless Talk",
-              "Late Nights", "Joyous Smiles", "Our Adventure", "A Sparkling Sight",
-              "Grand Gallery", "Pure Heart", "Deep Cozy Dialogs", "Stardust Chapters",
-              "Future Dreams", "My Whole Heart", "Beautiful Glow", "Infinite Love",
-              "Magical Light", "Sweet Comfy Vibes", "Sweet Companion", "Birthday Delight",
-              "Charming Glances", "Cherished Laughs", "College Days", "Secret Glances",
-              "Shared Secrets", "Classroom Sparks", "Jimiki Whispers", "Midnight Surprise",
-              "First Gift Joy", "Magic Coffee Date", "Teardrop Promise", "First Sweet Kiss",
-              "Rose Garden Walk", "Wanderlust Bus", "Keychain Keeper", "Our First Story",
-              "Wedding Dreams", "First Home Visit", "Funny Movie Edit", "Carnival Screams",
-              "Saree Serenade", "Melody Dedication", "Cake & Candles", "Kitchen Adventure",
-              "Future Nesting", "Eternal Devotion", "Two Souls Connected", "Butterfly Pathway",
-              "Cosmic Destiny", "Our Forever Vow", "Lovely Birds"
-            ]
-            const title = cardTitles[idx % cardTitles.length]
+          const mappedCards = data.slice(0, 50).map((img, idx) => {
+            // Extract the filename without extension to use as title dynamically
+            const filenameWithExt = img.split("/").pop() || img
+            const filenameWithoutExt = filenameWithExt.substring(0, filenameWithExt.lastIndexOf('.')) || filenameWithExt
+            const title = filenameWithoutExt
+              .replace(/\s+/g, ' ')
+              .trim()
+              .split(' ')
+              .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ')
+
             return {
               id: String(idx + 1),
               imageUrl: `/memories/${img}`,
