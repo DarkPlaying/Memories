@@ -595,7 +595,7 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
 
   useEffect(() => {
     let animationFrameId: number;
-    const speed = 0.018; // Elegant slow continuous scrolling along the arc path
+    const speed = 0.010; // Elegant slow-motion continuous scrolling along the arc path
     let lastTime = performance.now();
 
     const update = (time: number) => {
