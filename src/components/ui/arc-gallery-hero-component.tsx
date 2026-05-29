@@ -590,31 +590,37 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
     radius: radiusLg,
     cardSize: cardSizeLg,
   });
+  const [angles, setAngles] = useState({ start: startAngle, end: endAngle });
 
   // Responsive resizing of the arc and cards
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
       if (width < 400) {
-        setDimensions({ radius: 120, cardSize: 55 });
+        setDimensions({ radius: 240, cardSize: 60 });
+        setAngles({ start: 30, end: 150 });
       } else if (width < 480) {
-        setDimensions({ radius: 150, cardSize: 60 });
+        setDimensions({ radius: 260, cardSize: 65 });
+        setAngles({ start: 25, end: 155 });
       } else if (width < 640) {
         setDimensions({ radius: radiusSm, cardSize: cardSizeSm });
+        setAngles({ start: 20, end: 160 });
       } else if (width < 1024) {
         setDimensions({ radius: radiusMd, cardSize: cardSizeMd });
+        setAngles({ start: startAngle, end: endAngle });
       } else {
         setDimensions({ radius: radiusLg, cardSize: cardSizeLg });
+        setAngles({ start: startAngle, end: endAngle });
       }
     };
 
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [radiusLg, radiusMd, radiusSm, cardSizeLg, cardSizeMd, cardSizeSm]);
+  }, [radiusLg, radiusMd, radiusSm, cardSizeLg, cardSizeMd, cardSizeSm, startAngle, endAngle]);
 
   const count = Math.max(images.length, 2);
-  const step = (endAngle - startAngle) / (count - 1);
+  const step = (angles.end - angles.start) / (count - 1);
 
   return (
     <section className={`relative overflow-hidden bg-black text-white flex flex-col items-center pt-8 sm:pt-12 pb-0 ${className}`}>
@@ -656,7 +662,7 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
         }}
       >
         {/* HEADER SEGMENT PLACED BEAUTIFULLY INSIDE THE ARC (Responsive for both desktop and mobile) */}
-        <div className="absolute left-1/2 bottom-2 xs:bottom-4 sm:bottom-6 md:bottom-8 -translate-x-1/2 text-center w-[95%] sm:w-[90%] max-w-2xl px-2 sm:px-6 z-20 pointer-events-auto flex flex-col items-center">
+        <div className="absolute left-1/2 bottom-2 xs:bottom-4 sm:bottom-6 md:bottom-8 -translate-x-1/2 text-center w-full max-w-[220px] xs:max-w-[260px] sm:max-w-md md:max-w-2xl px-2 sm:px-6 z-20 pointer-events-auto flex flex-col items-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
@@ -671,14 +677,14 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
           <h2 className="text-xs xs:text-sm sm:text-2xl md:text-4xl lg:text-5xl font-playfair font-black text-white mb-1 sm:mb-3 tracking-tight leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
             Our Love Timeline
           </h2>
-          <p className="text-[8px] xs:text-[9px] sm:text-xs md:text-sm font-outfit text-gray-300 font-light leading-relaxed max-w-[200px] xs:max-w-[260px] sm:max-w-md md:max-w-xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
+          <p className="text-[8px] xs:text-[9.5px] sm:text-xs md:text-sm font-outfit text-gray-300 font-light leading-relaxed drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
             Every text, every gift, every milestone we shared charted along the beautiful chronological path of our destiny.
           </p>
         </div>
 
         <div className="absolute left-1/2 bottom-0 -translate-x-1/2">
           {images.map((src, i) => {
-            const angle = startAngle + step * i;
+            const angle = angles.start + step * i;
             const angleRad = (angle * Math.PI) / 180;
 
             const x = Math.cos(angleRad) * dimensions.radius;
