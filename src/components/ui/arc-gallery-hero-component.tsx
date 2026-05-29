@@ -595,7 +595,7 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
 
   useEffect(() => {
     let animationFrameId: number;
-    const speed = 0.010; // Elegant slow-motion continuous scrolling along the arc path
+    const speed = 0.01; // Elegant slow-motion continuous scrolling along the arc path
     let lastTime = performance.now();
 
     const update = (time: number) => {
@@ -714,24 +714,24 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
             // Elegant fixed angular spacing for spacious visual rhythm
             const spacing = 23; // Spacing in degrees between images (adjustable for perfect gaps)
             const beltWidth = count * spacing;
-            
+
             // Continuous travel position along the infinite virtual belt
             const cardAngle = ((i * spacing) + (timeOffset * beltWidth)) % beltWidth;
-            
+
             // Circular wrap-around distance relative to the visible arc center
             let diff = cardAngle - angles.start;
             if (diff > beltWidth / 2) diff -= beltWidth;
             if (diff < -beltWidth / 2) diff += beltWidth;
-            
+
             const normalizedAngle = angles.start + diff;
-            
+
             // Define visible window boundaries (with comfortable buffer for boundary transitions)
             const windowStart = angles.start - 15;
             const windowEnd = angles.end + 15;
             const windowSpan = windowEnd - windowStart;
-            
+
             const progress = (normalizedAngle - windowStart) / windowSpan;
-            
+
             // Render only cards currently traversing the active window
             const isVisible = progress >= 0 && progress <= 1;
             if (!isVisible) return null;
@@ -769,7 +769,7 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
                 <motion.div
                   className="w-full h-full"
                   whileHover={{ scale: 1.3, zIndex: 200 }}
-                  transition={{ 
+                  transition={{
                     type: "spring",
                     stiffness: 350,
                     damping: 18
