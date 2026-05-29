@@ -235,6 +235,7 @@ export default function HeartLoader({ onComplete }: HeartLoaderProps) {
                           {/* Front Waving liquid clip path */}
                           <clipPath id="heartClip1">
                             <motion.path
+                              d={`M 0 ${y} Q 6 ${y - 1.4}, 12 ${y} T 24 ${y} L 24 24 L 0 24 Z`}
                               animate={{
                                 y: [0, -1.2, 0.8, -0.6, 0.4, 0],
                                 d: [
@@ -253,6 +254,7 @@ export default function HeartLoader({ onComplete }: HeartLoaderProps) {
                           {/* Back Waving liquid clip path for a layered liquid depth effect */}
                           <clipPath id="heartClip2">
                             <motion.path
+                              d={`M 0 ${y} Q 6 ${y + 1.2}, 12 ${y} T 24 ${y} L 24 24 L 0 24 Z`}
                               animate={{
                                 y: [0, 0.8, -1.0, 0.6, -0.4, 0],
                                 d: [
