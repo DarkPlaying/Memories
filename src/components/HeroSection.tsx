@@ -507,8 +507,18 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
       // Accumulate the wheel scroll delta
       scrollAccumulatorRef.current += e.deltaY;
 
-      // Lower threshold = faster/more frames advanced per scroll
-      const threshold = 40;
+      // Dynamically adjust scroll threshold based on active chapter's length to increase scroll time for short chapters
+      const currentChapter = CHAPTERS[activeChapterIndex];
+      const chapterLength = currentChapter ? (currentChapter.endFrame - currentChapter.startFrame + 1) : 100;
+      
+      let threshold = 40;
+      if (chapterLength < 30) {
+        threshold = 180; // Shorter chapters scroll much slower (4.5x more scroll effort per frame)
+      } else if (chapterLength < 60) {
+        threshold = 110; // Medium-short chapters scroll 2.75x slower
+      } else if (chapterLength < 100) {
+        threshold = 70;  // Moderately short chapters scroll 1.75x slower
+      }
 
       if (Math.abs(scrollAccumulatorRef.current) >= threshold) {
         const deltaFrames = Math.sign(scrollAccumulatorRef.current) * Math.floor(Math.abs(scrollAccumulatorRef.current) / threshold);
@@ -560,7 +570,20 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
       const diffY = touchStartY - touchY; // Swipe up moves forward (diffY > 0)
 
       if (Math.abs(diffY) > 8) {
-        const frameDelta = Math.round(diffY * 0.10); // Faster touch swipe scrubbing
+        // Adjust touch sensitivity dynamically based on active chapter's length
+        const currentChapter = CHAPTERS[activeChapterIndex];
+        const chapterLength = currentChapter ? (currentChapter.endFrame - currentChapter.startFrame + 1) : 100;
+        
+        let touchSensitivity = 0.10;
+        if (chapterLength < 30) {
+          touchSensitivity = 0.02; // Very slow swipe for short chapters
+        } else if (chapterLength < 60) {
+          touchSensitivity = 0.04;
+        } else if (chapterLength < 100) {
+          touchSensitivity = 0.07;
+        }
+
+        const frameDelta = Math.round(diffY * touchSensitivity);
         setVirtualFrame(prev => {
           const next = prev + frameDelta;
           if (next >= TOTAL_FRAMES) {
@@ -586,7 +609,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchmove", handleTouchMove);
     };
-  }, [isUnlocked, isPreloading, isParentLoading]);
+  }, [isUnlocked, isPreloading, isParentLoading, activeChapterIndex]);
 
   // CONCURRENT SEAMLESS BACKGROUND PRELOADER (Loads Chapter 1 priority first, then loads f1-f5 concurrently)
   useEffect(() => {
