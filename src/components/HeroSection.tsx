@@ -594,11 +594,11 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
         f4: new Array(300),
         f5: new Array(295)
       };
-
-      // 1. Stage 1: Load first 10 frames of f1 immediately
-      const priorityCount = 10;
+      // 1. Stage 1: Load first 10 frames of f1 and last 5 frames of f5 immediately
       const priorityPromises = [];
 
+      // Priority load: First 10 frames of f1
+      const priorityCount = 10;
       for (let i = 1; i <= priorityCount; i++) {
         const formattedIndex = i.toString().padStart(3, '0');
         const url = `/Hero/f1/ezgif-frame-${formattedIndex}.jpg`;
@@ -609,6 +609,27 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
           img.onload = () => {
             if (active) {
               initializedCache["f1"][i - 1] = img;
+            }
+            resolve();
+          };
+          img.onerror = () => resolve();
+        });
+        priorityPromises.push(p);
+      }
+
+      // Priority load: Last 5 frames of f5 (f5 count is 295)
+      const lastFramesStart = 291;
+      const lastFramesEnd = 295;
+      for (let i = lastFramesStart; i <= lastFramesEnd; i++) {
+        const formattedIndex = i.toString().padStart(3, '0');
+        const url = `/Hero/f5/ezgif-frame-${formattedIndex}.jpg`;
+
+        const p = new Promise<void>((resolve) => {
+          const img = new Image();
+          img.src = url;
+          img.onload = () => {
+            if (active) {
+              initializedCache["f5"][i - 1] = img;
             }
             resolve();
           };
@@ -639,7 +660,8 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
 
       folderCounts.forEach((folder, chIdx) => {
         const startFrame = chIdx === 0 ? 11 : 1;
-        const endFrame = folder.count;
+        // If f5 (last chapter), stop 5 frames early since they've already been loaded as priority in Stage 1
+        const endFrame = folder.name === "f5" ? folder.count - 5 : folder.count;
         for (let i = startFrame; i <= endFrame; i++) {
           const formattedIndex = i.toString().padStart(3, '0');
           const url = `/Hero/${folder.name}/ezgif-frame-${formattedIndex}.jpg`;
