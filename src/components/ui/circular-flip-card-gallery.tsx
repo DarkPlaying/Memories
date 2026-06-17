@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { Globe, Heart } from "lucide-react"
 import { motion, useScroll, useTransform } from "framer-motion"
+import SendButton from "@/components/ui/send-button"
 
 // A simple utility for conditional class names
 const cn = (...classes: any[]) => classes.filter(Boolean).join(" ")
@@ -154,13 +155,13 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
     }
   })
   return (
-    <div className="w-full font-sans text-[#F5F5F5] min-h-0 py-8 md:py-12 flex flex-col items-center justify-center p-4 overflow-hidden relative">
+    <div className="w-full font-sans text-[#F5F5F5] min-h-0 pt-3 pb-24 sm:pt-6 sm:pb-6 md:py-10 flex flex-col items-center justify-center px-6 sm:px-18 md:px-26 overflow-visible relative">
 
       {/* Decorative ambient glowing grids */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,0,80,0.05)_0%,transparent_70%)] pointer-events-none" />
 
       {/* ACT I: THE Orbit of Memories Section Title (placed above the circle image) */}
-      <div className="w-[90%] max-w-xl text-center px-4 z-20 pointer-events-auto flex flex-col items-center mb-10 md:mb-16">
+      <div className="w-[90%] max-w-xl text-center px-4 z-20 pointer-events-auto flex flex-col items-center mb-16 md:mb-16">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-3 shadow-[inset_0_0_10px_rgba(255,0,80,0.05)]">
           <Heart size={10} className="text-rose-500 fill-current animate-pulse" />
           <span className="text-[9px] font-outfit uppercase tracking-[0.2em] text-pink-200">✦ Act I ✦</span>
@@ -177,6 +178,31 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
         ref={galleryRef}
         className="relative w-full max-w-[280px] xs:max-w-[340px] sm:max-w-[480px] md:max-w-[600px] aspect-square flex items-center justify-center"
       >
+        {/* Floating mail envelopes centered vertically according to the circular gallery */}
+        <motion.div 
+          animate={{ y: [-15, 15, -15] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-[-80px] left-[-35px] xs:left-[-20px] translate-y-0 sm:top-1/2 sm:left-[-100px] md:left-[-160px] lg:left-[-240px] xl:left-[-300px] sm:-translate-y-1/2 z-10 flex flex-col items-center gap-1.5 sm:gap-3 pointer-events-none"
+        >
+          <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-26 md:h-26 lg:w-32 lg:h-32 xl:w-36 xl:h-36 select-none pointer-events-none">
+            <img src="/mail/mail (1).gif" alt="Mail Envelope Left" className="w-full h-full object-contain filter drop-shadow-[0_0_15px_rgba(255,0,80,0.4)]" />
+          </div>
+          <Link href="/mailing" className="pointer-events-auto translate-x-[6px] sm:translate-x-[10px]">
+            <SendButton />
+          </Link>
+        </motion.div>
+        <motion.div 
+          animate={{ y: [15, -15, 15] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute bottom-[-80px] right-[-35px] xs:right-[-20px] top-auto translate-y-0 sm:top-1/2 sm:bottom-auto sm:right-[-100px] md:right-[-160px] lg:right-[-240px] xl:right-[-300px] sm:-translate-y-1/2 z-10 flex flex-col items-center gap-1.5 sm:gap-3 pointer-events-none"
+        >
+          <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-26 md:h-26 lg:w-32 lg:h-32 xl:w-36 xl:h-36 select-none pointer-events-none">
+            <img src="/mail/mail (1).gif" alt="Mail Envelope Right" className="w-full h-full object-contain filter drop-shadow-[0_0_15px_rgba(255,0,80,0.4)]" />
+          </div>
+          <Link href="/mailing" className="pointer-events-auto translate-x-[6px] sm:translate-x-[10px]">
+            <SendButton />
+          </Link>
+        </motion.div>
         {/* Central text & Magical View My World Button inside the circle */}
         <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none p-2 sm:p-4 text-center">
           <h2 className="text-pink-300/80 font-outfit uppercase tracking-[0.2em] sm:tracking-[0.3em] text-[7px] sm:text-[10px] md:text-xs mb-1 sm:mb-3 font-semibold">

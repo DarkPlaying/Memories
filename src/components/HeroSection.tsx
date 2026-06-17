@@ -6,6 +6,9 @@ import { Heart, Sparkles, Volume2, VolumeX, SkipBack, SkipForward, Play, Pause, 
 import confetti from "canvas-confetti";
 import CircularGallery from "@/components/ui/circular-flip-card-gallery";
 import { ArcGalleryHero } from "@/components/ui/arc-gallery-hero-component";
+import FloatingIconsHero from "@/components/ui/floating-icons-hero";
+import Footer from "@/components/ui/footer";
+
 
 interface Chapter {
   id: number;
@@ -64,7 +67,7 @@ const CHAPTERS: Chapter[] = [
     endFrame: 354,
     localStart: 1,
     title: "Chapter 5: Sharing Dreams 🫂💫🤍",
-    text: "She helped me with everything she could. Sharing all our struggles and laughter day by day. 🫂💫🤍"
+    text: "I helped her with everything I could. Sharing all our struggles and laughter day by day. 🫂💫🤍"
   },
   {
     id: 6,
@@ -325,14 +328,19 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
   const [activeChapterIndex, setActiveChapterIndex] = useState(0);
   const [activeFrameIndex, setActiveFrameIndex] = useState(1);
   const [loadedPercent, setLoadedPercent] = useState(0);
-  const [isPreloading, setIsPreloading] = useState(true);
+  const [isPreloading, setIsPreloading] = useState(() => typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("unlocked") === "true" ? false : true : true);
   const [hasCelebrated, setHasCelebrated] = useState(false);
 
   // Dynamic screen unlock and memories grid
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [memories, setMemories] = useState<string[]>([]);
   const [isPlayingMusic, setIsPlayingMusic] = useState(false);
-  const [isMutedByUser, setIsMutedByUser] = useState(false);
+  const [isMutedByUser, setIsMutedByUser] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("isMutedByUser") === "true";
+    }
+    return false;
+  });
   const [showCompletionPopup, setShowCompletionPopup] = useState(false);
 
   // Autoplay states
@@ -341,8 +349,9 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
 
   const { scrollY } = useScroll();
   // Extremely smooth, slow-motion scroll mapping (requires more scroll distance to reveal the circular gallery section!)
-  const sectionY = useTransform(scrollY, [0, 1000], [500, 0]);
-  const sectionOpacity = useTransform(scrollY, [0, 750], [0, 1]);
+  const sectionY = useTransform(scrollY, [0, 600], [150, 0]);
+  const sectionOpacity = useTransform(scrollY, [0, 400], [0, 1]);
+  const viewportOpacity = useTransform(scrollY, [0, 400], [1, 0]);
 
   // Auto-start music once preloading completes and page loader is lifted
   useEffect(() => {
@@ -382,9 +391,9 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
         // Clean URL immediately to prevent staying unlocked on a manual page reload/refresh
         window.history.replaceState({}, document.title, window.location.pathname);
 
-        // Smooth scroll to circular gallery section
+        // Smooth scroll to memorial parts section (last section)
         setTimeout(() => {
-          const element = document.getElementById("circular-gallery-section");
+          const element = document.getElementById("memorial-parts-section");
           if (element) {
             element.scrollIntoView({ behavior: "smooth" });
           } else {
@@ -510,7 +519,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
       // Dynamically adjust scroll threshold based on active chapter's length to increase scroll time for short chapters
       const currentChapter = CHAPTERS[activeChapterIndex];
       const chapterLength = currentChapter ? (currentChapter.endFrame - currentChapter.startFrame + 1) : 100;
-      
+
       let threshold = 40;
       if (chapterLength < 30) {
         threshold = 180; // Shorter chapters scroll much slower (4.5x more scroll effort per frame)
@@ -573,7 +582,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
         // Adjust touch sensitivity dynamically based on active chapter's length
         const currentChapter = CHAPTERS[activeChapterIndex];
         const chapterLength = currentChapter ? (currentChapter.endFrame - currentChapter.startFrame + 1) : 100;
-        
+
         let touchSensitivity = 0.10;
         if (chapterLength < 30) {
           touchSensitivity = 0.02; // Very slow swipe for short chapters
@@ -614,6 +623,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
   // CONCURRENT SEAMLESS BACKGROUND PRELOADER (Loads Chapter 1 priority first, then loads f1-f5 concurrently)
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
 
     const preloadSequence = async () => {
       // Initialize cache maps for the 5 frame folders
@@ -721,36 +731,55 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
       const totalBackgroundFrames = pendingFrames.length;
       let loadedBackgroundCount = 0;
 
+      const signal = controller.signal;
+
       // High-performance concurrent preloader queue (loads one-by-one continuously up to concurrency limit)
       const concurrency = 25;
       let currentIndex = 0;
 
-      const loadNext = () => {
-        if (!active || currentIndex >= pendingFrames.length) return;
+      const loadNext = async () => {
+        if (!active || currentIndex >= pendingFrames.length || signal.aborted) return;
 
         const frameInfo = pendingFrames[currentIndex++];
-        const img = new Image();
-        img.src = frameInfo.url;
+        
+        try {
+          // Fetch with AbortSignal to instantly release HTTP sockets and network when leaving the page!
+          const response = await fetch(frameInfo.url, { signal });
+          if (!response.ok) throw new Error("Fetch failed");
+          const blob = await response.blob();
+          const objectUrl = URL.createObjectURL(blob);
 
-        img.onload = () => {
-          if (active) {
-            if (frameInfo.folder && frameInfo.index !== undefined) {
-              initializedCache[frameInfo.folder][frameInfo.index - 1] = img;
-              setCache({ ...initializedCache });
+          const img = new Image();
+          img.src = objectUrl;
+
+          img.onload = () => {
+            if (active && !signal.aborted) {
+              if (frameInfo.folder && frameInfo.index !== undefined) {
+                initializedCache[frameInfo.folder][frameInfo.index - 1] = img;
+                setCache({ ...initializedCache });
+              }
+              loadedBackgroundCount++;
+              setLoadedPercent(Math.round((loadedBackgroundCount / totalBackgroundFrames) * 100));
             }
-            loadedBackgroundCount++;
-            setLoadedPercent(Math.round((loadedBackgroundCount / totalBackgroundFrames) * 100));
-          }
-          loadNext();
-        };
+            loadNext();
+          };
 
-        img.onerror = () => {
+          img.onerror = () => {
+            if (active && !signal.aborted) {
+              loadedBackgroundCount++;
+              setLoadedPercent(Math.round((loadedBackgroundCount / totalBackgroundFrames) * 100));
+            }
+            loadNext();
+          };
+        } catch (err) {
+          if (signal.aborted) return; // Do not continue if aborted
+          
           if (active) {
             loadedBackgroundCount++;
             setLoadedPercent(Math.round((loadedBackgroundCount / totalBackgroundFrames) * 100));
           }
           loadNext();
-        };
+        }
       };
 
       // Start initial concurrent preloading pipelines
@@ -763,6 +792,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
 
     return () => {
       active = false;
+      controller.abort(); // Cancel all active background fetches instantly when user navigates away!
     };
   }, []);
 
@@ -899,11 +929,13 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
       audioRef.current.pause();
       setIsPlayingMusic(false);
       setIsMutedByUser(true); // Explicitly muted by user
+      localStorage.setItem("isMutedByUser", "true");
     } else {
       audioRef.current.play()
         .then(() => {
           setIsPlayingMusic(true);
           setIsMutedByUser(false); // Explicitly unmuted by user
+          localStorage.setItem("isMutedByUser", "false");
         })
         .catch(err => console.log("Audio play failed:", err));
     }
@@ -980,16 +1012,17 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
   const overallProgressPercent = Math.round((virtualFrame / TOTAL_FRAMES) * 100);
 
   return (
-    <div className="relative w-full bg-black">
+    <div id="story-top" className="relative w-full bg-transparent">
 
       {/* Hidden Love Background Audio Element */}
       <audio ref={audioRef} src="/love.mp3" loop />
 
       {/* FIXED STORYTELLING VIEWPORT */}
-      <div
+      <motion.div
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
-        className="w-full h-screen fixed inset-0 overflow-hidden z-0 bg-black cursor-pointer"
+        style={{ opacity: viewportOpacity }}
+        className="w-full h-screen fixed inset-0 overflow-hidden z-0 bg-transparent cursor-pointer"
       >
 
         {/* Softer Ambient Overlays for brighter viewing and less black in corners */}
@@ -1134,15 +1167,23 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
         {!isUnlocked && (
           <>
             <div className="absolute bottom-20 sm:bottom-8 inset-x-0 z-30 flex flex-col items-center gap-2.5 sm:gap-3 pointer-events-none px-4">
-              <div className="flex gap-1 sm:gap-2.5 flex-wrap justify-center max-w-[90%]">
+              <div className="flex gap-1 sm:gap-2 flex-wrap justify-center max-w-[90%] pointer-events-auto">
                 {CHAPTERS.map((c, i) => (
-                  <div
+                  <button
                     key={c.id}
-                    className={`h-1 sm:h-1.5 rounded-full transition-all duration-500 ${activeChapterIndex === i
-                      ? "w-4 sm:w-8 bg-[#ff0050] shadow-[0_0_8px_#ff0050]"
-                      : "w-1 sm:w-2 bg-white/20"
-                      }`}
-                  />
+                    onClick={() => {
+                      setVirtualFrame(c.startFrame);
+                    }}
+                    title={`Jump to ${c.title}`}
+                    className="group relative py-2.5 px-1 cursor-pointer border-none bg-transparent outline-none flex items-center justify-center pointer-events-auto"
+                  >
+                    <div
+                      className={`h-1 sm:h-1.5 rounded-full transition-all duration-500 ${activeChapterIndex === i
+                        ? "w-4 sm:w-8 bg-[#ff0050] shadow-[0_0_8px_#ff0050]"
+                        : "w-1 sm:w-2 bg-white/20 group-hover:bg-white/60"
+                        }`}
+                    />
+                  </button>
                 ))}
               </div>
 
@@ -1245,7 +1286,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
           )}
         </AnimatePresence>
 
-      </div>
+      </motion.div>
 
       {/* GORGEOUS MEMORIES CIRCULAR FLIP CARD GALLERY SECTION (Unlocked and scrolled down to only when completed) */}
       <AnimatePresence>
@@ -1254,7 +1295,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
             ref={galleryRef}
             id="circular-gallery-section"
             style={{ marginTop: "100vh", y: sectionY, opacity: sectionOpacity }}
-            className="relative w-full pt-16 md:pt-24 pb-0 bg-black z-10 overflow-hidden flex flex-col gap-8 md:gap-12"
+            className="relative w-full pt-16 md:pt-24 pb-0 bg-transparent z-10 overflow-hidden flex flex-col gap-8 md:gap-12"
           >
             {/* Circular gallery — 16 unique images (indices 10 to 25) */}
             <motion.div
@@ -1267,6 +1308,26 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
               <CircularGallery images={memories.slice(10, 26)} />
             </motion.div>
 
+            {/* Memorial Parts — interactive butterflies & 3D scrolling gallery */}
+            <motion.div
+              id="memorial-parts-section"
+              initial={{ opacity: 0, y: 60 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 1.0, ease: "easeOut" }}
+              className="w-full relative z-10 mb-16"
+            >
+              <FloatingIconsHero
+                title="Memorial Parts"
+                subtitle="A dreamy collection of our most cherished moments, floating gracefully through time."
+                ctaText="Reveal Secret Memory"
+                ctaHref="/reveal"
+                images={memories
+                  .filter(img => img.toLowerCase().replace(/\\/g, "/").startsWith("wos/"))
+                  .map(img => `/memories/${img}`)}
+              />
+            </motion.div>
+
             {/* Arc timeline gallery — all dynamic memories for infinite showing */}
             <motion.div
               initial={{ opacity: 0, y: 60 }}
@@ -1277,6 +1338,9 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
             >
               <ArcGalleryHero images={memories.map(img => `/memories/${img}`)} />
             </motion.div>
+
+            {/* Footer */}
+            <Footer />
 
           </motion.section>
         )}

@@ -3,6 +3,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { Heart, Calendar, Star, Sparkles, MessageCircle, X } from 'lucide-react';
+import { AnimateNumber } from '@/components/ui/animated-blur-number';
+
 
 // --- The ArcGalleryHero Component ---
 type ArcGalleryHeroProps = {
@@ -105,9 +107,11 @@ const CountdownTimer: React.FC = () => {
           className="flex flex-col items-center justify-center w-[4.2rem] h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-2xl bg-white/[0.02] border border-pink-500/10 shadow-[0_10px_35px_rgba(0,0,0,0.6)] backdrop-blur-md relative overflow-hidden group"
         >
           <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-pink-500/40 to-transparent" />
-          <span className="text-lg sm:text-2xl md:text-3xl font-playfair font-black text-pink-300 drop-shadow-[0_0_8px_rgba(244,63,94,0.4)]">
-            {item.value.toString().padStart(2, '0')}
-          </span>
+          <AnimateNumber
+            value={item.value}
+            format={{ minimumIntegerDigits: 2 }}
+            className="text-lg sm:text-2xl md:text-3xl font-playfair font-black text-pink-300 drop-shadow-[0_0_8px_rgba(244,63,94,0.4)]"
+          />
           <span className="text-[7px] sm:text-[8px] md:text-[9px] font-outfit uppercase tracking-widest text-gray-400 mt-1.5 sm:mt-2 font-bold">
             {item.label}
           </span>
@@ -396,7 +400,7 @@ const WeddingInvitationFooter: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   return (
-    <div className="w-full min-h-0 flex flex-col items-center justify-center py-4 md:py-6 bg-black z-20 relative">
+    <div className="w-full min-h-0 flex flex-col items-center justify-center py-4 md:py-6 bg-transparent z-20 relative">
       <div className="w-full max-w-4xl mx-auto px-4 flex flex-col items-center gap-6 md:gap-10 z-20 relative">
 
         {/* THEMED SECTION HEADER FOR INVITATION */}
@@ -551,22 +555,7 @@ const WeddingInvitationFooter: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Premium Full-Width Climax Footer with tighter margins to prevent empty trailing space */}
-      <footer className="w-full text-center py-8 mt-12 border-t border-white/10 z-20 relative bg-black/60 backdrop-blur-md">
-        <div className="flex flex-col items-center gap-3.5">
-          <div className="flex items-center gap-2 text-rose-500 text-sm select-none">
-            <Heart size={14} fill="currentColor" className="animate-pulse" />
-            <span className="font-playfair font-black text-white tracking-widest text-xs uppercase">Sanjay & Divya</span>
-            <Heart size={14} fill="currentColor" className="animate-pulse" />
-          </div>
-          <p className="text-[9px] font-outfit uppercase tracking-[0.35em] text-gray-400 font-bold max-w-md leading-relaxed px-4 select-none">
-            Designing Our Future Nest Together • Avadi to Puzhal Connection • May 2031 💍
-          </p>
-          <p className="text-[8px] font-outfit text-gray-600 tracking-wider mt-2 select-none">
-            © 2026 Sanjay. Made with eternal love and devotion. All Rights Reserved.
-          </p>
-        </div>
-      </footer>
+
 
     </div>
   );
@@ -641,11 +630,12 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
 
   return (
     <motion.section
+      id="arc-timeline-section"
       initial={{ opacity: 0, y: 55 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-100px" }}
       transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
-      className={`relative overflow-hidden bg-black text-white flex flex-col items-center pt-8 sm:pt-12 pb-0 ${className}`}
+      className={`relative overflow-hidden bg-transparent text-white flex flex-col items-center pt-8 sm:pt-12 pb-0 ${className}`}
     >
 
       {/* SVG ClipPath Definitions for Heart Halves - placed at the top for reliable rendering on mobile devices */}
@@ -904,6 +894,7 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
 
       {/* ACT IV: TWO HEARTS, ONE DESTINY (MAPS & CONNECTION) */}
       <motion.div
+        id="connections-section"
         initial={{ opacity: 0, y: 55 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-100px" }}
@@ -941,6 +932,7 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
 
       {/* THE GRAND CLIMAX: THE FOREVER COUNTDOWN */}
       <motion.div
+        id="countdown-section"
         initial={{ opacity: 0, y: 55 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-100px" }}

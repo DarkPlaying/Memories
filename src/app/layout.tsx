@@ -37,10 +37,23 @@ export default function RootLayout({
       style={{ colorScheme: "dark" }}
       suppressHydrationWarning
     >
+      <head>
+        <link rel="preload" href="/BG.jpg" as="image" />
+      </head>
       <body 
         className="min-h-full flex flex-col bg-black text-white selection:bg-rose-500 selection:text-white"
         suppressHydrationWarning
       >
+        {/* Background Heart Animation */}
+        <div 
+          className="fixed inset-0 pointer-events-none z-0"
+          style={{
+            backgroundImage: "url('/bg hearts/Butterfly hearts.gif')",
+            backgroundRepeat: "repeat",
+            backgroundSize: "500px",
+            opacity: 0.14,
+          }}
+        />
         {children}
       </body>
     </html>

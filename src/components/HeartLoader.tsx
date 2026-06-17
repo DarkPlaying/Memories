@@ -6,6 +6,7 @@ import confetti from "canvas-confetti";
 
 interface HeartLoaderProps {
   onComplete: () => void;
+  skipExitAnimation?: boolean;
 }
 
 interface Particle {
@@ -29,7 +30,7 @@ interface TinyButterfly {
 
 const loaderText = "Preparing a sweet surprise...";
 
-export default function HeartLoader({ onComplete }: HeartLoaderProps) {
+export default function HeartLoader({ onComplete, skipExitAnimation = false }: HeartLoaderProps) {
   const [progress, setProgress] = useState(0);
   const [particles, setParticles] = useState<Particle[]>([]);
   const [isExiting, setIsExiting] = useState(false);
@@ -60,7 +61,7 @@ export default function HeartLoader({ onComplete }: HeartLoaderProps) {
       // Pause briefly at 100% so the user clearly sees it complete before the transition triggers
       const delayTimeout = setTimeout(() => {
         triggerMagicalTransition();
-      }, 350);
+      }, 150);
       return () => clearTimeout(delayTimeout);
     }
 
@@ -71,7 +72,7 @@ export default function HeartLoader({ onComplete }: HeartLoaderProps) {
         let delta = 0;
         
         if (isSurge) {
-          delta = Math.floor(Math.random() * 4) + 2; // Increase by 2% to 5%
+          delta = Math.floor(Math.random() * 6) + 4; // Increase by 4% to 9%
         } else {
           delta = -(Math.floor(Math.random() * 2) + 1); // Drop by 1% or 2%
         }
@@ -79,7 +80,7 @@ export default function HeartLoader({ onComplete }: HeartLoaderProps) {
         const next = prev + delta;
         return next > 100 ? 100 : next < 0 ? 0 : next;
       });
-    }, 90); // Slightly slower intervals to let surges feel heavy and physical
+    }, 30); // Faster intervals to load instantly
 
     return () => clearInterval(interval);
   }, [progress]);
@@ -98,7 +99,7 @@ export default function HeartLoader({ onComplete }: HeartLoaderProps) {
       colors: ["#ff0844", "#ffb199", "#ff0050", "#ffffff"],
     });
 
-    // 2. After the big butterfly settles (0.45 seconds later)
+    // 2. After the big butterfly settles (0.25 seconds later)
     setTimeout(() => {
       // Secondary explosive heart burst
       confetti({
@@ -124,17 +125,17 @@ export default function HeartLoader({ onComplete }: HeartLoaderProps) {
         };
       });
       setTinyButterflies(butterflies);
-    }, 450);
+    }, 250);
 
     // 3. Start sliding up the loader screen (revealing Hero page already running underneath!)
     setTimeout(() => {
       setIsExiting(true);
-    }, 1800);
+    }, 650);
 
     // 4. Complete transition and clean unmount loader
     setTimeout(() => {
       onComplete();
-    }, 2700);
+    }, 1150);
   };
 
   const y = 24 - (24 * progress) / 100;
@@ -145,10 +146,13 @@ export default function HeartLoader({ onComplete }: HeartLoaderProps) {
         <motion.div
           className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden bg-black"
           initial={{ opacity: 1 }}
-          exit={{
+          exit={skipExitAnimation ? {
+            opacity: 0,
+            transition: { duration: 0 }
+          } : {
             opacity: 0,
             y: "-100vh",
-            transition: { duration: 1.0, ease: [0.76, 0, 0.24, 1] }
+            transition: { duration: 0.5, ease: [0.76, 0, 0.24, 1] }
           }}
         >
           {/* Glowing Radial Background */}
