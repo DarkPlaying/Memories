@@ -89,7 +89,7 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
   useEffect(() => {
     let animationFrameId: number
     const animate = () => {
-      setRotation((prevRotation) => prevRotation + 0.005) // smooth auto-rotation
+      setRotation((prevRotation) => prevRotation + 0.008) // faster auto-rotation
       animationFrameId = requestAnimationFrame(animate)
     }
     animationFrameId = requestAnimationFrame(animate)
