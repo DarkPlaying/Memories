@@ -55,6 +55,7 @@ interface Letter {
   isEternal?: boolean;
   recipientId?: string;
   senderId?: string;
+  textareaRows?: number;
 }
 
 interface UserProfile {
@@ -82,6 +83,20 @@ export default function MailingPage() {
         setReaderScale((window.innerWidth - 24) / 512);
       } else {
         setReaderScale(1);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const [composerScale, setComposerScale] = useState(1);
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 504) { // 480px + 24px margins
+        setComposerScale((window.innerWidth - 24) / 480);
+      } else {
+        setComposerScale(1);
       }
     };
     handleResize();
@@ -272,6 +287,7 @@ export default function MailingPage() {
     setSalutation(letter.salutation || localStorage.getItem("default_salutation") || "Your Lovely");
     setIsEternalComposer(!!letter.isEternal);
     setRecipientId(letter.recipientId || "");
+    setTextareaRows(letter.textareaRows || 6);
     setPageState("landing");
     setOpenWritePopover(true);
   };
@@ -809,7 +825,7 @@ export default function MailingPage() {
     // Split the text into lines first to check the total count
     const paragraphs = activeLetter.content.split("\n");
     const allLines: string[] = [];
-    const charsPerLine = 72;
+    const charsPerLine = 60;
     paragraphs.forEach((para) => {
       if (para.trim() === "") {
         allLines.push("");
@@ -923,9 +939,9 @@ export default function MailingPage() {
         // Add content (Page 1 starts below headers, Page 2 starts near top)
         const contentDiv = document.createElement("div");
         contentDiv.style.position = "absolute";
-        contentDiv.style.left = "160px";
+        contentDiv.style.left = "180px";
         contentDiv.style.top = i === 0 ? "485px" : "165px";
-        contentDiv.style.width = "480px";
+        contentDiv.style.width = "440px";
         contentDiv.style.height = i === 0 ? "560px" : "820px";
         contentDiv.style.fontFamily = "'Outfit', sans-serif";
         contentDiv.style.fontSize = "14.5px";
@@ -973,7 +989,17 @@ export default function MailingPage() {
         // Add attachments for this page (positioned dynamically next to the exact line of text)
         activeLetter.attachments?.forEach((a: any) => {
           const totalLines = allLines.length;
-          const targetLine = Math.floor((a.y / 100) * totalLines);
+          const editorRows = Math.max(activeLetter.textareaRows || 0, totalLines);
+          
+          // H_parent in editor was: 24 + editorRows * 28
+          const H_parent = 24 + editorRows * 28;
+          const Y_px = (a.y / 100) * H_parent;
+          // In the editor: Y_text = Y_px - 12 (top padding is 4px parent + 8px textarea = 12px)
+          // Each line is 28px
+          const targetLine = Math.min(
+            Math.max(0, totalLines - 1),
+            Math.round((Y_px - 12) / 28)
+          );
           
           // Find which page this line belongs to
           let lineAccumulator = 0;
@@ -1007,8 +1033,8 @@ export default function MailingPage() {
             const maxTop = i === 0 ? 1000 : 960;
             topOffset = Math.max(contentTop, Math.min(maxTop, topOffset));
             
-            let leftOffset = 160 + (a.x / 100) * 480;
-            leftOffset = Math.max(160, Math.min(640 - imageWidth, leftOffset));
+            let leftOffset = 180 + (a.x / 100) * 440;
+            leftOffset = Math.max(180, Math.min(620 - imageWidth, leftOffset));
             
             attImg.style.left = `${leftOffset}px`;
             attImg.style.top = `${topOffset}px`;
@@ -1031,7 +1057,7 @@ export default function MailingPage() {
           dateDiv.style.left = "160px"; // Aligned with the content left margin
           dateDiv.style.bottom = "125px"; // Positioned beautifully relative to the bottom edge
           dateDiv.style.fontFamily = "'Playfair Display', Georgia, serif"; // Elegant serif font as requested
-          dateDiv.style.fontSize = "16px"; // Increased date size as requested
+          dateDiv.style.fontSize = "22px"; // Increased date size as requested
           dateDiv.style.fontStyle = "italic";
           dateDiv.style.color = "#c44d4d"; // Red color to match signature
           dateDiv.style.fontWeight = "bold"; // Bold red date to match the theme
@@ -1044,9 +1070,9 @@ export default function MailingPage() {
           stampImg.src = "/stamp.png";
           stampImg.style.position = "absolute";
           stampImg.style.right = "35px";
-          stampImg.style.bottom = "100px";
-          stampImg.style.width = "172px";
-          stampImg.style.height = "123px";
+          stampImg.style.bottom = "85px";
+          stampImg.style.width = "224px";
+          stampImg.style.height = "160px";
           stampImg.style.objectFit = "contain";
           stampImg.style.zIndex = "1";
           pageDiv.appendChild(stampImg);
@@ -1056,7 +1082,7 @@ export default function MailingPage() {
             sigImg.style.position = "absolute";
             sigImg.style.right = "160px";
             sigImg.style.bottom = "95px";
-            sigImg.style.height = "60px";
+            sigImg.style.height = "80px";
             sigImg.style.objectFit = "contain";
             sigImg.style.filter = "brightness(0)";
             sigImg.style.zIndex = "1";
@@ -1066,29 +1092,29 @@ export default function MailingPage() {
             // Render default printed signature in HTML if no custom signature is given
             const partSigDiv = document.createElement("div");
             partSigDiv.style.position = "absolute";
-            partSigDiv.style.left = "352px";
-            partSigDiv.style.bottom = "144px";
+            partSigDiv.style.left = "328px";
+            partSigDiv.style.bottom = "150px";
             partSigDiv.style.fontFamily = "'Great Vibes', 'Brush Script MT', cursive";
-            partSigDiv.style.fontSize = "36px";
+            partSigDiv.style.fontSize = "48px";
             partSigDiv.style.color = "#c44d4d";
             partSigDiv.style.lineHeight = "1";
             partSigDiv.style.textAlign = "center";
-            partSigDiv.style.width = "132px";
+            partSigDiv.style.width = "180px";
             partSigDiv.style.zIndex = "1";
             partSigDiv.innerText = "Partner";
             pageDiv.appendChild(partSigDiv);
             
             const lovSigDiv = document.createElement("div");
             lovSigDiv.style.position = "absolute";
-            lovSigDiv.style.left = "325px";
-            lovSigDiv.style.bottom = "111px";
+            lovSigDiv.style.left = "308px";
+            lovSigDiv.style.bottom = "115px";
             lovSigDiv.style.fontFamily = "'Outfit', sans-serif";
-            lovSigDiv.style.fontSize = "11px";
+            lovSigDiv.style.fontSize = "14px";
             lovSigDiv.style.fontWeight = "bold";
             lovSigDiv.style.color = "#c44d4d";
             lovSigDiv.style.letterSpacing = "0.1em";
             lovSigDiv.style.textAlign = "center";
-            lovSigDiv.style.width = "188px";
+            lovSigDiv.style.width = "220px";
             lovSigDiv.style.zIndex = "1";
             lovSigDiv.innerText = "YOUR'S LOVINGLY";
             pageDiv.appendChild(lovSigDiv);
@@ -1138,6 +1164,7 @@ export default function MailingPage() {
           isEternal: true,
           recipientId: data.recipientId || "",
           senderId: data.senderId || "",
+          textareaRows: data.textareaRows || 6,
         });
       });
       const localMails = JSON.parse(localStorage.getItem("local_letters") || "[]");
@@ -1169,6 +1196,11 @@ export default function MailingPage() {
     e.preventDefault();
     if (!letterContent.trim()) return;
 
+    const textarea = document.getElementById("letter-textarea") as HTMLTextAreaElement;
+    const actualRows = textarea 
+      ? Math.round((textarea.scrollHeight - 16) / 28) 
+      : Math.max(textareaRows, letterContent.split("\n").length);
+
     setFormState("loading");
     try {
       if (editingLetterId) {
@@ -1182,6 +1214,7 @@ export default function MailingPage() {
             salutation: salutation,
             isEternal: true,
             recipientId: recipientId,
+            textareaRows: actualRows,
           } : m);
           localStorage.setItem("local_letters", JSON.stringify(updated));
         } else {
@@ -1192,6 +1225,7 @@ export default function MailingPage() {
             salutation: salutation,
             isEternal: true,
             recipientId: recipientId,
+            textareaRows: actualRows,
           });
         }
       } else {
@@ -1204,6 +1238,7 @@ export default function MailingPage() {
           recipientId: recipientId,
           senderId: loggedInUser?.id || "",
           createdAt: new Date(),
+          textareaRows: actualRows,
         });
       }
 
@@ -1240,6 +1275,7 @@ export default function MailingPage() {
           salutation: salutation,
           isEternal: true,
           recipientId: recipientId,
+          textareaRows: actualRows,
         } : m);
         localStorage.setItem("local_letters", JSON.stringify(updated));
       } else {
@@ -1253,6 +1289,7 @@ export default function MailingPage() {
           recipientId: recipientId,
           senderId: loggedInUser?.id || "",
           createdAt: { seconds: Date.now() / 1000 },
+          textareaRows: actualRows,
         });
         localStorage.setItem("local_letters", JSON.stringify(localMails));
       }
@@ -2280,7 +2317,14 @@ export default function MailingPage() {
 
             {/* PopoverForm wrapper triggered by primary button */}
             <div className={openWritePopover ? "fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-auto transition-all duration-300" : "absolute opacity-0 pointer-events-none"}>
-              <PopoverForm
+              <div
+                className="flex-shrink-0 min-w-[480px] w-[480px]"
+                style={{
+                  transform: composerScale < 1 ? `scale(${composerScale})` : undefined,
+                  transformOrigin: "center center"
+                }}
+              >
+                <PopoverForm
                 title="Write Letter"
                 open={openWritePopover}
                 setOpen={handleCloseWritePopover}
@@ -2402,7 +2446,7 @@ export default function MailingPage() {
                             placeholder="Write your lovely words here..."
                             value={letterContent}
                             onChange={(e) => setLetterContent(e.target.value)}
-                            rows={textareaRows}
+                            rows={Math.max(textareaRows, letterContent.split("\n").length)}
                             required
                             className="w-full resize-none bg-transparent outline-none text-neutral-200 text-sm font-outfit leading-7 p-2 select-text"
                             style={{
@@ -2566,6 +2610,7 @@ export default function MailingPage() {
                   </div>
                 }
               />
+              </div>
             </div>
           </div>
         )}
@@ -2770,7 +2815,7 @@ export default function MailingPage() {
       {activeLetter && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
           <div 
-            className="bg-[#FAF8F5] border-2 border-[#EADEC9] rounded-2xl w-[512px] p-8 relative flex flex-col max-h-[85vh] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] text-neutral-800 transition-all duration-300"
+            className="bg-[#FAF8F5] border-2 border-[#EADEC9] rounded-2xl w-[512px] min-w-[512px] flex-shrink-0 p-8 relative flex flex-col max-h-[85vh] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] text-neutral-800 transition-all duration-300"
             style={{
               boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.55), inset 0 0 40px rgba(234, 222, 201, 0.3)",
               transform: readerScale < 1 ? `scale(${readerScale})` : undefined,

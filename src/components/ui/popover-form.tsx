@@ -30,22 +30,6 @@ export function PopoverForm({
   const ref = useRef<HTMLDivElement>(null)
   useClickOutside(ref, () => setOpen(false))
 
-  const [scale, setScale] = useState(1);
-
-  useEffect(() => {
-    const handleResize = () => {
-      const numericWidth = parseInt(width) || 480;
-      if (window.innerWidth < numericWidth + 24) {
-        setScale((window.innerWidth - 24) / numericWidth);
-      } else {
-        setScale(1);
-      }
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [width]);
-
   return (
     <div
       key={title}
@@ -66,15 +50,9 @@ export function PopoverForm({
         {open && (
           <motion.div
             layoutId={`${title}-wrapper`}
-            className="absolute p-1 overflow-hidden bg-neutral-900 border border-neutral-700 shadow-2xl outline-none z-50 origin-center"
+            className="absolute p-1 overflow-hidden bg-neutral-900 border border-neutral-700 shadow-2xl outline-none z-50"
             ref={ref}
-            style={{ 
-              borderRadius: 10, 
-              width, 
-              height,
-              transform: scale < 1 ? `scale(${scale})` : undefined,
-              transformOrigin: "center center"
-            }}
+            style={{ borderRadius: 10, width, height }}
           >
             <motion.span
               aria-hidden
