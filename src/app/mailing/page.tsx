@@ -826,96 +826,71 @@ export default function MailingPage() {
       return;
     }
 
-    // Check if selection is collapsed (empty) but cursor is inside a mark
-    if (range.collapsed) {
-      let node = range.startContainer;
-      if (node.nodeType === Node.TEXT_NODE) {
-        node = node.parentNode as Node;
-      }
-      const closestMark = (node as HTMLElement).closest?.("mark");
-      if (closestMark) {
-        const isSameColor = closestMark.className === `hl-${color}`;
-        const parent = closestMark.parentNode;
-        if (parent) {
-          if (isSameColor) {
-            // Remove coloring: unwrap mark element
-            while (closestMark.firstChild) {
-              parent.insertBefore(closestMark.firstChild, closestMark);
-            }
-            parent.removeChild(closestMark);
-          } else {
-            // Override color
-            closestMark.className = `hl-${color}`;
-          }
-          
-          // Trigger state update
-          const html = editor.innerHTML;
-          const textWithTags = convertHtmlToTags(html);
-          setLetterContent(textWithTags);
-          const lines = getLinesOfText(textWithTags);
-          setTextareaRows(Math.max(6, lines.length));
-        }
-        selection.removeAllRanges();
-      }
-      return;
-    }
-
-    const selectedText = range.toString().trim();
-    if (!selectedText) {
+    const selectedText = range.toString();
+    if (!selectedText.trim()) {
       setComposerError("Please select some text inside the sheet to highlight first!");
       setTimeout(() => setComposerError(null), 4000);
       return;
     }
 
-    // Check if the selection itself is inside a mark
+    // Check if selection is entirely inside a highlight of the SAME color
+    let isSameColor = false;
     let node = range.commonAncestorContainer;
     if (node.nodeType === Node.TEXT_NODE) {
       node = node.parentNode as Node;
     }
     const closestMark = (node as HTMLElement).closest?.("mark");
+    if (closestMark && closestMark.className === `hl-${color}`) {
+      isSameColor = true;
+    }
 
-    if (closestMark) {
-      const isSameColor = closestMark.className === `hl-${color}`;
-      const parent = closestMark.parentNode;
-      if (parent) {
-        if (isSameColor) {
-          // Remove coloring: unwrap mark element
-          while (closestMark.firstChild) {
-            parent.insertBefore(closestMark.firstChild, closestMark);
-          }
-          parent.removeChild(closestMark);
-        } else {
-          // Override color
-          closestMark.className = `hl-${color}`;
-        }
-      }
+    // Extract selected content. Browser automatically splits parent marks!
+    const fragment = range.extractContents();
+
+    if (isSameColor) {
+      // Toggle off: insert the plain text back, removing the highlight for this selection
+      const textNode = document.createTextNode(fragment.textContent || "");
+      range.insertNode(textNode);
     } else {
-      // Create a document fragment from range contents
-      const fragment = range.extractContents();
+      // Add or Override color:
+      // Remove any existing mark tags inside the extracted fragment to prevent nesting
+      const temp = document.createElement("div");
+      temp.appendChild(fragment);
       
-      // Remove any existing mark elements inside the fragment to prevent nested tags
-      const nestedMarks = fragment.querySelectorAll("mark");
+      const nestedMarks = temp.querySelectorAll("mark");
       nestedMarks.forEach(m => {
-        const parent = m.parentNode;
-        if (parent) {
+        const p = m.parentNode;
+        if (p) {
           while (m.firstChild) {
-            parent.insertBefore(m.firstChild, m);
+            p.insertBefore(m.firstChild, m);
           }
-          parent.removeChild(m);
+          p.removeChild(m);
         }
       });
 
-      const mark = document.createElement("mark");
-      mark.className = `hl-${color}`;
-      mark.appendChild(fragment);
-      range.insertNode(mark);
+      // Wrap the cleaned text content in the new color mark
+      const newMark = document.createElement("mark");
+      newMark.className = `hl-${color}`;
+      
+      // Move all child nodes from temp to newMark
+      while (temp.firstChild) {
+        newMark.appendChild(temp.firstChild);
+      }
+      
+      range.insertNode(newMark);
     }
 
     // Clear selection
     selection.removeAllRanges();
 
-    // Trigger state update
+    // Trigger state update & clean empty marks in-place
     if (editor) {
+      editor.querySelectorAll("mark").forEach(m => {
+        if (!m.textContent?.trim()) {
+          m.parentNode?.removeChild(m);
+        }
+      });
+
       const html = editor.innerHTML;
       const textWithTags = convertHtmlToTags(html);
       setLetterContent(textWithTags);
