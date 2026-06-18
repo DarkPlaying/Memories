@@ -151,7 +151,7 @@ const convertTagsToHtml = (text: string): string => {
   
   const markerColors = ["yellow", "pink", "green", "blue"];
   markerColors.forEach(color => {
-    const regex = new RegExp(`\\[hl-${color}\\](.*?)\\[\\/hl-${color}\\]`, "gi");
+    const regex = new RegExp(`\\[hl-${color}\\]([\\s\\S]*?)\\[\\/hl-${color}\\]`, "gi");
     escaped = escaped.replace(regex, `<mark class="hl-${color}">$1</mark>`);
   });
 
@@ -719,17 +719,17 @@ export default function MailingPage() {
       const dy = (moveEvent.clientY - startY) / composerScale;
       
       const unscaledWidth = rect.width / composerScale;
-      const unscaledHeight = rect.height / composerScale;
       
       const pctX = initialX + (dx / unscaledWidth) * 100;
       
-      const initialY_px = (initialY / 100) * unscaledHeight;
-      const Y_px = initialY_px + dy;
-      const L = Math.max(0, Math.round(Y_px / 29.5));
-      
       const allLinesCount = getLinesOfText(letterContent);
       const totalLinesCount = allLinesCount.length;
-      const editorRows = Math.max(textareaRows, totalLinesCount);
+      const editorRows = Math.max(6, totalLinesCount);
+      
+      const initialL = (initialY / 100) * editorRows;
+      const initialY_px = initialL * 29.5;
+      const Y_px = initialY_px + dy;
+      const L = Math.max(0, Math.round(Y_px / 29.5));
       
       const clampedL = Math.min(editorRows - 1, L);
       const pctY = (clampedL / editorRows) * 100;
@@ -833,78 +833,115 @@ export default function MailingPage() {
       return;
     }
 
-    // Check if selection is inside or contains a highlight of the SAME color
+    const getSelectedTextNodes = (r: Range): Text[] => {
+      const container = r.commonAncestorContainer;
+      if (container.nodeType === Node.TEXT_NODE) {
+        return [container as Text];
+      }
+      const walker = document.createTreeWalker(
+        container,
+        NodeFilter.SHOW_TEXT,
+        {
+          acceptNode: (node) => {
+            if (r.intersectsNode(node)) {
+              return NodeFilter.FILTER_ACCEPT;
+            }
+            return NodeFilter.FILTER_REJECT;
+          }
+        }
+      );
+      const nodes: Text[] = [];
+      let node: Node | null;
+      while ((node = walker.nextNode())) {
+        nodes.push(node as Text);
+      }
+      return nodes;
+    };
+
+    const splitParentAroundChild = (parent: HTMLElement, child: Node) => {
+      const parentCloneBefore = parent.cloneNode(false) as HTMLElement;
+      const parentCloneAfter = parent.cloneNode(false) as HTMLElement;
+      
+      let beforeChild = true;
+      const children = Array.from(parent.childNodes);
+      for (const childNode of children) {
+        if (childNode === child) {
+          beforeChild = false;
+          continue;
+        }
+        if (beforeChild) {
+          parentCloneBefore.appendChild(childNode);
+        } else {
+          parentCloneAfter.appendChild(childNode);
+        }
+      }
+      
+      const grandParent = parent.parentNode;
+      if (grandParent) {
+        if (parentCloneBefore.childNodes.length > 0) {
+          grandParent.insertBefore(parentCloneBefore, parent);
+        }
+        grandParent.insertBefore(child, parent);
+        if (parentCloneAfter.childNodes.length > 0) {
+          grandParent.insertBefore(parentCloneAfter, parent);
+        }
+        grandParent.removeChild(parent);
+      }
+    };
+
+    const textNodes = getSelectedTextNodes(range);
+    if (textNodes.length === 0) return;
+
     let isSameColor = false;
-    let node = range.commonAncestorContainer;
-    if (node.nodeType === Node.TEXT_NODE) {
-      node = node.parentNode as Node;
-    }
-    const closestMark = (node as HTMLElement).closest?.("mark");
-    if (closestMark && closestMark.className === `hl-${color}`) {
-      isSameColor = true;
-    } else {
-      const clone = range.cloneContents();
-      if (clone.querySelector(`mark.hl-${color}`)) {
+    for (const node of textNodes) {
+      const parentMark = node.parentElement?.closest("mark");
+      if (parentMark && parentMark.className === `hl-${color}`) {
         isSameColor = true;
+        break;
       }
     }
 
-    // Extract selected content. Browser automatically splits parent marks!
-    const fragment = range.extractContents();
-
-    if (isSameColor) {
-      // Toggle off: remove only target color highlights from extracted fragment, and insert back
-      const temp = document.createElement("div");
-      temp.appendChild(fragment);
-      
-      const targetMarks = temp.querySelectorAll(`mark.hl-${color}`);
-      targetMarks.forEach(m => {
-        const p = m.parentNode;
-        if (p) {
-          while (m.firstChild) {
-            p.insertBefore(m.firstChild, m);
-          }
-          p.removeChild(m);
-        }
-      });
-      
-      while (temp.firstChild) {
-        range.insertNode(temp.firstChild);
-      }
-    } else {
-      // Add or Override color:
-      // Remove any existing mark tags inside the extracted fragment to prevent nesting
-      const temp = document.createElement("div");
-      temp.appendChild(fragment);
-      
-      const nestedMarks = temp.querySelectorAll("mark");
-      nestedMarks.forEach(m => {
-        const p = m.parentNode;
-        if (p) {
-          while (m.firstChild) {
-            p.insertBefore(m.firstChild, m);
-          }
-          p.removeChild(m);
-        }
-      });
-
-      // Wrap the cleaned text content in the new color mark
-      const newMark = document.createElement("mark");
-      newMark.className = `hl-${color}`;
-      
-      // Move all child nodes from temp to newMark
-      while (temp.firstChild) {
-        newMark.appendChild(temp.firstChild);
-      }
-      
-      range.insertNode(newMark);
+    const targets: { node: Text; start: number; end: number }[] = [];
+    for (const node of textNodes) {
+      const startOffset = node === range.startContainer ? range.startOffset : 0;
+      const endOffset = node === range.endContainer ? range.endOffset : node.length;
+      if (startOffset === endOffset) continue;
+      targets.push({ node, start: startOffset, end: endOffset });
     }
 
-    // Clear selection
+    // Process from end to start so splitting doesn't invalidate offsets
+    for (let i = targets.length - 1; i >= 0; i--) {
+      const { node, start, end } = targets[i];
+      let targetNode = node;
+      if (start > 0) {
+        targetNode = targetNode.splitText(start);
+      }
+      const relativeEnd = end - (start > 0 ? start : 0);
+      if (relativeEnd < targetNode.length) {
+        targetNode.splitText(relativeEnd);
+      }
+
+      const parentMark = targetNode.parentElement?.closest("mark") as HTMLElement | null;
+
+      if (isSameColor) {
+        if (parentMark && parentMark.className === `hl-${color}`) {
+          splitParentAroundChild(parentMark, targetNode);
+        }
+      } else {
+        if (parentMark) {
+          splitParentAroundChild(parentMark, targetNode);
+        }
+        const mark = document.createElement("mark");
+        mark.className = `hl-${color}`;
+        targetNode.parentNode?.insertBefore(mark, targetNode);
+        mark.appendChild(targetNode);
+      }
+    }
+
     selection.removeAllRanges();
 
-    // Trigger state update & clean empty marks in-place
     if (editor) {
+      editor.normalize();
       editor.querySelectorAll("mark").forEach(m => {
         if (!m.textContent?.trim()) {
           m.parentNode?.removeChild(m);
@@ -937,8 +974,8 @@ export default function MailingPage() {
 
     const markerColors = ["yellow", "pink", "green", "blue"];
     markerColors.forEach(color => {
-      const regex = new RegExp(`\\[hl-${color}\\](.*?)\\[\\/hl-${color}\\]`, "gi");
-      escaped = escaped.replace(regex, `<mark class="hl-${color}">${"$1"}</mark>`);
+      const regex = new RegExp(`\\[hl-${color}\\]([\\s\\S]*?)\\[\\/hl-${color}\\]`, "gi");
+      escaped = escaped.replace(regex, `<mark class="hl-${color}">$1</mark>`);
     });
 
     // Strip any remaining unmatched or malformed tags
@@ -1219,7 +1256,7 @@ export default function MailingPage() {
         // Add attachments for this page (positioned dynamically next to the exact line of text)
         activeLetter.attachments?.forEach((a: any) => {
           const totalLines = allLines.length;
-          const editorRows = Math.max(activeLetter.textareaRows || 0, totalLines);
+          const editorRows = Math.max(6, totalLines);
           const targetLine = Math.min(
             Math.max(0, totalLines - 1),
             Math.round((a.y / 100) * editorRows)
@@ -1302,16 +1339,41 @@ export default function MailingPage() {
           pageDiv.appendChild(stampImg);
           
           if (activeLetter.signature) {
+            const lovSigDiv = document.createElement("div");
+            lovSigDiv.style.position = "absolute";
+            lovSigDiv.style.left = "180px";
+            lovSigDiv.style.width = "440px";
+            lovSigDiv.style.bottom = "165px";
+            lovSigDiv.style.fontFamily = "'Outfit', sans-serif";
+            lovSigDiv.style.fontSize = "14px";
+            lovSigDiv.style.fontWeight = "bold";
+            lovSigDiv.style.color = "#c44d4d";
+            lovSigDiv.style.letterSpacing = "0.1em";
+            lovSigDiv.style.textAlign = "center";
+            lovSigDiv.style.zIndex = "1";
+            lovSigDiv.innerText = (activeLetter.salutation || "Your Lovely").toUpperCase();
+            pageDiv.appendChild(lovSigDiv);
+
+            const sigWrapper = document.createElement("div");
+            sigWrapper.style.position = "absolute";
+            sigWrapper.style.left = "180px";
+            sigWrapper.style.width = "440px";
+            sigWrapper.style.bottom = "75px";
+            sigWrapper.style.height = "80px";
+            sigWrapper.style.display = "flex";
+            sigWrapper.style.justifyContent = "center";
+            sigWrapper.style.alignItems = "center";
+            sigWrapper.style.zIndex = "1";
+
             const sigImg = document.createElement("img");
-            sigImg.style.position = "absolute";
-            sigImg.style.right = "160px";
-            sigImg.style.bottom = "95px";
             sigImg.style.height = "80px";
+            sigImg.style.maxWidth = "100%";
             sigImg.style.objectFit = "contain";
             sigImg.style.filter = "brightness(0)";
-            sigImg.style.zIndex = "1";
             sigImg.src = activeLetter.signature;
-            pageDiv.appendChild(sigImg);
+            sigWrapper.appendChild(sigImg);
+            
+            pageDiv.appendChild(sigWrapper);
           } else {
             // Render default printed signature in HTML if no custom signature is given
             const partSigDiv = document.createElement("div");
@@ -2709,7 +2771,7 @@ export default function MailingPage() {
                           {attachments.map(a => {
                             const allLinesCount = getLinesOfText(letterContent);
                             const totalLinesCount = allLinesCount.length;
-                            const editorRows = Math.max(textareaRows, totalLinesCount);
+                            const editorRows = Math.max(6, totalLinesCount);
                             const targetLine = Math.min(
                               Math.max(0, totalLinesCount - 1),
                               Math.round((a.y / 100) * editorRows)
@@ -3155,7 +3217,7 @@ export default function MailingPage() {
                   {activeLetter.attachments?.map((a: any) => {
                     const allLinesCount = getLinesOfText(activeLetter.content);
                     const totalLinesCount = allLinesCount.length;
-                    const editorRows = Math.max(activeLetter.textareaRows || 0, totalLinesCount);
+                    const editorRows = Math.max(6, totalLinesCount);
                     const targetLine = Math.min(
                       Math.max(0, totalLinesCount - 1),
                       Math.round((a.y / 100) * editorRows)
