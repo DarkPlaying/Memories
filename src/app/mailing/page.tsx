@@ -2870,7 +2870,7 @@ export default function MailingPage() {
             >
               <div 
                 id="letter-paper-content-inner"
-                className="select-text relative p-0 mx-auto w-[440px]" 
+                className="select-text relative p-0 mx-auto w-[440px] flex flex-col" 
                 style={{ 
                   minHeight: "100%",
                   backgroundImage: "linear-gradient(to bottom, transparent 95%, rgba(139, 92, 246, 0.15) 95%)",
@@ -2882,17 +2882,36 @@ export default function MailingPage() {
                   fontFamily: "'Outfit', sans-serif",
                 }}
               >
-                <div 
-                  dangerouslySetInnerHTML={renderFormattedContent(activeLetter.content)} 
-                  className="whitespace-pre-wrap select-text text-[14.5px] text-left w-full animate-fade-in" 
-                  style={{
-                    lineHeight: "29.5px",
-                    fontFamily: "'Outfit', sans-serif",
-                  }}
-                />
+                {/* Relative container for text and attachments to match editor height exactly */}
+                <div className="relative w-full" id="reader-text-container">
+                  <div 
+                    dangerouslySetInnerHTML={renderFormattedContent(activeLetter.content)} 
+                    className="whitespace-pre-wrap select-text text-[14.5px] text-left w-full animate-fade-in" 
+                    style={{
+                      lineHeight: "29.5px",
+                      fontFamily: "'Outfit', sans-serif",
+                    }}
+                  />
+
+                  {/* Render attachments inside this text-only relative container */}
+                  {activeLetter.attachments?.map((a: any) => (
+                    <div 
+                      key={a.id}
+                      style={{ left: `${a.x}%`, top: `${a.y}%` }}
+                      className="absolute z-20 pointer-events-none select-none"
+                    >
+                      <img 
+                        src={a.src} 
+                        draggable="false" 
+                        style={{ width: `${a.width || 80}px`, height: "auto" }}
+                        className="object-contain rounded shadow-lg border border-[#EADEC9]" 
+                      />
+                    </div>
+                  ))}
+                </div>
                 
                 {activeLetter.signature && (
-                  <div className="mt-10 border-t border-[#EADEC9] pt-4 flex flex-col items-start gap-1">
+                  <div className="mt-10 border-t border-[#EADEC9] pt-4 flex flex-col items-start gap-1 w-full relative z-10">
                     <span className="text-xs font-bold text-amber-900 font-outfit uppercase tracking-wide">
                       {activeLetter.salutation || "Your Lovely"}:
                     </span>
@@ -2903,22 +2922,6 @@ export default function MailingPage() {
                     />
                   </div>
                 )}
-
-                {/* Render attachments inside the inner relative container */}
-                {activeLetter.attachments?.map((a: any) => (
-                  <div 
-                    key={a.id}
-                    style={{ left: `${a.x}%`, top: `${a.y}%` }}
-                    className="absolute z-20 pointer-events-none select-none"
-                  >
-                    <img 
-                      src={a.src} 
-                      draggable="false" 
-                      style={{ width: `${a.width || 80}px`, height: "auto" }}
-                      className="object-contain rounded shadow-lg border border-[#EADEC9]" 
-                    />
-                  </div>
-                ))}
               </div>
             </div>
           </div>
