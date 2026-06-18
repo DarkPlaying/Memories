@@ -633,6 +633,7 @@ export function InfiniteGallery({
   isImageControlActive,
 }: InfiniteGalleryProps) {
   const [webglSupported, setWebglSupported] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     try {
@@ -645,6 +646,13 @@ export function InfiniteGallery({
     } catch (e) {
       setWebglSupported(false);
     }
+
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   if (!webglSupported) {
@@ -667,6 +675,7 @@ export function InfiniteGallery({
             fadeSettings={fadeSettings}
             blurSettings={blurSettings}
             isImageControlActive={isImageControlActive}
+            visibleCount={isMobile ? 6 : 12}
           />
         </Suspense>
       </Canvas>
@@ -735,6 +744,16 @@ const FloatingIconsHero = React.forwardRef<
   const mouseY = useRef(0);
 
   const [isImageControlActive, setIsImageControlActive] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     mouseX.current = event.clientX;
@@ -767,21 +786,23 @@ const FloatingIconsHero = React.forwardRef<
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,transparent_85%)] z-10 pointer-events-none" />
 
       {/* Container for the background floating icons (Flapping Butterflies) */}
-      <div className="absolute inset-0 w-full h-full pointer-events-none z-20">
-        {REAL_BUTTERFLIES.map((butterflyData, index) => {
-          const gifImage = BUTTERFLY_GIFS[index % BUTTERFLY_GIFS.length];
-          const dataWithGif = { ...butterflyData, image: gifImage };
-          return (
-            <Butterfly
-              key={butterflyData.id}
-              mouseX={mouseX}
-              mouseY={mouseY}
-              butterflyData={dataWithGif}
-              index={index}
-            />
-          );
-        })}
-      </div>
+      {!isMobile && (
+        <div className="absolute inset-0 w-full h-full pointer-events-none z-20">
+          {REAL_BUTTERFLIES.map((butterflyData, index) => {
+            const gifImage = BUTTERFLY_GIFS[index % BUTTERFLY_GIFS.length];
+            const dataWithGif = { ...butterflyData, image: gifImage };
+            return (
+              <Butterfly
+                key={butterflyData.id}
+                mouseX={mouseX}
+                mouseY={mouseY}
+                butterflyData={dataWithGif}
+                index={index}
+              />
+            );
+          })}
+        </div>
+      )}
 
       {/* Container for the foreground content */}
       <div className="relative z-30 text-center px-6 max-w-2xl pointer-events-auto flex flex-col items-center">
