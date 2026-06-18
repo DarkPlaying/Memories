@@ -154,6 +154,12 @@ const convertTagsToHtml = (text: string): string => {
     const regex = new RegExp(`\\[hl-${color}\\](.*?)\\[\\/hl-${color}\\]`, "gi");
     escaped = escaped.replace(regex, `<mark class="hl-${color}">$1</mark>`);
   });
+
+  // Strip any remaining unmatched or malformed tags
+  escaped = escaped
+    .replace(/\[hl-(yellow|pink|green|blue)\]/gi, "")
+    .replace(/\[\/hl-(yellow|pink|green|blue)\]/gi, "");
+
   return escaped;
 };
 
@@ -174,6 +180,12 @@ const convertHtmlToTags = (html: string): string => {
       const tagName = el.tagName.toLowerCase();
       
       if (tagName === "mark") {
+        // Skip empty marks
+        if (!el.textContent?.trim()) {
+          el.childNodes.forEach(walk);
+          return;
+        }
+
         let color = "yellow";
         if (el.className.includes("hl-pink")) color = "pink";
         else if (el.className.includes("hl-green")) color = "green";
@@ -814,6 +826,40 @@ export default function MailingPage() {
       return;
     }
 
+    // Check if selection is collapsed (empty) but cursor is inside a mark
+    if (range.collapsed) {
+      let node = range.startContainer;
+      if (node.nodeType === Node.TEXT_NODE) {
+        node = node.parentNode as Node;
+      }
+      const closestMark = (node as HTMLElement).closest?.("mark");
+      if (closestMark) {
+        const isSameColor = closestMark.className === `hl-${color}`;
+        const parent = closestMark.parentNode;
+        if (parent) {
+          if (isSameColor) {
+            // Remove coloring: unwrap mark element
+            while (closestMark.firstChild) {
+              parent.insertBefore(closestMark.firstChild, closestMark);
+            }
+            parent.removeChild(closestMark);
+          } else {
+            // Override color
+            closestMark.className = `hl-${color}`;
+          }
+          
+          // Trigger state update
+          const html = editor.innerHTML;
+          const textWithTags = convertHtmlToTags(html);
+          setLetterContent(textWithTags);
+          const lines = getLinesOfText(textWithTags);
+          setTextareaRows(Math.max(6, lines.length));
+        }
+        selection.removeAllRanges();
+      }
+      return;
+    }
+
     const selectedText = range.toString().trim();
     if (!selectedText) {
       setComposerError("Please select some text inside the sheet to highlight first!");
@@ -821,14 +867,46 @@ export default function MailingPage() {
       return;
     }
 
-    const mark = document.createElement("mark");
-    mark.className = `hl-${color}`;
-    
-    try {
-      range.surroundContents(mark);
-    } catch (e) {
-      // Fallback if surroundContents fails (e.g. selection spans multiple nodes)
+    // Check if the selection itself is inside a mark
+    let node = range.commonAncestorContainer;
+    if (node.nodeType === Node.TEXT_NODE) {
+      node = node.parentNode as Node;
+    }
+    const closestMark = (node as HTMLElement).closest?.("mark");
+
+    if (closestMark) {
+      const isSameColor = closestMark.className === `hl-${color}`;
+      const parent = closestMark.parentNode;
+      if (parent) {
+        if (isSameColor) {
+          // Remove coloring: unwrap mark element
+          while (closestMark.firstChild) {
+            parent.insertBefore(closestMark.firstChild, closestMark);
+          }
+          parent.removeChild(closestMark);
+        } else {
+          // Override color
+          closestMark.className = `hl-${color}`;
+        }
+      }
+    } else {
+      // Create a document fragment from range contents
       const fragment = range.extractContents();
+      
+      // Remove any existing mark elements inside the fragment to prevent nested tags
+      const nestedMarks = fragment.querySelectorAll("mark");
+      nestedMarks.forEach(m => {
+        const parent = m.parentNode;
+        if (parent) {
+          while (m.firstChild) {
+            parent.insertBefore(m.firstChild, m);
+          }
+          parent.removeChild(m);
+        }
+      });
+
+      const mark = document.createElement("mark");
+      mark.className = `hl-${color}`;
       mark.appendChild(fragment);
       range.insertNode(mark);
     }
@@ -841,6 +919,8 @@ export default function MailingPage() {
       const html = editor.innerHTML;
       const textWithTags = convertHtmlToTags(html);
       setLetterContent(textWithTags);
+      const lines = getLinesOfText(textWithTags);
+      setTextareaRows(Math.max(6, lines.length));
     }
   };
 
@@ -865,6 +945,11 @@ export default function MailingPage() {
       const regex = new RegExp(`\\[hl-${color}\\](.*?)\\[\\/hl-${color}\\]`, "gi");
       escaped = escaped.replace(regex, `<mark class="hl-${color}">${"$1"}</mark>`);
     });
+
+    // Strip any remaining unmatched or malformed tags
+    escaped = escaped
+      .replace(/\[hl-(yellow|pink|green|blue)\]/gi, "")
+      .replace(/\[\/hl-(yellow|pink|green|blue)\]/gi, "");
 
     return { __html: escaped };
   };
