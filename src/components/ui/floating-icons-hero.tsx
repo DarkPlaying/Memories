@@ -469,6 +469,12 @@ function GalleryScene({
   useEffect(() => {
     if (!isImageControlActive) return;
 
+    // Capture and lock body/html overflow to prevent page scrolling on mobile/desktop
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalDocOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
     const preventDefaultScroll = (e: WheelEvent) => {
       e.preventDefault(); // Stop page scrolling
       targetVelocityRef.current += e.deltaY * 0.006;
@@ -503,6 +509,10 @@ function GalleryScene({
     window.addEventListener("touchmove", handleTouchMove, { passive: false });
 
     return () => {
+      // Restore original body/html overflow scroll settings on deactivate/unmount
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalDocOverflow;
+
       window.removeEventListener("wheel", preventDefaultScroll);
       document.removeEventListener("touchmove", preventDefaultTouch);
       window.removeEventListener("touchstart", handleTouchStart);
