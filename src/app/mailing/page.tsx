@@ -117,6 +117,15 @@ export default function MailingPage() {
     }
     return false;
   });
+  const [isPageLoading, setIsPageLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsPageLoading(false);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
   const [salutation, setSalutation] = useState("Your Lovely");
   const [isDefaultSet, setIsDefaultSet] = useState(false);
   const [isDefaultSignatureSet, setIsDefaultSignatureSet] = useState(false);
@@ -1221,6 +1230,25 @@ export default function MailingPage() {
   const dynamicPopoverHeight = isMobile 
     ? "80vh" 
     : `${Math.min(620, 430 + (textareaRows - 6) * 24)}px`;
+
+  if (isPageLoading) {
+    return (
+      <main className="relative min-h-screen w-full bg-[#030308] text-white flex flex-col items-center justify-center p-4">
+        {/* Soft pink/purple ambient light in background */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] sm:w-[450px] sm:h-[450px] bg-purple-900/10 rounded-full blur-[90px] pointer-events-none" />
+        <div className="flex flex-col items-center justify-center relative z-10">
+          <img 
+            src="/loader.gif" 
+            alt="Loading..." 
+            className="w-32 h-32 sm:w-44 sm:h-44 object-contain filter drop-shadow-[0_0_12px_rgba(168,85,247,0.25)]" 
+          />
+          <p className="text-purple-400/90 text-[10px] sm:text-xs font-outfit mt-4 uppercase tracking-[0.25em] animate-pulse font-semibold">
+            Opening Mailbox...
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="relative min-h-screen w-full bg-gradient-to-b from-[#0a0a16] via-[#05050e] to-[#010105] text-white overflow-x-hidden flex flex-col items-center justify-center p-4">
@@ -2494,11 +2522,11 @@ export default function MailingPage() {
         {/* LOADING VISIT STATE */}
         {pageState === "loading-visit" && (
           <div className="flex flex-col items-center justify-center">
-            {/* Custom loader: send mail.gif with increased size */}
+            {/* Custom loader: loader.gif */}
             <img 
-              src="/mail/send%20mail.gif" 
+              src="/loader.gif" 
               alt="Loading letters..." 
-              className="w-64 h-64 object-contain filter drop-shadow-[0_0_15px_rgba(139,92,246,0.3)]" 
+              className="w-32 h-32 sm:w-44 sm:h-44 object-contain filter drop-shadow-[0_0_12px_rgba(168,85,247,0.25)]" 
             />
             <p className="text-purple-400 text-lg font-outfit mt-4 animate-pulse uppercase tracking-widest font-semibold text-center px-4">
               Retrieving memories from the registry...

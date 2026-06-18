@@ -187,9 +187,9 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
           <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-26 md:h-26 lg:w-32 lg:h-32 xl:w-36 xl:h-36 select-none pointer-events-none">
             <img src="/mail/mail (1).gif" alt="Mail Envelope Left" className="w-full h-full object-contain filter drop-shadow-[0_0_15px_rgba(255,0,80,0.4)]" />
           </div>
-          <Link href="/mailing" className="pointer-events-auto translate-x-[6px] sm:translate-x-[10px]">
+          <a href="/mailing" className="pointer-events-auto translate-x-[6px] sm:translate-x-[10px]">
             <SendButton />
-          </Link>
+          </a>
         </motion.div>
         <motion.div 
           animate={{ y: [15, -15, 15] }}
@@ -199,9 +199,9 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
           <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-26 md:h-26 lg:w-32 lg:h-32 xl:w-36 xl:h-36 select-none pointer-events-none">
             <img src="/mail/mail (1).gif" alt="Mail Envelope Right" className="w-full h-full object-contain filter drop-shadow-[0_0_15px_rgba(255,0,80,0.4)]" />
           </div>
-          <Link href="/mailing" className="pointer-events-auto translate-x-[6px] sm:translate-x-[10px]">
+          <a href="/mailing" className="pointer-events-auto translate-x-[6px] sm:translate-x-[10px]">
             <SendButton />
-          </Link>
+          </a>
         </motion.div>
         {/* Central text & Magical View My World Button inside the circle */}
         <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none p-2 sm:p-4 text-center">
