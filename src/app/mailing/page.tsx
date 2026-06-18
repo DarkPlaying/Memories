@@ -75,6 +75,68 @@ const getLetterLockTargetTime = (letter?: any) => {
   return new Date("May 23, 2031 00:00:00").getTime();
 };
 
+const getLinesOfText = (text: string, font: string = "14.5px 'Outfit', sans-serif", width: number = 440): string[] => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return text.split('\n');
+  }
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return text.split('\n');
+  ctx.font = font;
+
+  const paragraphs = text.split('\n');
+  const allLines: string[] = [];
+
+  paragraphs.forEach((para) => {
+    if (para === '') {
+      allLines.push('');
+      return;
+    }
+
+    const words = para.split(' ');
+    let currentLine: string | null = null;
+
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      const testLine: string = currentLine !== null ? currentLine + ' ' + word : word;
+      const testWidth = ctx.measureText(testLine).width;
+
+      if (testWidth > width) {
+        if (currentLine !== null) {
+          allLines.push(currentLine);
+          currentLine = word;
+        } else {
+          // Force split a word that is wider than the width
+          let wordPart = '';
+          for (let j = 0; j < word.length; j++) {
+            const char = word[j];
+            const testWordPart = wordPart + char;
+            if (ctx.measureText(testWordPart).width > width) {
+              if (wordPart) {
+                allLines.push(wordPart);
+                wordPart = char;
+              } else {
+                allLines.push(char);
+                wordPart = '';
+              }
+            } else {
+              wordPart = testWordPart;
+            }
+          }
+          currentLine = wordPart;
+        }
+      } else {
+        currentLine = testLine;
+      }
+    }
+    if (currentLine !== null) {
+      allLines.push(currentLine);
+    }
+  });
+
+  return allLines;
+};
+
 export default function MailingPage() {
   const [readerScale, setReaderScale] = useState(1);
   useEffect(() => {
@@ -570,36 +632,19 @@ export default function MailingPage() {
     const initialY = attachments.find(a => a.id === id)?.y || 0;
 
     const handlePointerMove = (moveEvent: PointerEvent) => {
-      const dx = moveEvent.clientX - startX;
-      const dy = moveEvent.clientY - startY;
-      const pctX = initialX + (dx / rect.width) * 100;
+      const dx = (moveEvent.clientX - startX) / composerScale;
+      const dy = (moveEvent.clientY - startY) / composerScale;
       
-      const initialY_px = (initialY / 100) * rect.height;
+      const unscaledWidth = rect.width / composerScale;
+      const unscaledHeight = rect.height / composerScale;
+      
+      const pctX = initialX + (dx / unscaledWidth) * 100;
+      
+      const initialY_px = (initialY / 100) * unscaledHeight;
       const Y_px = initialY_px + dy;
       const L = Math.max(0, Math.round(Y_px / 29.5));
       
-      const paragraphs = letterContent.split("\n");
-      const allLinesCount: string[] = [];
-      const charsPerLine = 60;
-      paragraphs.forEach((para) => {
-        if (para.trim() === "") {
-          allLinesCount.push("");
-          return;
-        }
-        const words = para.split(" ");
-        let currentLine = "";
-        words.forEach((word) => {
-          if ((currentLine + " " + word).length > charsPerLine) {
-            allLinesCount.push(currentLine);
-            currentLine = word;
-          } else {
-            currentLine = currentLine ? currentLine + " " + word : word;
-          }
-        });
-        if (currentLine) {
-          allLinesCount.push(currentLine);
-        }
-      });
+      const allLinesCount = getLinesOfText(letterContent);
       const totalLinesCount = allLinesCount.length;
       const editorRows = Math.max(textareaRows, totalLinesCount);
       
@@ -627,7 +672,7 @@ export default function MailingPage() {
     const initialWidth = attachment.width || 80;
 
     const handlePointerMove = (moveEvent: PointerEvent) => {
-      const dx = moveEvent.clientX - startX;
+      const dx = (moveEvent.clientX - startX) / composerScale;
       const newWidth = Math.max(40, Math.min(300, initialWidth + dx));
       setAttachments(prev => prev.map(a => a.id === id ? { ...a, width: newWidth } : a));
     };
@@ -855,29 +900,7 @@ export default function MailingPage() {
     await preloadImages(bgImages);
     
     // Split the text into lines first to check the total count
-    const paragraphs = activeLetter.content.split("\n");
-    const allLines: string[] = [];
-    const charsPerLine = 60;
-    paragraphs.forEach((para) => {
-      if (para.trim() === "") {
-        allLines.push("");
-        return;
-      }
-      const words = para.split(" ");
-      let currentLine = "";
-      words.forEach((word) => {
-        if ((currentLine + " " + word).length > charsPerLine) {
-          allLines.push(currentLine);
-          currentLine = word;
-        } else {
-          currentLine = currentLine ? currentLine + " " + word : word;
-        }
-      });
-      if (currentLine) {
-        allLines.push(currentLine);
-      }
-    });
-
+    const allLines = getLinesOfText(activeLetter.content);
     const totalLines = allLines.length;
     let pagesContent: string[] = [];
 
@@ -2491,28 +2514,7 @@ export default function MailingPage() {
                           
                           {/* Draggable attachments */}
                           {attachments.map(a => {
-                            const paragraphs = letterContent.split("\n");
-                            const allLinesCount: string[] = [];
-                            const charsPerLine = 60;
-                            paragraphs.forEach((para) => {
-                              if (para.trim() === "") {
-                                allLinesCount.push("");
-                                return;
-                              }
-                              const words = para.split(" ");
-                              let currentLine = "";
-                              words.forEach((word) => {
-                                if ((currentLine + " " + word).length > charsPerLine) {
-                                  allLinesCount.push(currentLine);
-                                  currentLine = word;
-                                } else {
-                                  currentLine = currentLine ? currentLine + " " + word : word;
-                                }
-                              });
-                              if (currentLine) {
-                                allLinesCount.push(currentLine);
-                              }
-                            });
+                            const allLinesCount = getLinesOfText(letterContent);
                             const totalLinesCount = allLinesCount.length;
                             const editorRows = Math.max(textareaRows, totalLinesCount);
                             const targetLine = Math.min(
@@ -2958,28 +2960,7 @@ export default function MailingPage() {
 
                   {/* Render attachments inside this text-only relative container */}
                   {activeLetter.attachments?.map((a: any) => {
-                    const paragraphs = activeLetter.content.split("\n");
-                    const allLinesCount: string[] = [];
-                    const charsPerLine = 60;
-                    paragraphs.forEach((para) => {
-                      if (para.trim() === "") {
-                        allLinesCount.push("");
-                        return;
-                      }
-                      const words = para.split(" ");
-                      let currentLine = "";
-                      words.forEach((word) => {
-                        if ((currentLine + " " + word).length > charsPerLine) {
-                          allLinesCount.push(currentLine);
-                          currentLine = word;
-                        } else {
-                          currentLine = currentLine ? currentLine + " " + word : word;
-                        }
-                      });
-                      if (currentLine) {
-                        allLinesCount.push(currentLine);
-                      }
-                    });
+                    const allLinesCount = getLinesOfText(activeLetter.content);
                     const totalLinesCount = allLinesCount.length;
                     const editorRows = Math.max(activeLetter.textareaRows || 0, totalLinesCount);
                     const targetLine = Math.min(
