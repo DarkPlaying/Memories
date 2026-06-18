@@ -20,6 +20,14 @@ interface FlipCardProps {
 function FlipCard({ image, title, description, className, style }: FlipCardProps) {
   const [isFlipped, setIsFlipped] = useState(false)
 
+  useEffect(() => {
+    if (!isFlipped) return
+    const timer = setTimeout(() => {
+      setIsFlipped(false)
+    }, 3000)
+    return () => clearTimeout(timer)
+  }, [isFlipped])
+
   return (
     <div
       onClick={() => setIsFlipped(!isFlipped)}
