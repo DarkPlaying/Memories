@@ -75,16 +75,21 @@ const getLetterLockTargetTime = (letter?: any) => {
   return new Date("May 23, 2031 00:00:00").getTime();
 };
 
-const getLinesOfText = (text: string, font: string = "14.5px 'Outfit', sans-serif", width: number = 440): string[] => {
+const getLinesOfText = (text: string, font: string = "400 14.5px 'Outfit', sans-serif", width: number = 440): string[] => {
+  // Strip highlights so they don't count towards the character widths of visual lines
+  const cleanText = text
+    .replace(/\[hl-(yellow|pink|green|blue)\]/gi, "")
+    .replace(/\[\/hl-(yellow|pink|green|blue)\]/gi, "");
+
   if (typeof window === 'undefined' || typeof document === 'undefined') {
-    return text.split('\n');
+    return cleanText.split('\n');
   }
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
-  if (!ctx) return text.split('\n');
+  if (!ctx) return cleanText.split('\n');
   ctx.font = font;
 
-  const paragraphs = text.split('\n');
+  const paragraphs = cleanText.split('\n');
   const allLines: string[] = [];
 
   paragraphs.forEach((para) => {
@@ -2489,7 +2494,7 @@ export default function MailingPage() {
 
                         {/* ruled notebook styled text area wrapper */}
                         <div 
-                          className="relative border border-neutral-850 rounded-md bg-neutral-900/10 p-0 mx-auto w-[440px]" 
+                          className="relative border border-neutral-850 rounded-md bg-neutral-900/10 p-0 mx-auto w-[440px] box-content" 
                           id="composer-paper-parent"
                         >
                           <textarea
@@ -2500,7 +2505,7 @@ export default function MailingPage() {
                             onChange={(e) => setLetterContent(e.target.value)}
                             rows={Math.max(textareaRows, letterContent.split("\n").length)}
                             required
-                            className="w-full resize-none bg-transparent outline-none text-neutral-200 text-[14.5px] font-outfit leading-[29.5px] p-0 select-text"
+                            className="w-full resize-none bg-transparent outline-none border-none text-neutral-200 text-[14.5px] font-outfit leading-[29.5px] p-0 select-text"
                             style={{
                               backgroundImage: "linear-gradient(to bottom, transparent 95%, rgba(139, 92, 246, 0.1) 95%)",
                               backgroundSize: "100% 29.5px",
