@@ -142,6 +142,71 @@ const getLinesOfText = (text: string, font: string = "400 14.5px 'Outfit', sans-
   return allLines;
 };
 
+const convertTagsToHtml = (text: string): string => {
+  if (!text) return "";
+  let escaped = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  
+  const markerColors = ["yellow", "pink", "green", "blue"];
+  markerColors.forEach(color => {
+    const regex = new RegExp(`\\[hl-${color}\\](.*?)\\[\\/hl-${color}\\]`, "gi");
+    escaped = escaped.replace(regex, `<mark class="hl-${color}">$1</mark>`);
+  });
+  return escaped;
+};
+
+const convertHtmlToTags = (html: string): string => {
+  if (!html) return "";
+  if (typeof document === 'undefined') return html;
+  
+  const temp = document.createElement("div");
+  temp.innerHTML = html;
+  
+  let text = "";
+  
+  const walk = (node: Node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      text += node.nodeValue;
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      const el = node as HTMLElement;
+      const tagName = el.tagName.toLowerCase();
+      
+      if (tagName === "mark") {
+        let color = "yellow";
+        if (el.className.includes("hl-pink")) color = "pink";
+        else if (el.className.includes("hl-green")) color = "green";
+        else if (el.className.includes("hl-blue")) color = "blue";
+        
+        text += `[hl-${color}]`;
+        el.childNodes.forEach(walk);
+        text += `[/hl-${color}]`;
+      } else if (tagName === "br") {
+        text += "\n";
+      } else if (tagName === "div" || tagName === "p") {
+        const hasText = el.textContent || el.querySelector("br");
+        if (hasText) {
+          if (text.length > 0 && !text.endsWith("\n")) {
+            text += "\n";
+          }
+          el.childNodes.forEach(walk);
+        } else {
+          text += "\n";
+        }
+      } else {
+        el.childNodes.forEach(walk);
+      }
+    }
+  };
+  
+  temp.childNodes.forEach(walk);
+  
+  const decoder = document.createElement("textarea");
+  decoder.innerHTML = text;
+  return decoder.value;
+};
+
 export default function MailingPage() {
   const [readerScale, setReaderScale] = useState(1);
   useEffect(() => {
@@ -334,6 +399,19 @@ export default function MailingPage() {
     const timer = setTimeout(updateHeight, 50);
     return () => clearTimeout(timer);
   }, [letterContent, openWritePopover]);
+
+  // Initialize contenteditable editor HTML when popover opens or editingLetterId changes
+  useEffect(() => {
+    if (openWritePopover) {
+      const timer = setTimeout(() => {
+        const editor = document.getElementById("letter-textarea");
+        if (editor) {
+          editor.innerHTML = convertTagsToHtml(letterContent);
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [openWritePopover, editingLetterId]);
 
   // Dynamic starry background stars
   const [stars, setStars] = useState<{ x: number; y: number; size: number; duration: number }[]>([]);
@@ -737,29 +815,51 @@ export default function MailingPage() {
   };
 
   const applyHighlight = (color: string) => {
-    const textarea = document.getElementById("letter-textarea") as HTMLTextAreaElement;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const text = textarea.value;
-    const selectedText = text.substring(start, end);
-
-    if (!selectedText) {
-      setComposerError("Please select some text in the sheet to highlight first!");
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+    const range = selection.getRangeAt(0);
+    
+    const editor = document.getElementById("letter-textarea");
+    if (!editor || !editor.contains(range.commonAncestorContainer)) {
+      setComposerError("Please select some text inside the sheet to highlight first!");
       setTimeout(() => setComposerError(null), 4000);
       return;
     }
 
-    const highlighted = `[hl-${color}]${selectedText}[/hl-${color}]`;
-    const newContent = text.substring(0, start) + highlighted + text.substring(end);
+    const selectedText = range.toString().trim();
+    if (!selectedText) {
+      setComposerError("Please select some text inside the sheet to highlight first!");
+      setTimeout(() => setComposerError(null), 4000);
+      return;
+    }
+
+    const mark = document.createElement("mark");
+    mark.className = `hl-${color}`;
     
-    setLetterContent(newContent);
-    
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start, start + highlighted.length);
-    }, 0);
+    try {
+      range.surroundContents(mark);
+    } catch (e) {
+      // Fallback if surroundContents fails (e.g. selection spans multiple nodes)
+      const fragment = range.extractContents();
+      mark.appendChild(fragment);
+      range.insertNode(mark);
+    }
+
+    // Clear selection
+    selection.removeAllRanges();
+
+    // Trigger state update
+    if (editor) {
+      const html = editor.innerHTML;
+      const textWithTags = convertHtmlToTags(html);
+      setLetterContent(textWithTags);
+    }
+  };
+
+  const handleEditorInput = (e: React.FormEvent<HTMLDivElement>) => {
+    const html = e.currentTarget.innerHTML;
+    const textWithTags = convertHtmlToTags(html);
+    setLetterContent(textWithTags);
   };
 
   const renderFormattedContent = (content: string) => {
@@ -2497,21 +2597,18 @@ export default function MailingPage() {
                           className="relative border border-neutral-850 rounded-md bg-neutral-900/10 p-0 mx-auto w-[440px] box-content" 
                           id="composer-paper-parent"
                         >
-                          <textarea
+                          <div
                             id="letter-textarea"
-                            autoFocus
-                            placeholder="Write your lovely words here..."
-                            value={letterContent}
-                            onChange={(e) => setLetterContent(e.target.value)}
-                            rows={Math.max(textareaRows, letterContent.split("\n").length)}
-                            required
-                            className="w-full resize-none bg-transparent outline-none border-none text-neutral-200 text-[14.5px] font-outfit leading-[29.5px] p-0 select-text"
+                            contentEditable
+                            suppressContentEditableWarning
+                            onInput={handleEditorInput}
+                            {...{ placeholder: "Write your lovely words here..." }}
+                            className="w-full bg-transparent outline-none border-none text-neutral-200 text-[14.5px] font-outfit leading-[29.5px] p-0 select-text min-h-[177px] whitespace-pre-wrap break-words empty:before:content-[attr(placeholder)] empty:before:text-neutral-500 empty:before:pointer-events-none"
                             style={{
                               backgroundImage: "linear-gradient(to bottom, transparent 95%, rgba(139, 92, 246, 0.1) 95%)",
                               backgroundSize: "100% 29.5px",
                               backgroundPosition: "0 3px",
                               backgroundAttachment: "local",
-                              overflow: "hidden",
                               lineHeight: "29.5px",
                               fontFamily: "'Outfit', sans-serif",
                             }}
