@@ -386,20 +386,6 @@ export default function MailingPage() {
     }
   }, [filteredLetters.length, currentPage]);
 
-  // Auto-growing textarea height
-  useEffect(() => {
-    const updateHeight = () => {
-      const textarea = document.getElementById("letter-textarea");
-      if (textarea) {
-        textarea.style.height = "auto";
-        textarea.style.height = `${textarea.scrollHeight}px`;
-      }
-    };
-    updateHeight();
-    const timer = setTimeout(updateHeight, 50);
-    return () => clearTimeout(timer);
-  }, [letterContent, openWritePopover]);
-
   // Initialize contenteditable editor HTML when popover opens or editingLetterId changes
   useEffect(() => {
     if (openWritePopover) {
@@ -407,6 +393,8 @@ export default function MailingPage() {
         const editor = document.getElementById("letter-textarea");
         if (editor) {
           editor.innerHTML = convertTagsToHtml(letterContent);
+          const lines = getLinesOfText(letterContent);
+          setTextareaRows(Math.max(6, lines.length));
         }
       }, 50);
       return () => clearTimeout(timer);
@@ -860,6 +848,8 @@ export default function MailingPage() {
     const html = e.currentTarget.innerHTML;
     const textWithTags = convertHtmlToTags(html);
     setLetterContent(textWithTags);
+    const lines = getLinesOfText(textWithTags);
+    setTextareaRows(Math.max(6, lines.length));
   };
 
   const renderFormattedContent = (content: string) => {
@@ -1560,6 +1550,27 @@ export default function MailingPage() {
           padding: 0 4px;
           border-radius: 4px;
           mix-blend-mode: multiply;
+        }
+
+        /* Editor Highlight Overrides for Readability */
+        #letter-textarea .hl-yellow,
+        #letter-textarea .hl-pink,
+        #letter-textarea .hl-green,
+        #letter-textarea .hl-blue {
+          mix-blend-mode: normal !important;
+          color: #0c0c0c !important;
+        }
+        #letter-textarea .hl-yellow {
+          background-color: rgba(250, 240, 137, 0.95) !important;
+        }
+        #letter-textarea .hl-pink {
+          background-color: rgba(246, 173, 198, 0.95) !important;
+        }
+        #letter-textarea .hl-green {
+          background-color: rgba(154, 230, 180, 0.95) !important;
+        }
+        #letter-textarea .hl-blue {
+          background-color: rgba(144, 205, 244, 0.95) !important;
         }
       `}</style>
 
