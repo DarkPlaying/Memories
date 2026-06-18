@@ -833,7 +833,7 @@ export default function MailingPage() {
       return;
     }
 
-    // Check if selection is entirely inside a highlight of the SAME color
+    // Check if selection is inside or contains a highlight of the SAME color
     let isSameColor = false;
     let node = range.commonAncestorContainer;
     if (node.nodeType === Node.TEXT_NODE) {
@@ -842,15 +842,35 @@ export default function MailingPage() {
     const closestMark = (node as HTMLElement).closest?.("mark");
     if (closestMark && closestMark.className === `hl-${color}`) {
       isSameColor = true;
+    } else {
+      const clone = range.cloneContents();
+      if (clone.querySelector(`mark.hl-${color}`)) {
+        isSameColor = true;
+      }
     }
 
     // Extract selected content. Browser automatically splits parent marks!
     const fragment = range.extractContents();
 
     if (isSameColor) {
-      // Toggle off: insert the plain text back, removing the highlight for this selection
-      const textNode = document.createTextNode(fragment.textContent || "");
-      range.insertNode(textNode);
+      // Toggle off: remove only target color highlights from extracted fragment, and insert back
+      const temp = document.createElement("div");
+      temp.appendChild(fragment);
+      
+      const targetMarks = temp.querySelectorAll(`mark.hl-${color}`);
+      targetMarks.forEach(m => {
+        const p = m.parentNode;
+        if (p) {
+          while (m.firstChild) {
+            p.insertBefore(m.firstChild, m);
+          }
+          p.removeChild(m);
+        }
+      });
+      
+      while (temp.firstChild) {
+        range.insertNode(temp.firstChild);
+      }
     } else {
       // Add or Override color:
       // Remove any existing mark tags inside the extracted fragment to prevent nesting
