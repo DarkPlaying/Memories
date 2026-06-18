@@ -2458,13 +2458,43 @@ export default function MailingPage() {
                           />
                           
                           {/* Draggable attachments */}
-                          {attachments.map(a => (
-                            <div 
-                              key={a.id}
-                              style={{ left: `${a.x}%`, top: `${a.y}%` }}
-                              className="absolute z-20 cursor-move group select-none touch-none"
-                              onPointerDown={(e) => handlePointerDown(e, a.id)}
-                            >
+                          {attachments.map(a => {
+                            const paragraphs = letterContent.split("\n");
+                            const allLinesCount: string[] = [];
+                            const charsPerLine = 60;
+                            paragraphs.forEach((para) => {
+                              if (para.trim() === "") {
+                                allLinesCount.push("");
+                                return;
+                              }
+                              const words = para.split(" ");
+                              let currentLine = "";
+                              words.forEach((word) => {
+                                if ((currentLine + " " + word).length > charsPerLine) {
+                                  allLinesCount.push(currentLine);
+                                  currentLine = word;
+                                } else {
+                                  currentLine = currentLine ? currentLine + " " + word : word;
+                                }
+                              });
+                              if (currentLine) {
+                                allLinesCount.push(currentLine);
+                              }
+                            });
+                            const totalLinesCount = allLinesCount.length;
+                            const editorRows = Math.max(textareaRows, totalLinesCount);
+                            const targetLine = Math.min(
+                              Math.max(0, totalLinesCount - 1),
+                              Math.round((a.y / 100) * editorRows)
+                            );
+                            
+                            return (
+                              <div 
+                                key={a.id}
+                                style={{ left: `${a.x}%`, top: `${targetLine * 29.5}px` }}
+                                className="absolute z-20 cursor-move group select-none touch-none"
+                                onPointerDown={(e) => handlePointerDown(e, a.id)}
+                              >
                               <div className="relative">
                                 <img 
                                   src={a.src} 
@@ -2492,7 +2522,8 @@ export default function MailingPage() {
                                 </div>
                               </div>
                             </div>
-                          ))}
+                          );
+                        })}
                         </div>
 
                         {/* Editable Signature Section */}
@@ -2894,20 +2925,51 @@ export default function MailingPage() {
                   />
 
                   {/* Render attachments inside this text-only relative container */}
-                  {activeLetter.attachments?.map((a: any) => (
-                    <div 
-                      key={a.id}
-                      style={{ left: `${a.x}%`, top: `${a.y}%` }}
-                      className="absolute z-20 pointer-events-none select-none"
-                    >
-                      <img 
-                        src={a.src} 
-                        draggable="false" 
-                        style={{ width: `${a.width || 80}px`, height: "auto" }}
-                        className="object-contain rounded shadow-lg border border-[#EADEC9]" 
-                      />
-                    </div>
-                  ))}
+                  {activeLetter.attachments?.map((a: any) => {
+                    const paragraphs = activeLetter.content.split("\n");
+                    const allLinesCount: string[] = [];
+                    const charsPerLine = 60;
+                    paragraphs.forEach((para) => {
+                      if (para.trim() === "") {
+                        allLinesCount.push("");
+                        return;
+                      }
+                      const words = para.split(" ");
+                      let currentLine = "";
+                      words.forEach((word) => {
+                        if ((currentLine + " " + word).length > charsPerLine) {
+                          allLinesCount.push(currentLine);
+                          currentLine = word;
+                        } else {
+                          currentLine = currentLine ? currentLine + " " + word : word;
+                        }
+                      });
+                      if (currentLine) {
+                        allLinesCount.push(currentLine);
+                      }
+                    });
+                    const totalLinesCount = allLinesCount.length;
+                    const editorRows = Math.max(activeLetter.textareaRows || 0, totalLinesCount);
+                    const targetLine = Math.min(
+                      Math.max(0, totalLinesCount - 1),
+                      Math.round((a.y / 100) * editorRows)
+                    );
+                    
+                    return (
+                      <div 
+                        key={a.id}
+                        style={{ left: `${a.x}%`, top: `${targetLine * 29.5}px` }}
+                        className="absolute z-20 pointer-events-none select-none"
+                      >
+                        <img 
+                          src={a.src} 
+                          draggable="false" 
+                          style={{ width: `${a.width || 80}px`, height: "auto" }}
+                          className="object-contain rounded shadow-lg border border-[#EADEC9]" 
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
                 
                 {activeLetter.signature && (
