@@ -789,7 +789,7 @@ export default function MailingPage() {
     const formattedDate = `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}/${date.getFullYear()}`;
     
     // Preload background images to ensure they render in html-to-image
-    const bgImages = ["/love_letter_bg_1.jpg", "/love_letter_bg_2.jpg", "/love_letter_bg_3.jpg", "/stamp.png"];
+    const bgImages = ["/love_letter_bg_1.jpg", "/love_letter_bg_2.jpg", "/stamp.png"];
     if (activeLetter.signature) {
       bgImages.push(activeLetter.signature);
     }
