@@ -1571,17 +1571,6 @@ export default function MailingPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      setLoginState("reset-password-master");
-                      setMasterPasswordInput("");
-                      setMasterPasswordError("");
-                    }}
-                    className="w-full text-center text-xs text-purple-400 hover:text-purple-300 font-outfit cursor-pointer transition mt-1"
-                  >
-                    Forgot or Reset Password?
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
                       setLoginState("select-profile");
                       setLoginPasswordInput("");
                       setLoginPasswordError("");
