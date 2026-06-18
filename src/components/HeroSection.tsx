@@ -335,12 +335,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [memories, setMemories] = useState<string[]>([]);
   const [isPlayingMusic, setIsPlayingMusic] = useState(false);
-  const [isMutedByUser, setIsMutedByUser] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("isMutedByUser") === "true";
-    }
-    return false;
-  });
+  const [isMutedByUser, setIsMutedByUser] = useState(false);
   const [showCompletionPopup, setShowCompletionPopup] = useState(false);
 
   // Autoplay states
@@ -364,8 +359,13 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
 
   // Watch for story complete removed to support manual scroll gesture detent unlock at final frame
 
-  // Fetch memory photos from recursive API
+  // Fetch memory photos from recursive API and load mute state
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const muted = localStorage.getItem("isMutedByUser") === "true";
+      setIsMutedByUser(muted);
+    }
+
     async function loadGallery() {
       try {
         const res = await fetch("/api/memories");
@@ -492,6 +492,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
     if (isPreloading || isParentLoading) return;
 
     let touchStartY = 0;
+    let touchAccumulator = 0;
 
     const handleWheel = (e: WheelEvent) => {
       // If unlocked and scrolled down, let standard browser scroll happen normally
@@ -520,13 +521,13 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
       const currentChapter = CHAPTERS[activeChapterIndex];
       const chapterLength = currentChapter ? (currentChapter.endFrame - currentChapter.startFrame + 1) : 100;
 
-      let threshold = 40;
+      let threshold = 10;
       if (chapterLength < 30) {
-        threshold = 180; // Shorter chapters scroll much slower (4.5x more scroll effort per frame)
+        threshold = 30; // Shorter chapters scroll much faster now
       } else if (chapterLength < 60) {
-        threshold = 110; // Medium-short chapters scroll 2.75x slower
+        threshold = 20;
       } else if (chapterLength < 100) {
-        threshold = 70;  // Moderately short chapters scroll 1.75x slower
+        threshold = 15;
       }
 
       if (Math.abs(scrollAccumulatorRef.current) >= threshold) {
@@ -551,6 +552,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
 
     const handleTouchStart = (e: TouchEvent) => {
       touchStartY = e.touches[0].clientY;
+      touchAccumulator = 0;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
@@ -577,22 +579,28 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
       setIsAutoplay(false); // Pause autoplay immediately on manual touch swipe scrub!
       const touchY = e.touches[0].clientY;
       const diffY = touchStartY - touchY; // Swipe up moves forward (diffY > 0)
+      touchStartY = touchY; // Update base Y for next touchmove
 
-      if (Math.abs(diffY) > 8) {
-        // Adjust touch sensitivity dynamically based on active chapter's length
-        const currentChapter = CHAPTERS[activeChapterIndex];
-        const chapterLength = currentChapter ? (currentChapter.endFrame - currentChapter.startFrame + 1) : 100;
+      // Adjust touch sensitivity dynamically based on active chapter's length
+      const currentChapter = CHAPTERS[activeChapterIndex];
+      const chapterLength = currentChapter ? (currentChapter.endFrame - currentChapter.startFrame + 1) : 100;
 
-        let touchSensitivity = 0.10;
-        if (chapterLength < 30) {
-          touchSensitivity = 0.02; // Very slow swipe for short chapters
-        } else if (chapterLength < 60) {
-          touchSensitivity = 0.04;
-        } else if (chapterLength < 100) {
-          touchSensitivity = 0.07;
-        }
+      let touchSensitivity = 0.45; // Significantly higher base sensitivity for mobile response
+      if (chapterLength < 30) {
+        touchSensitivity = 0.15;
+      } else if (chapterLength < 60) {
+        touchSensitivity = 0.25;
+      } else if (chapterLength < 100) {
+        touchSensitivity = 0.35;
+      }
 
-        const frameDelta = Math.round(diffY * touchSensitivity);
+      // Accumulate touch drag delta to maintain float precision between touchmove events
+      touchAccumulator += diffY * touchSensitivity;
+
+      if (Math.abs(touchAccumulator) >= 1) {
+        const frameDelta = Math.sign(touchAccumulator) * Math.floor(Math.abs(touchAccumulator));
+        touchAccumulator = touchAccumulator % 1;
+
         setVirtualFrame(prev => {
           const next = prev + frameDelta;
           if (next >= TOTAL_FRAMES) {
@@ -605,7 +613,6 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
           }
           return Math.max(1, next);
         });
-        touchStartY = touchY;
       }
     };
 
@@ -910,8 +917,8 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
   const handleUnlock = () => {
     setIsUnlocked(true);
 
-    // Play romantic background music on interaction
-    if (audioRef.current) {
+    // Play romantic background music on interaction if not muted by user
+    if (audioRef.current && !isMutedByUser) {
       audioRef.current.play()
         .then(() => setIsPlayingMusic(true))
         .catch(err => console.log("Audio play blocked by browser:", err));
@@ -1039,9 +1046,9 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
         <div className="absolute top-3 left-3 sm:top-6 sm:left-6 z-40 flex items-center gap-2 sm:gap-3 pointer-events-auto select-none">
           <motion.div
             whileHover={{ scale: 1.08, rotate: 5 }}
-            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-white/10 bg-black/40 backdrop-blur-md overflow-hidden flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.3)] hover:border-[#ff0050]/40 hover:shadow-[0_0_15px_rgba(255,0,80,0.4)] transition-all cursor-pointer"
+            className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border border-white/10 bg-black/40 backdrop-blur-md overflow-hidden flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.3)] hover:border-[#ff0050]/40 hover:shadow-[0_0_15px_rgba(255,0,80,0.4)] transition-all cursor-pointer"
           >
-            <img src="/f.png" alt="Logo" className="w-5 h-5 sm:w-7 sm:h-7 object-contain" />
+            <img src="/stamp.png" alt="Logo" className="w-9 h-9 sm:w-12 sm:h-12 object-contain" />
           </motion.div>
           <span className="hidden sm:inline-block font-outfit uppercase tracking-[0.2em] text-[10px] text-white/70 font-semibold drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
             Our Memories

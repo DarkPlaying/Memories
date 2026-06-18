@@ -19,9 +19,9 @@ export const metadata: Metadata = {
   title: "Our Story '26",
   description: "A beautiful gallery of our sweetest moments and cherished memories together.",
   icons: {
-    icon: "/f.png",
-    shortcut: "/f.png",
-    apple: "/f.png",
+    icon: "/stamp.png",
+    shortcut: "/stamp.png",
+    apple: "/stamp.png",
   }
 };
 

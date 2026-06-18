@@ -44,12 +44,15 @@ export async function getCroppedImg(imageSrc: string, pixelCrop: any, rotation =
   canvas.height = pixelCrop.height;
   ctx.putImageData(data, 0, 0);
 
-  return canvas.toDataURL("image/png");
+  return canvas.toDataURL("image/jpeg", 0.7);
 }
 
 interface ImageCropperProps {
   initialImageSrc?: string | null;
-  onCropSave?: (croppedUrl: string) => void;
+  onCropSave?: (
+    croppedUrl: string,
+    cropDetails: { x: number; y: number; width: number; height: number; zoom: number; rotation: number }
+  ) => void;
   onCancel?: () => void;
 }
 
@@ -89,7 +92,14 @@ export default function ImageCropper({
     try {
       const cropped = await getCroppedImg(imageSrc, croppedAreaPixels, rotation);
       if (onCropSave && cropped) {
-        onCropSave(cropped);
+        onCropSave(cropped, {
+          x: croppedAreaPixels.x,
+          y: croppedAreaPixels.y,
+          width: croppedAreaPixels.width,
+          height: croppedAreaPixels.height,
+          zoom,
+          rotation
+        });
       }
     } catch (e) {
       console.error(e);

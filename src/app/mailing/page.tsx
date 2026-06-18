@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Mail, Calendar, FileText, Trash2, Download, Eye, EyeOff, LogOut, Globe } from "lucide-react";
 import { Github, Linkedin, Twitter } from "@/components/ui/brand-icons";
-import { collection, addDoc, getDocs, orderBy, query, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs, orderBy, query, doc, updateDoc, deleteDoc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { MailboxFullState } from "@/components/ui/state";
 import { PopoverForm } from "@/components/ui/popover-form";
@@ -20,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { toPng } from "html-to-image";
+import { toPng, toJpeg } from "html-to-image";
 import { jsPDF } from "jspdf";
 
 import { ProfileSelector, ProfileIcon } from "@/components/ui/profile-selector";
@@ -30,6 +30,8 @@ import { GlassmorphismProfileCard } from "@/components/ui/profile-card-1";
 import { EventCountdownCard } from "@/components/ui/event-countdown-card";
 import { AlertCard } from "@/components/ui/alert-card";
 import { MorphingCardStack } from "@/components/ui/morphing-card-stack";
+import ImageCropper from "@/components/ui/image-cropper";
+import { hashPassword } from "@/lib/password-security";
 
 
 type PageState = "landing" | "visit" | "loading-visit";
@@ -65,6 +67,7 @@ interface UserProfile {
   actionButton: { text: string; href: string };
   password?: string;
   avatarAdjust?: { scale: number; x: number; y: number };
+  avatarCrop?: { x: number; y: number; width: number; height: number; zoom: number; rotation: number };
 }
 
 const getLetterLockTargetTime = (letter?: any) => {
@@ -93,8 +96,34 @@ export default function MailingPage() {
   const [isDefaultSignatureSet, setIsDefaultSignatureSet] = useState(false);
 
   // Profile selection & login state hooks
-  const [loggedInUser, setLoggedInUser] = useState<UserProfile | null>(null);
-  const [profiles, setProfiles] = useState<UserProfile[]>([]);
+  const [loggedInUser, setLoggedInUser] = useState<UserProfile | null>(() => {
+    if (typeof window !== "undefined") {
+      const savedProfiles = localStorage.getItem("user_profiles");
+      const savedUserId = sessionStorage.getItem("logged_in_user_id");
+      if (savedProfiles && savedUserId) {
+        try {
+          const parsed = JSON.parse(savedProfiles) as UserProfile[];
+          return parsed.find(p => p.id === savedUserId) || null;
+        } catch (e) {
+          return null;
+        }
+      }
+    }
+    return null;
+  });
+  const [profiles, setProfiles] = useState<UserProfile[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("user_profiles");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          return [];
+        }
+      }
+    }
+    return [];
+  });
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [loginState, setLoginState] = useState<"select-profile" | "enter-password" | "set-password-enter" | "set-password-confirm" | "master-password" | "add-profile" | "reset-password-master" | "reset-password-new">("select-profile");
 
@@ -116,6 +145,9 @@ export default function MailingPage() {
   const [newProfileTwitter, setNewProfileTwitter] = useState("");
   const [newProfileBtnText, setNewProfileBtnText] = useState("Contact Me");
   const [newProfileBtnHref, setNewProfileBtnHref] = useState("#");
+  const [newProfileCrop, setNewProfileCrop] = useState<{ x: number; y: number; width: number; height: number; zoom: number; rotation: number } | undefined>(undefined);
+  const [showCreateCropModal, setShowCreateCropModal] = useState(false);
+  const [createUploadImageSrc, setCreateUploadImageSrc] = useState<string | null>(null);
 
   const [isDetailedCardOpen, setIsDetailedCardOpen] = useState(false);
 
@@ -166,7 +198,7 @@ export default function MailingPage() {
 
   const handleEditLetter = (letter: Letter) => {
     const targetTime = getLetterLockTargetTime(letter);
-    const isLocked = letter.isEternal && (Date.now() < targetTime);
+    const isLocked = letter.isEternal && (Date.now() < targetTime) && (letter.senderId ? letter.senderId !== loggedInUser?.id : false);
     if (isLocked) {
       setLockedLetter(letter);
       setCountdownSource("grid");
@@ -214,6 +246,20 @@ export default function MailingPage() {
     }
   };
 
+  // Define a function to validate master password in Firebase
+  const validateMasterPasswordInFirebase = async (passwordInput: string): Promise<boolean> => {
+    try {
+      const uniqueId = Math.random().toString(36).substring(2, 15);
+      const verifyRef = doc(db, "validation", `check_${uniqueId}`);
+      await setDoc(verifyRef, { password: passwordInput });
+      await deleteDoc(verifyRef);
+      return true;
+    } catch (error) {
+      console.error("Master password validation failed in Firebase:", error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     setIsMobile(window.innerWidth < 640);
     const handleResize = () => setIsMobile(window.innerWidth < 640);
@@ -237,70 +283,104 @@ export default function MailingPage() {
     }));
     setStars(generatedStars);
 
-    // Initialize/Retrieve User Profiles
-    const savedProfilesStr = localStorage.getItem("user_profiles");
-    let currentProfiles: UserProfile[] = [];
-    if (savedProfilesStr) {
-      currentProfiles = JSON.parse(savedProfilesStr);
-      // Migrate/Shorten long default title/bio texts to fit visually
-      currentProfiles = currentProfiles.map(p => {
-        if (p.id === "sanjay") {
-          if (p.title === "Aspiring Software Developer & Cybersecurity Enthusiast" || p.title === "ASPIRING SOFTWARE DEVELOPER & CYBERSECUI") {
-            p.title = "Software Developer & Cybersecurity";
-          }
-          if (p.bio.startsWith("Aspiring Software Developer & Cybersecurity Enthusiast")) {
-            p.bio = "Software Developer & Cybersecurity Enthusiast with practical experience in React, Python, and security bug hunting.";
-          }
-        }
-        if (p.id === "divya") {
-          if (p.bio.startsWith("Dedicated and hardworking student")) {
-            p.bio = "Dedicated student pursuing B.Sc. Computer Science at Vel Tech. Passionate about coding, learning, and collaborating on meaningful projects.";
-          }
-        }
-        return p;
-      });
-      localStorage.setItem("user_profiles", JSON.stringify(currentProfiles));
-      setProfiles(currentProfiles);
-    } else {
-      const defaultProfiles: UserProfile[] = [
-        {
-          id: "sanjay",
-          name: "Sanjay M",
-          avatarUrl: "/3d images/me.png",
-          title: "Software Developer & Cybersecurity",
-          bio: "Software Developer & Cybersecurity Enthusiast with practical experience in React, Python, and security bug hunting.",
-          socials: { 
-            github: "https://github.com/DarkPlaying", 
-            linkedin: "https://www.linkedin.com/in/m-sanjay-105623258/" 
-          },
-          actionButton: { text: "Contact Me", href: "mailto:sanjaymofficialmail@gmail.com" }
-        },
-        {
-          id: "divya",
-          name: "Divya Bharathi S",
-          avatarUrl: "/3d images/her.jpeg",
-          title: "Learner | Coder | Creator",
-          bio: "Dedicated student pursuing B.Sc. Computer Science at Vel Tech. Passionate about coding, learning, and collaborating on meaningful projects.",
-          socials: { 
-            github: "https://github.com/", 
-            linkedin: "" 
-          },
-          actionButton: { text: "Email Me", href: "mailto:divya20051123@gmail.com" }
-        }
-      ];
-      currentProfiles = defaultProfiles;
-      setProfiles(defaultProfiles);
-      localStorage.setItem("user_profiles", JSON.stringify(defaultProfiles));
-    }
+    // Initialize/Retrieve User Profiles and Master Password from Firestore
+    const initializeProfilesAndSecurity = async () => {
+      try {
+        // 1. Initialize Master Password in Firestore if not present (non-blocking background task)
+        const configRef = doc(db, "config", "security");
+        setDoc(configRef, { masterPassword: "Dark1123@#" }).then(() => {
+          console.log("Initialized default master password in Firestore.");
+        }).catch((e) => {
+          console.log("Master password document already exists or is locked.");
+        });
 
-    // Load active session
-    const savedUserId = sessionStorage.getItem("logged_in_user_id");
-    if (savedUserId) {
-      const user = currentProfiles.find(p => p.id === savedUserId);
-      if (user) {
-        setLoggedInUser(user);
+        // 2. Load Profiles
+        const querySnapshot = await getDocs(collection(db, "profiles"));
+        let fetchedProfiles: UserProfile[] = [];
+        if (!querySnapshot.empty) {
+          querySnapshot.forEach((doc) => {
+            fetchedProfiles.push({ id: doc.id, ...doc.data() } as UserProfile);
+          });
+        } else {
+          // Initialize with default profiles
+          const defaultProfiles: UserProfile[] = [
+            {
+              id: "sanjay",
+              name: "Sanjay M",
+              avatarUrl: "/3d images/me.png",
+              title: "Software Developer & Cybersecurity",
+              bio: "Software Developer & Cybersecurity Enthusiast with practical experience in React, Python, and security bug hunting.",
+              socials: { 
+                github: "https://github.com/DarkPlaying", 
+                linkedin: "https://www.linkedin.com/in/m-sanjay-105623258/" 
+              },
+              actionButton: { text: "Contact Me", href: "mailto:sanjaymofficialmail@gmail.com" }
+            },
+            {
+              id: "divya",
+              name: "Divya Bharathi S",
+              avatarUrl: "/3d images/her.jpeg",
+              title: "Learner | Coder | Creator",
+              bio: "Dedicated student pursuing B.Sc. Computer Science at Vel Tech. Passionate about coding, learning, and collaborating on meaningful projects.",
+              socials: { 
+                github: "https://github.com/", 
+                linkedin: "" 
+              },
+              actionButton: { text: "Email Me", href: "mailto:divya20051123@gmail.com" }
+            }
+          ];
+          for (const p of defaultProfiles) {
+            const { id, ...data } = p;
+            await setDoc(doc(db, "profiles", id), data);
+          }
+          fetchedProfiles = defaultProfiles;
+        }
+
+        // Apply migrations to fetchedProfiles if necessary
+        fetchedProfiles = fetchedProfiles.map(p => {
+          if (p.id === "sanjay") {
+            if (p.title === "Aspiring Software Developer & Cybersecurity Enthusiast" || p.title === "ASPIRING SOFTWARE DEVELOPER & CYBERSECUI") {
+              p.title = "Software Developer & Cybersecurity";
+            }
+            if (p.bio.startsWith("Aspiring Software Developer & Cybersecurity Enthusiast")) {
+              p.bio = "Software Developer & Cybersecurity Enthusiast with practical experience in React, Python, and security bug hunting.";
+            }
+          }
+          if (p.id === "divya") {
+            if (p.bio.startsWith("Dedicated and hardworking student")) {
+              p.bio = "Dedicated student pursuing B.Sc. Computer Science at Vel Tech. Passionate about coding, learning, and collaborating on meaningful projects.";
+            }
+          }
+          return p;
+        });
+
+        setProfiles(fetchedProfiles);
+        localStorage.setItem("user_profiles", JSON.stringify(fetchedProfiles));
+
+        // Load active session
+        const savedUserId = sessionStorage.getItem("logged_in_user_id");
+        if (savedUserId) {
+          const user = fetchedProfiles.find(p => p.id === savedUserId);
+          if (user) {
+            setLoggedInUser(user);
+          }
+        }
+      } catch (error) {
+        console.error("Error initializing profiles/config from firestore:", error);
+        // Fallback to local storage
+        const savedProfilesStr = localStorage.getItem("user_profiles");
+        if (savedProfilesStr) {
+          const localParsed = JSON.parse(savedProfilesStr);
+          setProfiles(localParsed);
+          const savedUserId = sessionStorage.getItem("logged_in_user_id");
+          if (savedUserId) {
+            const user = localParsed.find((p: any) => p.id === savedUserId);
+            if (user) setLoggedInUser(user);
+          }
+        }
       }
-    }
+    };
+    initializeProfilesAndSecurity();
 
     // Background prefetch letters on mount
     const prefetchLetters = async () => {
@@ -348,7 +428,7 @@ export default function MailingPage() {
 
   const handleOpenLetter = (letter: Letter) => {
     const targetTime = getLetterLockTargetTime(letter);
-    const isLocked = letter.isEternal && (Date.now() < targetTime);
+    const isLocked = letter.isEternal && (Date.now() < targetTime) && (letter.senderId ? letter.senderId !== loggedInUser?.id : false);
     
     if (isLocked) {
       setLockedLetter(letter);
@@ -537,46 +617,424 @@ export default function MailingPage() {
     return { __html: escaped };
   };
 
-  const downloadLetterPdf = async () => {
-    const node = document.getElementById("letter-paper-content-inner");
-    if (!node) return;
-    try {
-      const dataUrl = await toPng(node, {
-        cacheBust: true,
-        backgroundColor: "#FCFBF9",
-        pixelRatio: 3,
-      });
-      const img = new Image();
-      img.onload = () => {
-        const pdf = new jsPDF("p", "pt", "a4");
-        const pdfWidth = 595.28;
-        const pdfHeight = 841.89;
-        const pageHeightInPixels = (img.width / pdfWidth) * pdfHeight;
-        let yOffset = 0;
-        let pageNum = 0;
-        while (yOffset < img.height) {
-          if (pageNum > 0) pdf.addPage();
-          const canvas = document.createElement("canvas");
-          canvas.width = img.width;
-          canvas.height = pageHeightInPixels;
-          const currentSliceHeight = Math.min(pageHeightInPixels, img.height - yOffset);
-          const ctx = canvas.getContext("2d");
-          if (ctx) {
-            ctx.fillStyle = "#FCFBF9";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, yOffset, img.width, currentSliceHeight, 0, 0, img.width, currentSliceHeight);
-          }
-          const sliceDataUrl = canvas.toDataURL("image/jpeg", 0.95);
-          pdf.addImage(sliceDataUrl, "JPEG", 0, 0, pdfWidth, pdfHeight);
-          yOffset += pageHeightInPixels;
-          pageNum++;
+  const preloadImages = (urls: string[]) => {
+    return Promise.all(
+      urls.map((url) => {
+        return new Promise<void>((resolve) => {
+          const img = new Image();
+          img.src = url;
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+        });
+      })
+    );
+  };
+
+  const paginateTextIntoPages = (text: string, maxLinesPage1: number = 24, maxLinesPage2: number = 29) => {
+    const paragraphs = text.split("\n");
+    const allLines: string[] = [];
+    const charsPerLine = 72; // Average character limit for 600px width at 14.5px font-size
+
+    paragraphs.forEach((para) => {
+      if (para.trim() === "") {
+        allLines.push("");
+        return;
+      }
+      const words = para.split(" ");
+      let currentLine = "";
+      words.forEach((word) => {
+        if ((currentLine + " " + word).length > charsPerLine) {
+          allLines.push(currentLine);
+          currentLine = word;
+        } else {
+          currentLine = currentLine ? currentLine + " " + word : word;
         }
-        pdf.save(`Letter-${activeLetter?.id || "memory"}.pdf`);
-      };
-      img.src = dataUrl;
+      });
+      if (currentLine) {
+        allLines.push(currentLine);
+      }
+    });
+
+    const pages: string[] = [];
+    
+    // Page 1
+    pages.push(allLines.slice(0, maxLinesPage1).join("\n"));
+    
+    // Page 2 and subsequent pages
+    let remainingLines = allLines.slice(maxLinesPage1);
+    while (remainingLines.length > 0) {
+      pages.push(remainingLines.slice(0, maxLinesPage2).join("\n"));
+      remainingLines = remainingLines.slice(maxLinesPage2);
+    }
+
+    // Ensure we always have at least 2 pages (so date and signature are on Page 2)
+    if (pages.length < 2) {
+      pages.push("");
+    }
+    
+    return pages;
+  };
+
+  const downloadLetterPdf = async () => {
+    if (!activeLetter) return;
+    
+    // Get sender and recipient names with smart fallbacks
+    let senderNameRaw = profiles.find(p => p.id === activeLetter.senderId)?.name;
+    let recipientNameRaw = profiles.find(p => p.id === activeLetter.recipientId)?.name;
+    
+    const senderIdLower = activeLetter.senderId?.toLowerCase();
+    const recipientIdLower = activeLetter.recipientId?.toLowerCase();
+    
+    if (!senderNameRaw) {
+      if (senderIdLower === "sanjay" || recipientIdLower === "divya") {
+        senderNameRaw = "Sanjay M";
+      } else if (senderIdLower === "divya" || recipientIdLower === "sanjay") {
+        senderNameRaw = "Divya Bharathi S";
+      } else {
+        senderNameRaw = "Partner";
+      }
+    }
+    
+    if (!recipientNameRaw) {
+      if (recipientIdLower === "divya" || senderIdLower === "sanjay") {
+        recipientNameRaw = "Divya Bharathi S";
+      } else if (recipientIdLower === "sanjay" || senderIdLower === "divya") {
+        recipientNameRaw = "Sanjay M";
+      } else {
+        recipientNameRaw = "Partner";
+      }
+    }
+    
+    // Clean name formatting for love letters
+    const senderName = (senderNameRaw === "Sanjay M" || senderNameRaw === "Sanjay")
+      ? "Sanjay"
+      : (senderNameRaw === "Divya Bharathi S" || senderNameRaw === "Divya Bharathi")
+        ? "Divya Bharathi"
+        : senderNameRaw;
+        
+    const recipientName = (recipientNameRaw === "Divya Bharathi S" || recipientNameRaw === "Divya Bharathi")
+      ? "Divya Bharathi"
+      : (recipientNameRaw === "Sanjay M" || recipientNameRaw === "Sanjay")
+        ? "Sanjay"
+        : recipientNameRaw;
+    
+    // Get date
+    const date = activeLetter.createdAt 
+      ? new Date((activeLetter.createdAt.seconds || Date.now() / 1000) * 1000)
+      : new Date();
+    const formattedDate = `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}/${date.getFullYear()}`;
+    
+    // Preload background images to ensure they render in html-to-image
+    const bgImages = ["/love_letter_bg_1.jpg", "/love_letter_bg_2.jpg", "/love_letter_bg_3.jpg", "/stamp.png"];
+    if (activeLetter.signature) {
+      bgImages.push(activeLetter.signature);
+    }
+    
+    // Add attachments to preloader
+    activeLetter.attachments?.forEach((a: any) => {
+      bgImages.push(a.src);
+    });
+    
+    await preloadImages(bgImages);
+    
+    // Split the text into lines first to check the total count
+    const paragraphs = activeLetter.content.split("\n");
+    const allLines: string[] = [];
+    const charsPerLine = 72;
+    paragraphs.forEach((para) => {
+      if (para.trim() === "") {
+        allLines.push("");
+        return;
+      }
+      const words = para.split(" ");
+      let currentLine = "";
+      words.forEach((word) => {
+        if ((currentLine + " " + word).length > charsPerLine) {
+          allLines.push(currentLine);
+          currentLine = word;
+        } else {
+          currentLine = currentLine ? currentLine + " " + word : word;
+        }
+      });
+      if (currentLine) {
+        allLines.push(currentLine);
+      }
+    });
+
+    const totalLines = allLines.length;
+    let pagesContent: string[] = [];
+
+    if (totalLines < 15) {
+      // 1-page PDF: Page 1 gets all lines, signature and date are also on Page 1
+      pagesContent.push(allLines.join("\n"));
+    } else {
+      // Multi-page PDF: Page 1 has 19 lines, subsequent non-final pages have 27 lines, final page has 18 lines
+      let remaining = [...allLines];
+      pagesContent.push(remaining.splice(0, 19).join("\n"));
+      
+      while (remaining.length > 0) {
+        if (remaining.length <= 18) {
+          pagesContent.push(remaining.splice(0, 18).join("\n"));
+        } else {
+          pagesContent.push(remaining.splice(0, 27).join("\n"));
+        }
+      }
+      
+      if (pagesContent.length < 2) {
+        pagesContent.push("");
+      }
+    }
+    
+    // Create temporary container
+    const tempContainer = document.createElement("div");
+    tempContainer.style.position = "absolute";
+    tempContainer.style.left = "-9999px";
+    tempContainer.style.top = "-9999px";
+    tempContainer.style.width = "800px";
+    document.body.appendChild(tempContainer);
+    
+    try {
+      const pdf = new jsPDF("p", "pt", "a4");
+      const pdfWidth = 595.28;
+      const pdfHeight = 841.89;
+      
+      for (let i = 0; i < pagesContent.length; i++) {
+        const pageDiv = document.createElement("div");
+        pageDiv.style.position = "relative";
+        pageDiv.style.width = "800px";
+        pageDiv.style.height = "1130px";
+        pageDiv.style.backgroundColor = "#f2eeeb";
+        pageDiv.style.overflow = "hidden";
+        pageDiv.style.boxSizing = "border-box";
+        
+        let bgImg = "/love_letter_bg_2.jpg"; // Default page 2 (blank)
+        if (i === 0) {
+          bgImg = "/love_letter_bg_1.jpg"; // Page 1
+        } else if (i === pagesContent.length - 1) {
+          bgImg = activeLetter.signature ? "/love_letter_bg_2.jpg" : "/love_letter_bg_3.jpg"; // Final page
+        }
+        
+        // Append background image as an absolute img element to ensure precise positioning & prevent shift in html-to-image
+        const bgImgEl = document.createElement("img");
+        bgImgEl.src = bgImg;
+        bgImgEl.style.position = "absolute";
+        bgImgEl.style.left = "0px";
+        bgImgEl.style.top = "0px";
+        bgImgEl.style.width = "800px";
+        bgImgEl.style.height = "1130px";
+        bgImgEl.style.zIndex = "0";
+        pageDiv.appendChild(bgImgEl);
+        
+        // Add names only on Page 1 next to the red lines (positioned precisely over the lines)
+        if (i === 0) {
+          const toDiv = document.createElement("div");
+          toDiv.style.position = "absolute";
+          toDiv.style.left = "165px";
+          toDiv.style.top = "328px"; // Baseline sits right on TO line (Y = 361px)
+          toDiv.style.fontFamily = "'Great Vibes', 'Brush Script MT', cursive";
+          toDiv.style.fontSize = "28px";
+          toDiv.style.color = "#c44d4d";
+          toDiv.style.lineHeight = "1";
+          toDiv.style.whiteSpace = "nowrap";
+          toDiv.style.zIndex = "1";
+          toDiv.innerText = recipientName;
+          pageDiv.appendChild(toDiv);
+          
+          const fromDiv = document.createElement("div");
+          fromDiv.style.position = "absolute";
+          fromDiv.style.left = "195px";
+          fromDiv.style.top = "390px"; // Baseline sits right on FROM line (Y = 423px)
+          fromDiv.style.fontFamily = "'Great Vibes', 'Brush Script MT', cursive";
+          fromDiv.style.fontSize = "28px";
+          fromDiv.style.color = "#c44d4d";
+          fromDiv.style.lineHeight = "1";
+          fromDiv.style.whiteSpace = "nowrap";
+          fromDiv.style.zIndex = "1";
+          fromDiv.innerText = senderName;
+          pageDiv.appendChild(fromDiv);
+        }
+        
+        // Add content (Page 1 starts below headers, Page 2 starts near top)
+        const contentDiv = document.createElement("div");
+        contentDiv.style.position = "absolute";
+        contentDiv.style.left = "160px";
+        contentDiv.style.top = i === 0 ? "485px" : "165px";
+        contentDiv.style.width = "480px";
+        contentDiv.style.height = i === 0 ? "560px" : "820px";
+        contentDiv.style.fontFamily = "'Outfit', sans-serif";
+        contentDiv.style.fontSize = "14.5px";
+        contentDiv.style.lineHeight = "29.5px";
+        contentDiv.style.color = "#000000"; // Black font as requested
+        contentDiv.style.textAlign = "left";
+        contentDiv.style.whiteSpace = "pre-wrap";
+        contentDiv.style.wordBreak = "break-word";
+        contentDiv.style.zIndex = "1";
+        
+        // Add thin black ruled notebook lines to align with the text spacing (first page gets full/longer lines, final page gets capped lines)
+        const lineCount = pagesContent[i].split("\n").length;
+        let lineLimit = lineCount;
+        
+        if (i === 0) {
+          if (pagesContent.length > 1) {
+            lineLimit = 19; // Multi-page: fill entire page 1 content area (19 lines)
+          } else {
+            lineLimit = 14; // Single-page: fill space above signature (14 lines)
+          }
+        } else {
+          if (i < pagesContent.length - 1) {
+            lineLimit = 27; // Non-final page: fill entire page content area (27 lines)
+          } else {
+            lineLimit = lineCount; // Final page: cap at actual text height to prevent overlap with signature
+          }
+        }
+        
+        contentDiv.style.backgroundImage = `repeating-linear-gradient(
+          to bottom,
+          transparent,
+          transparent 28.5px,
+          rgba(0, 0, 0, 0.12) 28.5px,
+          rgba(0, 0, 0, 0.12) 29.5px
+        )`;
+        contentDiv.style.backgroundSize = `100% ${lineLimit * 29.5}px`;
+        contentDiv.style.backgroundRepeat = "no-repeat";
+        contentDiv.style.backgroundAttachment = "local";
+        
+        // Render formatted HTML (to support marker highlights!)
+        const formattedHTML = renderFormattedContent(pagesContent[i]).__html;
+        contentDiv.innerHTML = formattedHTML;
+        pageDiv.appendChild(contentDiv);
+        
+        // Add attachments for this page
+        activeLetter.attachments?.forEach((a: any) => {
+          const isPage1 = i === 0;
+          const isLastPage = i === pagesContent.length - 1;
+          const shouldRenderOnThisPage = (isPage1 && a.y < 45) || (isLastPage && a.y >= 45) || (pagesContent.length > 2 && !isPage1 && !isLastPage && a.y >= 45 && a.y < 75);
+          
+          if (shouldRenderOnThisPage) {
+            const attImg = document.createElement("img");
+            attImg.style.position = "absolute";
+            
+            let relativeY = a.y;
+            if (isPage1) {
+              relativeY = a.y * 2.0;
+            } else {
+              relativeY = (a.y - 45) * 1.8;
+            }
+            relativeY = Math.max(5, Math.min(85, relativeY));
+            
+            attImg.style.left = `${a.x}%`;
+            attImg.style.top = `${relativeY}%`;
+            attImg.style.width = `${a.width || 80}px`;
+            attImg.style.height = "auto";
+            attImg.style.objectFit = "contain";
+            attImg.style.borderRadius = "4px";
+            attImg.style.border = "1px solid #EADEC9";
+            attImg.style.boxShadow = "0 4px 6px rgba(0,0,0,0.15)";
+            attImg.src = a.src;
+            attImg.style.zIndex = "1";
+            pageDiv.appendChild(attImg);
+          }
+        });
+        
+        // Add date and signature on final page
+        if (i === pagesContent.length - 1) {
+          const dateDiv = document.createElement("div");
+          dateDiv.style.position = "absolute";
+          dateDiv.style.left = "160px"; // Aligned with the content left margin
+          dateDiv.style.bottom = "125px"; // Positioned beautifully relative to the bottom edge
+          dateDiv.style.fontFamily = "'Playfair Display', Georgia, serif"; // Elegant serif font as requested
+          dateDiv.style.fontSize = "16px"; // Increased date size as requested
+          dateDiv.style.fontStyle = "italic";
+          dateDiv.style.color = "#c44d4d"; // Red color to match signature
+          dateDiv.style.fontWeight = "bold"; // Bold red date to match the theme
+          dateDiv.style.zIndex = "1";
+          dateDiv.innerText = formattedDate;
+          pageDiv.appendChild(dateDiv);
+          
+          // Render the transparent postmark stamp only on Page 1 in single-page mode
+          // (Multi-page PDF uses love_letter_bg_2/3 which already has the stamp in the background image)
+          if (pagesContent.length === 1) {
+            const stampImg = document.createElement("img");
+            stampImg.src = "/stamp.png";
+            stampImg.style.position = "absolute";
+            stampImg.style.right = "35px";
+            stampImg.style.bottom = "100px";
+            stampImg.style.width = "172px";
+            stampImg.style.height = "123px";
+            stampImg.style.objectFit = "contain";
+            stampImg.style.zIndex = "1";
+            pageDiv.appendChild(stampImg);
+          }
+          
+          if (activeLetter.signature) {
+            const sigImg = document.createElement("img");
+            sigImg.style.position = "absolute";
+            sigImg.style.right = "160px";
+            sigImg.style.bottom = "95px";
+            sigImg.style.height = "60px";
+            sigImg.style.objectFit = "contain";
+            sigImg.style.filter = "brightness(0)";
+            sigImg.style.zIndex = "1";
+            sigImg.src = activeLetter.signature;
+            pageDiv.appendChild(sigImg);
+          } else {
+            // Render default printed signature in HTML only if it is a single-page PDF with no custom signature
+            // (Multi-page PDF uses love_letter_bg_3.jpg which already has this signature printed in the background)
+            if (pagesContent.length === 1) {
+              const partSigDiv = document.createElement("div");
+              partSigDiv.style.position = "absolute";
+              partSigDiv.style.left = "352px";
+              partSigDiv.style.bottom = "144px";
+              partSigDiv.style.fontFamily = "'Great Vibes', 'Brush Script MT', cursive";
+              partSigDiv.style.fontSize = "36px";
+              partSigDiv.style.color = "#c44d4d";
+              partSigDiv.style.lineHeight = "1";
+              partSigDiv.style.textAlign = "center";
+              partSigDiv.style.width = "132px";
+              partSigDiv.style.zIndex = "1";
+              partSigDiv.innerText = "Partner";
+              pageDiv.appendChild(partSigDiv);
+              
+              const lovSigDiv = document.createElement("div");
+              lovSigDiv.style.position = "absolute";
+              lovSigDiv.style.left = "325px";
+              lovSigDiv.style.bottom = "111px";
+              lovSigDiv.style.fontFamily = "'Outfit', sans-serif";
+              lovSigDiv.style.fontSize = "11px";
+              lovSigDiv.style.fontWeight = "bold";
+              lovSigDiv.style.color = "#c44d4d";
+              lovSigDiv.style.letterSpacing = "0.1em";
+              lovSigDiv.style.textAlign = "center";
+              lovSigDiv.style.width = "188px";
+              lovSigDiv.style.zIndex = "1";
+              lovSigDiv.innerText = "YOUR'S LOVINGLY";
+              pageDiv.appendChild(lovSigDiv);
+            }
+          }
+        }
+        
+        tempContainer.appendChild(pageDiv);
+        
+        const dataUrl = await toJpeg(pageDiv, {
+          cacheBust: true,
+          backgroundColor: "#f2eeeb",
+          pixelRatio: 2, // 2x ratio is extremely crisp for printing/viewing while dramatically reducing size
+          quality: 0.85, // 85% quality JPEGs compress much better than lossless PNGs
+        });
+        
+        if (i > 0) {
+          pdf.addPage();
+        }
+        
+        pdf.addImage(dataUrl, "JPEG", 0, 0, pdfWidth, pdfHeight, undefined, "FAST");
+      }
+      
+      pdf.save(`Letter-${activeLetter?.id || "memory"}.pdf`);
     } catch (err) {
       console.error("PDF export failed:", err);
       alert("Failed to export PDF. Please try again.");
+    } finally {
+      document.body.removeChild(tempContainer);
     }
   };
 
@@ -980,15 +1438,26 @@ export default function MailingPage() {
                   </p>
                 </div>
 
-                <form onSubmit={(e) => {
+                 <form onSubmit={async (e) => {
                   e.preventDefault();
                   const profile = profiles.find(p => p.id === selectedProfileId);
-                  if (profile && profile.password === loginPasswordInput) {
-                    setLoggedInUser(profile);
-                    sessionStorage.setItem("logged_in_user_id", profile.id);
-                    localStorage.setItem(`session_expiry_${profile.id}`, (Date.now() + 5 * 60 * 1000).toString());
-                    setLoginPasswordInput("");
-                    setLoginPasswordError("");
+                  if (profile) {
+                    const hashedInput = await hashPassword(loginPasswordInput);
+                    const isMatch = profile.password === hashedInput || profile.password === loginPasswordInput;
+                    if (isMatch) {
+                      // Migrate to hash if it was plaintext
+                      if (profile.password === loginPasswordInput) {
+                        profile.password = hashedInput;
+                        await setDoc(doc(db, "profiles", profile.id), { password: hashedInput }, { merge: true }).catch(console.error);
+                      }
+                      setLoggedInUser(profile);
+                      sessionStorage.setItem("logged_in_user_id", profile.id);
+                      localStorage.setItem(`session_expiry_${profile.id}`, (Date.now() + 5 * 60 * 1000).toString());
+                      setLoginPasswordInput("");
+                      setLoginPasswordError("");
+                    } else {
+                      setLoginPasswordError("Incorrect password. Please try again.");
+                    }
                   } else {
                     setLoginPasswordError("Incorrect password. Please try again.");
                   }
@@ -1115,12 +1584,16 @@ export default function MailingPage() {
             {loginState === "set-password-confirm" && (
               <AssistedPasswordConfirmation
                 password={tempNewPassword}
-                onSuccess={() => {
+                onSuccess={async () => {
+                  const hashedPassword = await hashPassword(tempNewPassword);
                   const updated = profiles.map(p => 
-                    p.id === selectedProfileId ? { ...p, password: tempNewPassword } : p
+                    p.id === selectedProfileId ? { ...p, password: hashedPassword } : p
                   );
                   setProfiles(updated);
                   localStorage.setItem("user_profiles", JSON.stringify(updated));
+                  if (selectedProfileId) {
+                    setDoc(doc(db, "profiles", selectedProfileId), { password: hashedPassword }, { merge: true }).catch(console.error);
+                  }
                   const activeP = updated.find(p => p.id === selectedProfileId);
                   if (activeP) {
                     setLoggedInUser(activeP);
@@ -1147,9 +1620,11 @@ export default function MailingPage() {
                   </p>
                 </div>
 
-                <form onSubmit={(e) => {
+                <form onSubmit={async (e) => {
                   e.preventDefault();
-                  if (masterPasswordInput === "Dark1123@#") {
+                  setMasterPasswordError("");
+                  const isValid = await validateMasterPasswordInFirebase(masterPasswordInput);
+                  if (isValid) {
                     setLoginState("add-profile");
                     setMasterPasswordInput("");
                     setMasterPasswordError("");
@@ -1220,9 +1695,11 @@ export default function MailingPage() {
                   </p>
                 </div>
 
-                <form onSubmit={(e) => {
+                <form onSubmit={async (e) => {
                   e.preventDefault();
-                  if (masterPasswordInput === "Dark1123@#") {
+                  setMasterPasswordError("");
+                  const isValid = await validateMasterPasswordInFirebase(masterPasswordInput);
+                  if (isValid) {
                     setLoginState("reset-password-new");
                     setMasterPasswordInput("");
                     setMasterPasswordError("");
@@ -1296,15 +1773,19 @@ export default function MailingPage() {
                   </p>
                 </div>
 
-                <form onSubmit={(e) => {
+                <form onSubmit={async (e) => {
                   e.preventDefault();
                   if (!tempNewPassword.trim()) return;
                   
+                  const hashedPassword = await hashPassword(tempNewPassword);
                   const updated = profiles.map(p => 
-                    p.id === selectedProfileId ? { ...p, password: tempNewPassword } : p
+                    p.id === selectedProfileId ? { ...p, password: hashedPassword } : p
                   );
                   setProfiles(updated);
                   localStorage.setItem("user_profiles", JSON.stringify(updated));
+                  if (selectedProfileId) {
+                    setDoc(doc(db, "profiles", selectedProfileId), { password: hashedPassword }, { merge: true }).catch(console.error);
+                  }
                   
                   const activeP = updated.find(p => p.id === selectedProfileId);
                   if (activeP) {
@@ -1357,15 +1838,17 @@ export default function MailingPage() {
               isNewProfileConfirming ? (
                 <AssistedPasswordConfirmation
                   password={newProfilePassword}
-                  onSuccess={() => {
+                  onSuccess={async () => {
                     const newId = newProfileName.toLowerCase().replace(/[^a-z0-9]/g, "-") || `profile-${Date.now()}`;
+                    const hashedPassword = await hashPassword(newProfilePassword);
                     const newProfile: UserProfile = {
                       id: newId,
                       name: newProfileName,
                       avatarUrl: newProfileAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&auto=format&fit=crop",
                       title: newProfileTitle || "Member",
                       bio: newProfileBio || "A lovely member of memories.",
-                      password: newProfilePassword,
+                      password: hashedPassword,
+                      avatarCrop: newProfileCrop,
                       socials: {
                         github: newProfileGithub,
                         linkedin: newProfileLinkedin,
@@ -1379,8 +1862,11 @@ export default function MailingPage() {
                     const updated = [...profiles, newProfile];
                     setProfiles(updated);
                     localStorage.setItem("user_profiles", JSON.stringify(updated));
+                    const { id, ...newProfileData } = newProfile;
+                    setDoc(doc(db, "profiles", id), newProfileData).catch(console.error);
                     setLoginState("select-profile");
                     setIsNewProfileConfirming(false);
+                    setNewProfileCrop(undefined);
                   }}
                   onCancel={() => {
                     setIsNewProfileConfirming(false);
@@ -1403,7 +1889,15 @@ export default function MailingPage() {
                     
                     {/* Avatar upload */}
                     <div className="flex items-center gap-4 border-b border-neutral-850 pb-4">
-                      <div className="relative w-16 h-16 rounded-full border border-neutral-850 p-0.5 overflow-hidden bg-neutral-950 flex items-center justify-center">
+                      <div 
+                        onClick={() => {
+                          if (newProfileAvatar) {
+                            setCreateUploadImageSrc(newProfileAvatar);
+                            setShowCreateCropModal(true);
+                          }
+                        }}
+                        className="relative w-16 h-16 rounded-full border border-neutral-850 p-0.5 overflow-hidden bg-neutral-950 flex items-center justify-center cursor-pointer"
+                      >
                         {newProfileAvatar ? (
                           <img src={newProfileAvatar} alt="Preview" className="w-full h-full rounded-full object-cover" />
                         ) : (
@@ -1423,7 +1917,8 @@ export default function MailingPage() {
                               const reader = new FileReader();
                               reader.onloadend = () => {
                                 if (typeof reader.result === 'string') {
-                                  setNewProfileAvatar(reader.result);
+                                  setCreateUploadImageSrc(reader.result);
+                                  setShowCreateCropModal(true);
                                 }
                               };
                               reader.readAsDataURL(file);
@@ -2030,9 +2525,8 @@ export default function MailingPage() {
                       <div key={letter.id} className="flex flex-col items-center gap-4 bg-neutral-900/30 p-3 sm:p-5 rounded-2xl border border-neutral-800/80 shadow-lg transition duration-300 hover:border-purple-900/30 w-full max-w-[310px] min-[375px]:max-w-[330px] sm:max-w-none">
                         <InteractiveTravelCard
                           title={letter.isEternal ? "Eternal Letter" : `Letter #${letterNumber}`}
-                          subtitle={`From: ${senderName}`}
                           date={dateStr}
-                          imageUrl="/f.png"
+                          imageUrl="/stamp.png"
                           onActionClick={() => {
                             setActiveLetterSource("grid");
                             handleOpenLetter(letter);
@@ -2053,7 +2547,7 @@ export default function MailingPage() {
                             Open Letter
                           </button>
                           
-                          {!isViewOnlyMode && (
+                          {!isViewOnlyMode && (!letter.senderId || letter.senderId === loggedInUser?.id) && (
                             <>
                               <button
                                 onMouseDown={(e) => e.stopPropagation()}
@@ -2117,6 +2611,25 @@ export default function MailingPage() {
       </>
     )}
   </div>
+
+      {/* Create Profile Image Cropper Modal */}
+      {showCreateCropModal && createUploadImageSrc && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in" onMouseDown={(e) => e.stopPropagation()}>
+          <ImageCropper
+            initialImageSrc={createUploadImageSrc}
+            onCropSave={(croppedUrl, cropDetails) => {
+              setNewProfileAvatar(croppedUrl);
+              setNewProfileCrop(cropDetails);
+              setShowCreateCropModal(false);
+              setCreateUploadImageSrc(null);
+            }}
+            onCancel={() => {
+              setShowCreateCropModal(false);
+              setCreateUploadImageSrc(null);
+            }}
+          />
+        </div>
+      )}
 
       {/* Signature Pad Modal Popup */}
       {isSignatureOpen && (
@@ -2301,10 +2814,12 @@ export default function MailingPage() {
             ]}
             actionButton={loggedInUser.actionButton}
             avatarAdjust={loggedInUser.avatarAdjust}
+            avatarCrop={loggedInUser.avatarCrop}
             password={loggedInUser.password}
             onClose={() => setIsDetailedCardOpen(false)}
-            onSave={(updatedData) => {
-              const updatedProfiles = profiles.map(p => {
+            onSave={async (updatedData) => {
+              const hashedPassword = updatedData.password ? await hashPassword(updatedData.password) : "";
+              const updatedProfiles = await Promise.all(profiles.map(async (p) => {
                 if (p.id === loggedInUser.id) {
                   return {
                     ...p,
@@ -2319,13 +2834,19 @@ export default function MailingPage() {
                     },
                     actionButton: updatedData.actionButton,
                     avatarAdjust: updatedData.avatarAdjust,
-                    password: updatedData.password
+                    avatarCrop: updatedData.avatarCrop,
+                    password: hashedPassword
                   };
                 }
                 return p;
-              });
+              }));
               setProfiles(updatedProfiles);
               localStorage.setItem("user_profiles", JSON.stringify(updatedProfiles));
+              const targetProfile = updatedProfiles.find(p => p.id === loggedInUser.id);
+              if (targetProfile) {
+                const { id, ...data } = targetProfile;
+                setDoc(doc(db, "profiles", loggedInUser.id), data).catch(console.error);
+              }
               
               const newLoggedIn = updatedProfiles.find(p => p.id === loggedInUser.id);
               if (newLoggedIn) {

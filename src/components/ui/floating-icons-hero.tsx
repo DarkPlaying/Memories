@@ -476,7 +476,7 @@ function GalleryScene({
     };
 
     const preventDefaultTouch = (e: TouchEvent) => {
-      e.preventDefault();
+      e.preventDefault(); // Stop page scrolling
     };
 
     let touchStartY = 0;
@@ -485,7 +485,7 @@ function GalleryScene({
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
+      e.preventDefault(); // Stop any bounce/page scrolling
       const touchY = e.touches[0].clientY;
       const diffY = touchStartY - touchY;
       targetVelocityRef.current += diffY * 0.025;
@@ -494,13 +494,13 @@ function GalleryScene({
     };
 
     window.addEventListener("wheel", preventDefaultScroll, { passive: false });
-    window.addEventListener("touchmove", preventDefaultTouch, { passive: false });
+    document.addEventListener("touchmove", preventDefaultTouch, { passive: false });
     window.addEventListener("touchstart", handleTouchStart, { passive: true });
     window.addEventListener("touchmove", handleTouchMove, { passive: false });
 
     return () => {
       window.removeEventListener("wheel", preventDefaultScroll);
-      window.removeEventListener("touchmove", preventDefaultTouch);
+      document.removeEventListener("touchmove", preventDefaultTouch);
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchmove", handleTouchMove);
     };

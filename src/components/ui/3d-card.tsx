@@ -62,7 +62,7 @@ export const InteractiveTravelCard = React.forwardRef<
           transformStyle: "preserve-3d",
         }}
         className={cn(
-          "relative h-[340px] sm:h-[26rem] w-full max-w-[270px] min-[375px]:max-w-[290px] sm:max-w-none sm:w-80 rounded-2xl bg-transparent shadow-2xl border border-neutral-800 cursor-pointer",
+          "relative h-[340px] sm:h-[26rem] w-full max-w-[270px] min-[375px]:max-w-[290px] sm:max-w-none sm:w-80 rounded-2xl bg-neutral-900/50 backdrop-blur-md shadow-2xl border border-neutral-800/80 cursor-pointer group",
           className
         )}
       >
@@ -71,13 +71,18 @@ export const InteractiveTravelCard = React.forwardRef<
             transform: "translateZ(50px)",
             transformStyle: "preserve-3d",
           }}
-          className="absolute inset-4 grid h-[calc(100%-2rem)] w-[calc(100%-2rem)] grid-rows-[1fr_auto] rounded-xl shadow-lg"
+          className="absolute inset-4 grid h-[calc(100%-2rem)] w-[calc(100%-2rem)] grid-rows-[1fr_auto] rounded-xl shadow-lg bg-black/40"
         >
-          {/* Background Image - Dynamic or f.png */}
+          {/* Background Image - Dynamic or stamp.png */}
           <img
-            src={imageUrl || "/f.png"}
+            src={imageUrl || "/stamp.png"}
             alt={`${title}`}
-            className="absolute inset-0 h-full w-full rounded-xl object-cover"
+            className={cn(
+              "absolute rounded-xl transition-all duration-300",
+              (imageUrl || "/stamp.png").includes("stamp.png")
+                ? "inset-0 m-auto w-36 h-36 sm:w-48 sm:h-48 object-contain opacity-80 group-hover:scale-105 group-hover:opacity-95 z-0"
+                : "inset-0 h-full w-full object-cover z-0"
+            )}
           />
           
           {/* Darkening overlay for better text contrast */}

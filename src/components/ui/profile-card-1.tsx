@@ -26,6 +26,7 @@ interface GlassmorphismProfileCardProps {
   socialLinks?: SocialLink[];
   actionButton?: ActionButtonProps;
   avatarAdjust?: { scale: number; x: number; y: number };
+  avatarCrop?: { x: number; y: number; width: number; height: number; zoom: number; rotation: number };
   password?: string;
   onSave?: (updated: {
     name: string;
@@ -35,6 +36,7 @@ interface GlassmorphismProfileCardProps {
     socialLinks: Array<{ id: string; href: string }>;
     actionButton: ActionButtonProps;
     avatarAdjust?: { scale: number; x: number; y: number };
+    avatarCrop?: { x: number; y: number; width: number; height: number; zoom: number; rotation: number };
     password?: string;
   }) => void;
   onClose?: () => void;
@@ -48,6 +50,7 @@ export function GlassmorphismProfileCard({
   socialLinks = [],
   actionButton = { text: 'Contact Me', href: '#' },
   avatarAdjust = { scale: 1, x: 0, y: 0 },
+  avatarCrop: initialAvatarCrop,
   password: initialPassword = '',
   onSave,
   onClose,
@@ -67,6 +70,9 @@ export function GlassmorphismProfileCard({
   // Profile password
   const [profilePassword, setProfilePassword] = useState(initialPassword);
   const [showEditPassword, setShowEditPassword] = useState(false);
+
+  // Crop coordinates
+  const [avatarCrop, setAvatarCrop] = useState<{ x: number; y: number; width: number; height: number; zoom: number; rotation: number } | undefined>(initialAvatarCrop);
 
   // Upload and crop modal states
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -112,6 +118,7 @@ export function GlassmorphismProfileCard({
         })),
         actionButton: { text: btnText, href: btnHref },
         avatarAdjust: { scale, x: posX, y: posY },
+        avatarCrop,
         password: profilePassword
       });
     }
@@ -132,6 +139,7 @@ export function GlassmorphismProfileCard({
     setScale(avatarAdjust?.scale || 1);
     setPosX(avatarAdjust?.x || 0);
     setPosY(avatarAdjust?.y || 0);
+    setAvatarCrop(initialAvatarCrop);
     setProfilePassword(initialPassword);
     setShowEditPassword(false);
     setIsEditing(false);
@@ -431,8 +439,9 @@ export function GlassmorphismProfileCard({
         <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in" onMouseDown={(e) => e.stopPropagation()}>
           <ImageCropper
             initialImageSrc={uploadImageSrc}
-            onCropSave={(croppedUrl) => {
+            onCropSave={(croppedUrl, cropDetails) => {
               setAvatarUrl(croppedUrl);
+              setAvatarCrop(cropDetails);
               setShowCropModal(false);
               setUploadImageSrc(null);
               // Save immediately if view mode
@@ -448,6 +457,7 @@ export function GlassmorphismProfileCard({
                   })),
                   actionButton: { text: btnText, href: btnHref },
                   avatarAdjust: { scale, x: posX, y: posY },
+                  avatarCrop: cropDetails,
                   password: profilePassword
                 });
               }

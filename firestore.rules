@@ -4,5 +4,20 @@ service cloud.firestore {
     match /letters/{document} {
       allow read, write: if true;
     }
+    match /profiles/{document} {
+      allow read, write: if true;
+    }
+    match /config/security {
+      allow read: if false;
+      allow create: if !exists(/databases/$(database)/documents/config/security);
+      allow update, delete: if false;
+    }
+    match /config/{document} {
+      allow read, write: if document != 'security';
+    }
+    match /validation/{document} {
+      allow create: if request.resource.data.password == get(/databases/$(database)/documents/config/security).data.masterPassword;
+      allow delete: if true;
+    }
   }
 }

@@ -24,7 +24,7 @@ interface TimelineItem {
   date: string;
   title: string;
   emoji: string;
-  category: 'February' | 'March' | 'April' | 'May' | 'Future';
+  category: 'February' | 'March' | 'April' | 'May' | 'June' | 'Future';
 }
 
 const timelineData: TimelineItem[] = [
@@ -52,11 +52,17 @@ const timelineData: TimelineItem[] = [
   { date: "Apr 03", title: "First edited video of our laughs", emoji: "🎬", category: "April" },
   { date: "Apr 10", title: "First carnival ride screaming together", emoji: "🎡", category: "April" },
   { date: "Apr 11", title: "Your first gorgeous saree look for me", emoji: "🥻", category: "April" },
+  { date: "Apr 29", title: "First Image Edit from her", emoji: "🎨", category: "April" },
 
   // --- May ---
   { date: "May 19", title: "Dedication of the first song for you", emoji: "🎵", category: "May" },
-  { date: "May 23", title: "Celebrating your first birthday by my side", emoji: "🎂", category: "May" },
-  { date: "May 26", title: "First cooking adventure together at my home", emoji: "🍳", category: "May" }
+  { date: "May 23", title: "First Celebration on My birthday", emoji: "🎂", category: "May" },
+  { date: "May 26", title: "First cooking adventure together at my home", emoji: "🍳", category: "May" },
+
+  // --- June ---
+  { date: "Jun 06", title: "First long drive to Velachery for first interview", emoji: "🚗", category: "June" },
+  { date: "Jun 09", title: "First 3D model edit", emoji: "💻", category: "June" },
+  { date: "Jun 13", title: "First beach visit and second interview drive together", emoji: "🏖️", category: "June" }
 ];
 
 // --- Countdown Timer Subcomponent ---

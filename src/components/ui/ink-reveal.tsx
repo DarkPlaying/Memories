@@ -229,6 +229,13 @@ export default function InkReveal({
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   };
 
+  const getRelativeTouchPos = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (e.touches.length === 0) return null;
+    const touch = e.touches[0];
+    return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+  };
+
   return (
     <canvas
       ref={canvasRef}
@@ -268,6 +275,37 @@ export default function InkReveal({
         startLoop();
       }}
       onMouseLeave={() => {
+        lastPosRef.current = null;
+        setIsRevealed(false);
+      }}
+      onTouchStart={(e) => {
+        const pos = getRelativeTouchPos(e);
+        if (!pos) return;
+        lastPosRef.current = pos;
+        const now = performance.now();
+        lastMoveTimeRef.current = now;
+        movementStartRef.current = now;
+        setIsRevealed(false);
+        stampAlong(pos.x, pos.y);
+        startLoop();
+      }}
+      onTouchMove={(e) => {
+        const pos = getRelativeTouchPos(e);
+        if (!pos) return;
+        lastPosRef.current = pos;
+        const now = performance.now();
+        if (now - lastMoveTimeRef.current > 300) {
+          movementStartRef.current = now;
+        }
+        lastMoveTimeRef.current = now;
+        const elapsed = now - movementStartRef.current;
+        if (elapsed >= revealDelay) {
+          setIsRevealed(true);
+        }
+        stampAlong(pos.x, pos.y);
+        startLoop();
+      }}
+      onTouchEnd={() => {
         lastPosRef.current = null;
         setIsRevealed(false);
       }}
