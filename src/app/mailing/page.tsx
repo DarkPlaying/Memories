@@ -75,6 +75,20 @@ const getLetterLockTargetTime = (letter?: any) => {
 };
 
 export default function MailingPage() {
+  const [readerScale, setReaderScale] = useState(1);
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 536) { // 512px (max-w-lg) + 24px margins
+        setReaderScale((window.innerWidth - 24) / 512);
+      } else {
+        setReaderScale(1);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const [pageState, setPageState] = useState<PageState>("landing");
   const [formState, setFormState] = useState<FormState>("idle");
   const [openWritePopover, setOpenWritePopover] = useState(false);
@@ -860,8 +874,6 @@ export default function MailingPage() {
         let bgImg = "/love_letter_bg_2.jpg"; // Default page 2 (blank)
         if (i === 0) {
           bgImg = "/love_letter_bg_1.jpg"; // Page 1
-        } else if (i === pagesContent.length - 1) {
-          bgImg = activeLetter.signature ? "/love_letter_bg_2.jpg" : "/love_letter_bg_3.jpg"; // Final page
         }
         
         // Append background image as an absolute img element to ensure precise positioning & prevent shift in html-to-image
@@ -1023,20 +1035,17 @@ export default function MailingPage() {
           dateDiv.innerText = formattedDate;
           pageDiv.appendChild(dateDiv);
           
-          // Render the transparent postmark stamp only on Page 1 in single-page mode
-          // (Multi-page PDF uses love_letter_bg_2/3 which already has the stamp in the background image)
-          if (pagesContent.length === 1) {
-            const stampImg = document.createElement("img");
-            stampImg.src = "/stamp.png";
-            stampImg.style.position = "absolute";
-            stampImg.style.right = "35px";
-            stampImg.style.bottom = "100px";
-            stampImg.style.width = "172px";
-            stampImg.style.height = "123px";
-            stampImg.style.objectFit = "contain";
-            stampImg.style.zIndex = "1";
-            pageDiv.appendChild(stampImg);
-          }
+          // Render the transparent postmark stamp on the final page
+          const stampImg = document.createElement("img");
+          stampImg.src = "/stamp.png";
+          stampImg.style.position = "absolute";
+          stampImg.style.right = "35px";
+          stampImg.style.bottom = "100px";
+          stampImg.style.width = "172px";
+          stampImg.style.height = "123px";
+          stampImg.style.objectFit = "contain";
+          stampImg.style.zIndex = "1";
+          pageDiv.appendChild(stampImg);
           
           if (activeLetter.signature) {
             const sigImg = document.createElement("img");
@@ -1050,38 +1059,35 @@ export default function MailingPage() {
             sigImg.src = activeLetter.signature;
             pageDiv.appendChild(sigImg);
           } else {
-            // Render default printed signature in HTML only if it is a single-page PDF with no custom signature
-            // (Multi-page PDF uses love_letter_bg_3.jpg which already has this signature printed in the background)
-            if (pagesContent.length === 1) {
-              const partSigDiv = document.createElement("div");
-              partSigDiv.style.position = "absolute";
-              partSigDiv.style.left = "352px";
-              partSigDiv.style.bottom = "144px";
-              partSigDiv.style.fontFamily = "'Great Vibes', 'Brush Script MT', cursive";
-              partSigDiv.style.fontSize = "36px";
-              partSigDiv.style.color = "#c44d4d";
-              partSigDiv.style.lineHeight = "1";
-              partSigDiv.style.textAlign = "center";
-              partSigDiv.style.width = "132px";
-              partSigDiv.style.zIndex = "1";
-              partSigDiv.innerText = "Partner";
-              pageDiv.appendChild(partSigDiv);
-              
-              const lovSigDiv = document.createElement("div");
-              lovSigDiv.style.position = "absolute";
-              lovSigDiv.style.left = "325px";
-              lovSigDiv.style.bottom = "111px";
-              lovSigDiv.style.fontFamily = "'Outfit', sans-serif";
-              lovSigDiv.style.fontSize = "11px";
-              lovSigDiv.style.fontWeight = "bold";
-              lovSigDiv.style.color = "#c44d4d";
-              lovSigDiv.style.letterSpacing = "0.1em";
-              lovSigDiv.style.textAlign = "center";
-              lovSigDiv.style.width = "188px";
-              lovSigDiv.style.zIndex = "1";
-              lovSigDiv.innerText = "YOUR'S LOVINGLY";
-              pageDiv.appendChild(lovSigDiv);
-            }
+            // Render default printed signature in HTML if no custom signature is given
+            const partSigDiv = document.createElement("div");
+            partSigDiv.style.position = "absolute";
+            partSigDiv.style.left = "352px";
+            partSigDiv.style.bottom = "144px";
+            partSigDiv.style.fontFamily = "'Great Vibes', 'Brush Script MT', cursive";
+            partSigDiv.style.fontSize = "36px";
+            partSigDiv.style.color = "#c44d4d";
+            partSigDiv.style.lineHeight = "1";
+            partSigDiv.style.textAlign = "center";
+            partSigDiv.style.width = "132px";
+            partSigDiv.style.zIndex = "1";
+            partSigDiv.innerText = "Partner";
+            pageDiv.appendChild(partSigDiv);
+            
+            const lovSigDiv = document.createElement("div");
+            lovSigDiv.style.position = "absolute";
+            lovSigDiv.style.left = "325px";
+            lovSigDiv.style.bottom = "111px";
+            lovSigDiv.style.fontFamily = "'Outfit', sans-serif";
+            lovSigDiv.style.fontSize = "11px";
+            lovSigDiv.style.fontWeight = "bold";
+            lovSigDiv.style.color = "#c44d4d";
+            lovSigDiv.style.letterSpacing = "0.1em";
+            lovSigDiv.style.textAlign = "center";
+            lovSigDiv.style.width = "188px";
+            lovSigDiv.style.zIndex = "1";
+            lovSigDiv.innerText = "YOUR'S LOVINGLY";
+            pageDiv.appendChild(lovSigDiv);
           }
         }
         
@@ -1267,11 +1273,9 @@ export default function MailingPage() {
     }
   };
 
-  const dynamicPopoverWidth = isMobile ? "90vw" : "480px";
+  const dynamicPopoverWidth = "480px";
   // Dynamically increase height based on rows added
-  const dynamicPopoverHeight = isMobile 
-    ? "80vh" 
-    : `${Math.min(620, 430 + (textareaRows - 6) * 24)}px`;
+  const dynamicPopoverHeight = `${Math.min(620, 430 + (textareaRows - 6) * 24)}px`;
 
   if (isPageLoading) {
     return (
@@ -2762,9 +2766,11 @@ export default function MailingPage() {
       {activeLetter && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
           <div 
-            className="bg-[#FAF8F5] border-2 border-[#EADEC9] rounded-2xl w-full max-w-lg p-8 relative flex flex-col max-h-[85vh] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] text-neutral-800 transition-all duration-300"
+            className="bg-[#FAF8F5] border-2 border-[#EADEC9] rounded-2xl w-[512px] p-8 relative flex flex-col max-h-[85vh] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] text-neutral-800 transition-all duration-300"
             style={{
-              boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.55), inset 0 0 40px rgba(234, 222, 201, 0.3)"
+              boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.55), inset 0 0 40px rgba(234, 222, 201, 0.3)",
+              transform: readerScale < 1 ? `scale(${readerScale})` : undefined,
+              transformOrigin: "center center"
             }}
           >
             <button 
