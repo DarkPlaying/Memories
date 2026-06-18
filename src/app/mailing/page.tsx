@@ -281,6 +281,9 @@ export default function MailingPage() {
   const handleCloseWritePopover = (isOpen: boolean) => {
     setOpenWritePopover(isOpen);
     if (!isOpen) {
+      if (editingLetterId) {
+        setPageState("visit");
+      }
       setEditingLetterId(null);
       setLetterContent("");
       setSignatureUrl(localStorage.getItem("default_signature") || null);
@@ -1180,6 +1183,9 @@ export default function MailingPage() {
         setLetterContent("");
         setSignatureUrl(localStorage.getItem("default_signature") || null);
         setAttachments([]);
+        if (editingLetterId) {
+          setPageState("visit");
+        }
         setEditingLetterId(null);
         setIsEternalComposer(true);
         setRecipientId("");
@@ -1226,6 +1232,9 @@ export default function MailingPage() {
         setLetterContent("");
         setSignatureUrl(localStorage.getItem("default_signature") || null);
         setAttachments([]);
+        if (editingLetterId) {
+          setPageState("visit");
+        }
         setEditingLetterId(null);
         setSalutation(localStorage.getItem("default_salutation") || "Your Lovely");
         setIsEternalComposer(true);
