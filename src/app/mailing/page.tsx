@@ -573,7 +573,39 @@ export default function MailingPage() {
       const dx = moveEvent.clientX - startX;
       const dy = moveEvent.clientY - startY;
       const pctX = initialX + (dx / rect.width) * 100;
-      const pctY = initialY + (dy / rect.height) * 100;
+      
+      const initialY_px = (initialY / 100) * rect.height;
+      const Y_px = initialY_px + dy;
+      const L = Math.max(0, Math.round(Y_px / 29.5));
+      
+      const paragraphs = letterContent.split("\n");
+      const allLinesCount: string[] = [];
+      const charsPerLine = 60;
+      paragraphs.forEach((para) => {
+        if (para.trim() === "") {
+          allLinesCount.push("");
+          return;
+        }
+        const words = para.split(" ");
+        let currentLine = "";
+        words.forEach((word) => {
+          if ((currentLine + " " + word).length > charsPerLine) {
+            allLinesCount.push(currentLine);
+            currentLine = word;
+          } else {
+            currentLine = currentLine ? currentLine + " " + word : word;
+          }
+        });
+        if (currentLine) {
+          allLinesCount.push(currentLine);
+        }
+      });
+      const totalLinesCount = allLinesCount.length;
+      const editorRows = Math.max(textareaRows, totalLinesCount);
+      
+      const clampedL = Math.min(editorRows - 1, L);
+      const pctY = (clampedL / editorRows) * 100;
+
       setAttachments(prev => prev.map(a => a.id === id ? { ...a, x: Math.max(0, Math.min(85, pctX)), y: Math.max(0, Math.min(90, pctY)) } : a));
     };
 
