@@ -1317,10 +1317,10 @@ export default function MailingPage() {
           const stampImg = document.createElement("img");
           stampImg.src = "/stamp.png";
           stampImg.style.position = "absolute";
-          stampImg.style.left = "160px";
-          stampImg.style.bottom = "80px";
-          stampImg.style.width = "240px";
-          stampImg.style.height = "170px";
+          stampImg.style.left = "110px";
+          stampImg.style.bottom = "70px";
+          stampImg.style.width = "260px";
+          stampImg.style.height = "185px";
           stampImg.style.objectFit = "contain";
           stampImg.style.zIndex = "1";
           pageDiv.appendChild(stampImg);
@@ -1330,7 +1330,7 @@ export default function MailingPage() {
           dateDiv.style.position = "absolute";
           dateDiv.style.left = "420px";
           dateDiv.style.width = "220px";
-          dateDiv.style.bottom = "85px";
+          dateDiv.style.bottom = "75px";
           dateDiv.style.fontFamily = "'Playfair Display', Georgia, serif";
           dateDiv.style.fontSize = "22px";
           dateDiv.style.fontStyle = "italic";
@@ -1347,7 +1347,7 @@ export default function MailingPage() {
             lovSigDiv.style.position = "absolute";
             lovSigDiv.style.left = "420px";
             lovSigDiv.style.width = "220px";
-            lovSigDiv.style.bottom = "120px";
+            lovSigDiv.style.bottom = "105px";
             lovSigDiv.style.fontFamily = "'Outfit', sans-serif";
             lovSigDiv.style.fontSize = "14px";
             lovSigDiv.style.fontWeight = "bold";
@@ -1358,20 +1358,20 @@ export default function MailingPage() {
             lovSigDiv.innerText = (activeLetter.salutation || "Your Lovely").toUpperCase();
             pageDiv.appendChild(lovSigDiv);
 
-            // Render signature image centered in the right column (increased size)
+            // Render signature image centered in the right column (lowered height/bottom)
             const sigWrapper = document.createElement("div");
             sigWrapper.style.position = "absolute";
             sigWrapper.style.left = "420px";
             sigWrapper.style.width = "220px";
-            sigWrapper.style.bottom = "150px";
-            sigWrapper.style.height = "100px";
+            sigWrapper.style.bottom = "130px";
+            sigWrapper.style.height = "80px";
             sigWrapper.style.display = "flex";
             sigWrapper.style.justifyContent = "center";
             sigWrapper.style.alignItems = "center";
             sigWrapper.style.zIndex = "1";
 
             const sigImg = document.createElement("img");
-            sigImg.style.height = "100px";
+            sigImg.style.height = "80px";
             sigImg.style.maxWidth = "100%";
             sigImg.style.objectFit = "contain";
             sigImg.style.filter = "brightness(0)";
@@ -1385,7 +1385,7 @@ export default function MailingPage() {
             partSigDiv.style.position = "absolute";
             partSigDiv.style.left = "420px";
             partSigDiv.style.width = "220px";
-            partSigDiv.style.bottom = "145px";
+            partSigDiv.style.bottom = "130px";
             partSigDiv.style.fontFamily = "'Great Vibes', 'Brush Script MT', cursive";
             partSigDiv.style.fontSize = "48px";
             partSigDiv.style.color = "#c44d4d";
@@ -1399,7 +1399,7 @@ export default function MailingPage() {
             lovSigDiv.style.position = "absolute";
             lovSigDiv.style.left = "420px";
             lovSigDiv.style.width = "220px";
-            lovSigDiv.style.bottom = "115px";
+            lovSigDiv.style.bottom = "105px";
             lovSigDiv.style.fontFamily = "'Outfit', sans-serif";
             lovSigDiv.style.fontSize = "14px";
             lovSigDiv.style.fontWeight = "bold";
