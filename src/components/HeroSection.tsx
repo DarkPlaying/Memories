@@ -333,7 +333,20 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
 
   // Dynamic screen unlock and memories grid
   const [isUnlocked, setIsUnlocked] = useState(false);
-  const [memories, setMemories] = useState<string[]>([]);
+  const [memories, setMemories] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("cached_memories");
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) return parsed;
+        } catch (e) {
+          console.error("Error parsing cached memories in HeroSection:", e);
+        }
+      }
+    }
+    return [];
+  });
   const [isPlayingMusic, setIsPlayingMusic] = useState(false);
   const [isMutedByUser, setIsMutedByUser] = useState(false);
   const [showCompletionPopup, setShowCompletionPopup] = useState(false);
@@ -350,12 +363,18 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
 
   // Auto-start music once preloading completes and page loader is lifted
   useEffect(() => {
-    if (!isPreloading && !isParentLoading && audioRef.current && !isPlayingMusic && !isMutedByUser) {
-      audioRef.current.play()
-        .then(() => setIsPlayingMusic(true))
-        .catch((err) => console.log("Audio autoplay waiting for user interaction:", err));
+    if (audioRef.current) {
+      const isMutedLS = typeof window !== "undefined" && localStorage.getItem("isMutedByUser") === "true";
+      if (isMutedLS || isMutedByUser) {
+        audioRef.current.pause();
+        setIsPlayingMusic(false);
+      } else if (!isPreloading && !isParentLoading && !isPlayingMusic) {
+        audioRef.current.play()
+          .then(() => setIsPlayingMusic(true))
+          .catch((err) => console.log("Audio autoplay waiting for user interaction:", err));
+      }
     }
-  }, [isPreloading, isParentLoading, isMutedByUser]);
+  }, [isPreloading, isParentLoading, isMutedByUser, isPlayingMusic]);
 
   // Watch for story complete removed to support manual scroll gesture detent unlock at final frame
 
@@ -372,6 +391,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
         const data = await res.json();
         if (Array.isArray(data)) {
           setMemories(data);
+          localStorage.setItem("cached_memories", JSON.stringify(data));
         }
       } catch (err) {
         console.error("Failed to load memory photos:", err);

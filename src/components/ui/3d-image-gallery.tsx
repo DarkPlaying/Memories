@@ -45,7 +45,38 @@ function useCard() {
 
 function CardProvider({ children }: { children: React.ReactNode }) {
   const [selectedCard, setSelectedCard] = useState<Card | null>(null)
-  const [cards, setCards] = useState<Card[]>([])
+  const [cards, setCards] = useState<Card[]>(() => {
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("cached_memories");
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) {
+            return parsed.slice(0, 50).map((img, idx) => {
+              const filenameWithExt = img.split("/").pop() || img;
+              const filenameWithoutExt = filenameWithExt.substring(0, filenameWithExt.lastIndexOf('.')) || filenameWithExt;
+              const title = filenameWithoutExt
+                .replace(/\s+/g, ' ')
+                .trim()
+                .split(' ')
+                .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+
+              return {
+                id: String(idx + 1),
+                imageUrl: `/memories/${img}`,
+                alt: title,
+                title: title
+              };
+            });
+          }
+        } catch (e) {
+          console.error("Error parsing cached memories in CardProvider:", e);
+        }
+      }
+    }
+    return [];
+  })
 
   useEffect(() => {
     async function loadCards() {
@@ -53,6 +84,7 @@ function CardProvider({ children }: { children: React.ReactNode }) {
         const res = await fetch("/api/memories")
         const data = await res.json()
         if (Array.isArray(data)) {
+          localStorage.setItem("cached_memories", JSON.stringify(data));
           // Map all 50 memories dynamically to display them in our floating spherical constellation
           const mappedCards = data.slice(0, 50).map((img, idx) => {
             // Extract the filename without extension to use as title dynamically

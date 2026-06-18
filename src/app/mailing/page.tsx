@@ -82,7 +82,27 @@ export default function MailingPage() {
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [isSignatureOpen, setIsSignatureOpen] = useState(false);
   const [textareaRows, setTextareaRows] = useState(6);
-  const [letters, setLetters] = useState<Letter[]>([]);
+  const [letters, setLetters] = useState<Letter[]>(() => {
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("cached_letters");
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) return parsed;
+        } catch (e) {
+          console.error("Error parsing cached letters on init:", e);
+        }
+      }
+      try {
+        const local = localStorage.getItem("local_letters");
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch (e) {}
+    }
+    return [];
+  });
   const [activeLetter, setActiveLetter] = useState<Letter | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [editingLetterId, setEditingLetterId] = useState<string | null>(null);
@@ -90,7 +110,13 @@ export default function MailingPage() {
   const [letterToDelete, setLetterToDelete] = useState<Letter | null>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [composerError, setComposerError] = useState<string | null>(null);
-  const [isInitialLoadDone, setIsInitialLoadDone] = useState(false);
+  const [isInitialLoadDone, setIsInitialLoadDone] = useState(() => {
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("cached_letters") || localStorage.getItem("local_letters");
+      if (cached) return true;
+    }
+    return false;
+  });
   const [salutation, setSalutation] = useState("Your Lovely");
   const [isDefaultSet, setIsDefaultSet] = useState(false);
   const [isDefaultSignatureSet, setIsDefaultSignatureSet] = useState(false);
@@ -413,6 +439,7 @@ export default function MailingPage() {
           }
         });
         setLetters(merged);
+        localStorage.setItem("cached_letters", JSON.stringify(merged));
       } catch (error) {
         console.error("Error prefetching letters:", error);
         const localMails = JSON.parse(localStorage.getItem("local_letters") || "[]");
