@@ -214,7 +214,7 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
           </h1>
 
           {/* VIEW MY WORLD ACTION BUTTON */}
-          <Link
+          <a
             href="/my-world"
             className="group pointer-events-auto inline-flex items-center gap-1 sm:gap-2 px-2.5 py-1.5 sm:px-6 sm:py-3 rounded-full bg-white text-black font-extrabold font-outfit text-[8px] sm:text-xs uppercase tracking-widest hover:bg-[#ff0050] hover:text-white transition-all shadow-[0_10px_25px_rgba(255,255,255,0.08)] hover:shadow-[0_15px_30px_rgba(255,0,80,0.4)] hover:scale-105 active:scale-95 transition-all"
           >
@@ -222,7 +222,7 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
               View My World
               <Globe size={9} className="group-hover:rotate-45 transition-transform duration-500 sm:size-[14px]" />
             </span>
-          </Link>
+          </a>
         </div>
 
         {/* Circular arrangement of cards fanning out and rotating on scroll */}

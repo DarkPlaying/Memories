@@ -54,12 +54,23 @@ export default function RevealPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [slideIndex, setSlideIndex] = useState(0);
   const [isPageLoading, setIsPageLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsPageLoading(false);
-    }, 1200);
-    return () => clearTimeout(timer);
+    const duration = 1200;
+    const intervalTime = 15;
+    const steps = duration / intervalTime;
+    let step = 0;
+    const timer = setInterval(() => {
+      step++;
+      const nextProgress = Math.min(100, Math.round((step / steps) * 100));
+      setLoadingProgress(nextProgress);
+      if (step >= steps) {
+        clearInterval(timer);
+        setIsPageLoading(false);
+      }
+    }, intervalTime);
+    return () => clearInterval(timer);
   }, []);
 
   // Prevent any scrolling when on the reveal page
@@ -136,9 +147,21 @@ export default function RevealPage() {
             alt="Loading..." 
             className="w-32 h-32 sm:w-44 sm:h-44 object-contain filter drop-shadow-[0_0_12px_rgba(168,85,247,0.25)]" 
           />
-          <p className="text-purple-400/90 text-[10px] sm:text-xs font-outfit mt-4 uppercase tracking-[0.25em] animate-pulse font-semibold">
-            Unveiling Memories...
-          </p>
+          <div className="mt-4 flex flex-col items-center gap-1.5">
+            <p className="text-purple-400/90 text-[10px] sm:text-xs font-outfit uppercase tracking-[0.25em] font-semibold animate-pulse">
+              Unveiling Memories...
+            </p>
+            <span className="text-white/80 font-mono text-xs sm:text-sm font-bold">
+              {loadingProgress}%
+            </span>
+            {/* Ambient Progress Bar */}
+            <div className="w-28 sm:w-36 h-[3px] bg-white/5 rounded-full overflow-hidden mt-1 border border-white/5">
+              <div 
+                className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-75 ease-out" 
+                style={{ width: `${loadingProgress}%` }}
+              />
+            </div>
+          </div>
         </div>
       </main>
     );

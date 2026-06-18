@@ -170,13 +170,24 @@ function ViewerContent() {
   const modelName = searchParams.get("model") || "her";
   const [mounted, setMounted] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
 
   useEffect(() => {
     setMounted(true);
-    const timer = setTimeout(() => {
-      setIsPageLoading(false);
-    }, 1200);
-    return () => clearTimeout(timer);
+    const duration = 1200;
+    const intervalTime = 15;
+    const steps = duration / intervalTime;
+    let step = 0;
+    const timer = setInterval(() => {
+      step++;
+      const nextProgress = Math.min(100, Math.round((step / steps) * 100));
+      setLoadingProgress(nextProgress);
+      if (step >= steps) {
+        clearInterval(timer);
+        setIsPageLoading(false);
+      }
+    }, intervalTime);
+    return () => clearInterval(timer);
   }, []);
 
   const MODELS = useMemo(() => ["her", "me", "keychain", "pair", "toy"], []);
@@ -240,9 +251,21 @@ function ViewerContent() {
             alt="Loading..." 
             className="w-32 h-32 sm:w-44 sm:h-44 object-contain filter drop-shadow-[0_0_12px_rgba(168,85,247,0.25)]" 
           />
-          <p className="text-purple-400/90 text-[10px] sm:text-xs font-outfit mt-4 uppercase tracking-[0.25em] animate-pulse font-semibold">
-            Entering 3D Space...
-          </p>
+          <div className="mt-4 flex flex-col items-center gap-1.5">
+            <p className="text-purple-400/90 text-[10px] sm:text-xs font-outfit uppercase tracking-[0.25em] font-semibold animate-pulse">
+              Entering 3D Space...
+            </p>
+            <span className="text-white/80 font-mono text-xs sm:text-sm font-bold">
+              {loadingProgress}%
+            </span>
+            {/* Ambient Progress Bar */}
+            <div className="w-28 sm:w-36 h-[3px] bg-white/5 rounded-full overflow-hidden mt-1 border border-white/5">
+              <div 
+                className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-75 ease-out" 
+                style={{ width: `${loadingProgress}%` }}
+              />
+            </div>
+          </div>
         </div>
       </main>
     );
@@ -287,13 +310,13 @@ function ViewerContent() {
 
       {/* Floating Header */}
       <div className="absolute top-8 left-8 right-8 z-20 flex justify-between items-center pointer-events-none">
-        <Link
+        <a
           href="/reveal"
           className="pointer-events-auto px-5 py-2.5 rounded-full bg-black/55 border border-white/10 backdrop-blur-md text-white font-extrabold font-outfit text-[10px] uppercase tracking-widest hover:bg-rose-500 hover:border-rose-500 hover:shadow-[0_0_15px_rgba(244,63,94,0.4)] flex items-center gap-2 cursor-pointer transition-all hover:scale-105 active:scale-95"
         >
           <ArrowLeft size={12} />
           <span>Back to Memories</span>
-        </Link>
+        </a>
 
         <div className="hidden md:flex pointer-events-auto px-4 py-2 rounded-full bg-black/40 border border-white/5 backdrop-blur-sm items-center gap-4 text-[10px] font-outfit text-gray-400 uppercase tracking-wider">
           <span>Drag to Rotate</span>
@@ -305,19 +328,19 @@ function ViewerContent() {
       </div>
 
       {/* Navigation Arrows */}
-      <Link
+      <a
         href={`/3d?model=${prevModel}`}
         className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-30 bg-black/65 border border-white/15 hover:bg-rose-500 hover:border-rose-500 p-3 sm:p-4 rounded-full text-white transition-all cursor-pointer shadow-[0_4px_24px_rgba(0,0,0,0.7)] hover:scale-110 active:scale-95 hover:shadow-[0_0_20px_rgba(244,63,94,0.5)] flex items-center justify-center"
       >
         <ChevronLeft size={20} className="sm:w-6 sm:h-6" />
-      </Link>
+      </a>
 
-      <Link
+      <a
         href={`/3d?model=${nextModel}`}
         className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-30 bg-black/65 border border-white/15 hover:bg-rose-500 hover:border-rose-500 p-3 sm:p-4 rounded-full text-white transition-all cursor-pointer shadow-[0_4px_24px_rgba(0,0,0,0.7)] hover:scale-110 active:scale-95 hover:shadow-[0_0_20px_rgba(244,63,94,0.5)] flex items-center justify-center"
       >
         <ChevronRight size={20} className="sm:w-6 sm:h-6" />
-      </Link>
+      </a>
 
       {/* Bottom Info Sheet */}
       <div className="absolute bottom-8 left-8 right-8 md:max-w-md z-20 pointer-events-none">

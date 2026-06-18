@@ -36,9 +36,9 @@ export function FlowButton({ text = "Modern Button", href, onClick, className }:
 
   if (href) {
     return (
-      <Link href={href} className={`${btnClasses} ${className || ""}`}>
+      <a href={href} className={`${btnClasses} ${className || ""}`}>
         {content}
-      </Link>
+      </a>
     );
   }
 
