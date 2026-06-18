@@ -1313,37 +1313,41 @@ export default function MailingPage() {
         
         // Add date and signature on final page
         if (i === pagesContent.length - 1) {
+          // Render the transparent postmark stamp on the final page (bottom-left)
+          const stampImg = document.createElement("img");
+          stampImg.src = "/stamp.png";
+          stampImg.style.position = "absolute";
+          stampImg.style.left = "160px";
+          stampImg.style.bottom = "80px";
+          stampImg.style.width = "240px";
+          stampImg.style.height = "170px";
+          stampImg.style.objectFit = "contain";
+          stampImg.style.zIndex = "1";
+          pageDiv.appendChild(stampImg);
+
+          // Render date centered in the right column
           const dateDiv = document.createElement("div");
           dateDiv.style.position = "absolute";
-          dateDiv.style.left = "160px"; // Aligned with the content left margin
-          dateDiv.style.bottom = "125px"; // Positioned beautifully relative to the bottom edge
-          dateDiv.style.fontFamily = "'Playfair Display', Georgia, serif"; // Elegant serif font as requested
-          dateDiv.style.fontSize = "22px"; // Increased date size as requested
+          dateDiv.style.left = "420px";
+          dateDiv.style.width = "220px";
+          dateDiv.style.bottom = "85px";
+          dateDiv.style.fontFamily = "'Playfair Display', Georgia, serif";
+          dateDiv.style.fontSize = "22px";
           dateDiv.style.fontStyle = "italic";
-          dateDiv.style.color = "#c44d4d"; // Red color to match signature
-          dateDiv.style.fontWeight = "bold"; // Bold red date to match the theme
+          dateDiv.style.color = "#c44d4d";
+          dateDiv.style.fontWeight = "bold";
+          dateDiv.style.textAlign = "center";
           dateDiv.style.zIndex = "1";
           dateDiv.innerText = formattedDate;
           pageDiv.appendChild(dateDiv);
           
-          // Render the transparent postmark stamp on the final page
-          const stampImg = document.createElement("img");
-          stampImg.src = "/stamp.png";
-          stampImg.style.position = "absolute";
-          stampImg.style.right = "35px";
-          stampImg.style.bottom = "85px";
-          stampImg.style.width = "224px";
-          stampImg.style.height = "160px";
-          stampImg.style.objectFit = "contain";
-          stampImg.style.zIndex = "1";
-          pageDiv.appendChild(stampImg);
-          
           if (activeLetter.signature) {
+            // Render dynamic salutation centered in the right column
             const lovSigDiv = document.createElement("div");
             lovSigDiv.style.position = "absolute";
-            lovSigDiv.style.left = "180px";
-            lovSigDiv.style.width = "440px";
-            lovSigDiv.style.bottom = "165px";
+            lovSigDiv.style.left = "420px";
+            lovSigDiv.style.width = "220px";
+            lovSigDiv.style.bottom = "120px";
             lovSigDiv.style.fontFamily = "'Outfit', sans-serif";
             lovSigDiv.style.fontSize = "14px";
             lovSigDiv.style.fontWeight = "bold";
@@ -1354,19 +1358,20 @@ export default function MailingPage() {
             lovSigDiv.innerText = (activeLetter.salutation || "Your Lovely").toUpperCase();
             pageDiv.appendChild(lovSigDiv);
 
+            // Render signature image centered in the right column (increased size)
             const sigWrapper = document.createElement("div");
             sigWrapper.style.position = "absolute";
-            sigWrapper.style.left = "180px";
-            sigWrapper.style.width = "440px";
-            sigWrapper.style.bottom = "75px";
-            sigWrapper.style.height = "80px";
+            sigWrapper.style.left = "420px";
+            sigWrapper.style.width = "220px";
+            sigWrapper.style.bottom = "150px";
+            sigWrapper.style.height = "100px";
             sigWrapper.style.display = "flex";
             sigWrapper.style.justifyContent = "center";
             sigWrapper.style.alignItems = "center";
             sigWrapper.style.zIndex = "1";
 
             const sigImg = document.createElement("img");
-            sigImg.style.height = "80px";
+            sigImg.style.height = "100px";
             sigImg.style.maxWidth = "100%";
             sigImg.style.objectFit = "contain";
             sigImg.style.filter = "brightness(0)";
@@ -1375,24 +1380,25 @@ export default function MailingPage() {
             
             pageDiv.appendChild(sigWrapper);
           } else {
-            // Render default printed signature in HTML if no custom signature is given
+            // Render default printed signature in HTML centered in the right column
             const partSigDiv = document.createElement("div");
             partSigDiv.style.position = "absolute";
-            partSigDiv.style.left = "328px";
-            partSigDiv.style.bottom = "150px";
+            partSigDiv.style.left = "420px";
+            partSigDiv.style.width = "220px";
+            partSigDiv.style.bottom = "145px";
             partSigDiv.style.fontFamily = "'Great Vibes', 'Brush Script MT', cursive";
             partSigDiv.style.fontSize = "48px";
             partSigDiv.style.color = "#c44d4d";
             partSigDiv.style.lineHeight = "1";
             partSigDiv.style.textAlign = "center";
-            partSigDiv.style.width = "180px";
             partSigDiv.style.zIndex = "1";
             partSigDiv.innerText = "Partner";
             pageDiv.appendChild(partSigDiv);
             
             const lovSigDiv = document.createElement("div");
             lovSigDiv.style.position = "absolute";
-            lovSigDiv.style.left = "308px";
+            lovSigDiv.style.left = "420px";
+            lovSigDiv.style.width = "220px";
             lovSigDiv.style.bottom = "115px";
             lovSigDiv.style.fontFamily = "'Outfit', sans-serif";
             lovSigDiv.style.fontSize = "14px";
@@ -1400,9 +1406,8 @@ export default function MailingPage() {
             lovSigDiv.style.color = "#c44d4d";
             lovSigDiv.style.letterSpacing = "0.1em";
             lovSigDiv.style.textAlign = "center";
-            lovSigDiv.style.width = "220px";
             lovSigDiv.style.zIndex = "1";
-            lovSigDiv.innerText = "YOUR'S LOVINGLY";
+            lovSigDiv.innerText = (activeLetter.salutation || "YOUR'S LOVINGLY").toUpperCase();
             pageDiv.appendChild(lovSigDiv);
           }
         }
