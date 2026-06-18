@@ -17,17 +17,24 @@ interface FlipCardProps {
   style?: React.CSSProperties
 }
 
-// --- FlipCard Component ---
 function FlipCard({ image, title, description, className, style }: FlipCardProps) {
+  const [isFlipped, setIsFlipped] = useState(false)
+
   return (
     <div
+      onClick={() => setIsFlipped(!isFlipped)}
       className={cn(
-        "group w-16 h-22 sm:w-22 sm:h-28 md:w-28 md:h-36 rounded-lg sm:rounded-xl [perspective:1000px] transition-transform duration-300 ease-in-out hover:scale-110",
+        "group w-16 h-22 sm:w-22 sm:h-28 md:w-28 md:h-36 rounded-lg sm:rounded-xl [perspective:1000px] transition-transform duration-300 ease-in-out hover:scale-110 cursor-pointer select-none",
         className
       )}
       style={style}
     >
-      <div className="relative w-full h-full rounded-xl shadow-lg transition-all duration-700 [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]">
+      <div
+        className={cn(
+          "relative w-full h-full rounded-xl shadow-lg transition-all duration-700 [transform-style:preserve-3d]",
+          isFlipped ? "[transform:rotateY(180deg)]" : "group-hover:[transform:rotateY(180deg)]"
+        )}
+      >
         {/* Front side - Image */}
         <div className="absolute inset-0 rounded-xl [backface-visibility:hidden]">
           <img
@@ -167,7 +174,7 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
         className="relative w-full max-w-[280px] xs:max-w-[340px] sm:max-w-[480px] md:max-w-[600px] aspect-square flex items-center justify-center"
       >
         {/* Floating mail envelopes centered vertically according to the circular gallery */}
-        <motion.div 
+        <motion.div
           animate={{ y: [-15, 15, -15] }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
           className="absolute top-[-80px] left-[-35px] xs:left-[-20px] translate-y-0 sm:top-1/2 sm:left-[-100px] md:left-[-160px] lg:left-[-240px] xl:left-[-300px] sm:-translate-y-1/2 z-10 flex flex-col items-center gap-1.5 sm:gap-3 pointer-events-none"
@@ -179,7 +186,7 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
             <SendButton />
           </a>
         </motion.div>
-        <motion.div 
+        <motion.div
           animate={{ y: [15, -15, 15] }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
           className="absolute bottom-[-80px] right-[-35px] xs:right-[-20px] top-auto translate-y-0 sm:top-1/2 sm:bottom-auto sm:right-[-100px] md:right-[-160px] lg:right-[-240px] xl:right-[-300px] sm:-translate-y-1/2 z-10 flex flex-col items-center gap-1.5 sm:gap-3 pointer-events-none"
