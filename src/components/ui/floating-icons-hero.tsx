@@ -487,6 +487,10 @@ function GalleryScene({
     const handleTouchMove = (e: TouchEvent) => {
       e.preventDefault(); // Stop any bounce/page scrolling
       const touchY = e.touches[0].clientY;
+      if (touchStartY === 0) {
+        touchStartY = touchY;
+        return;
+      }
       const diffY = touchStartY - touchY;
       targetVelocityRef.current += diffY * 0.025;
       touchStartY = touchY;

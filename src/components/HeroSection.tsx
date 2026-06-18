@@ -333,6 +333,17 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
 
   // Dynamic screen unlock and memories grid
   const [isUnlocked, setIsUnlocked] = useState(false);
+
+  // Create refs to capture latest state values for gesture listeners without re-binding them
+  const isUnlockedRef = useRef(isUnlocked);
+  useEffect(() => {
+    isUnlockedRef.current = isUnlocked;
+  }, [isUnlocked]);
+
+  const activeChapterIndexRef = useRef(activeChapterIndex);
+  useEffect(() => {
+    activeChapterIndexRef.current = activeChapterIndex;
+  }, [activeChapterIndex]);
   const [memories, setMemories] = useState<string[]>(() => {
     if (typeof window !== "undefined") {
       const cached = localStorage.getItem("cached_memories");
@@ -516,7 +527,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
 
     const handleWheel = (e: WheelEvent) => {
       // If unlocked and scrolled down, let standard browser scroll happen normally
-      if (isUnlocked) {
+      if (isUnlockedRef.current) {
         if (window.scrollY > 0) {
           return;
         }
@@ -538,7 +549,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
       scrollAccumulatorRef.current += e.deltaY;
 
       // Dynamically adjust scroll threshold based on active chapter's length to increase scroll time for short chapters
-      const currentChapter = CHAPTERS[activeChapterIndex];
+      const currentChapter = CHAPTERS[activeChapterIndexRef.current];
       const chapterLength = currentChapter ? (currentChapter.endFrame - currentChapter.startFrame + 1) : 100;
 
       let threshold = 10;
@@ -577,11 +588,15 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
 
     const handleTouchMove = (e: TouchEvent) => {
       // If unlocked and scrolled down, let standard browser swipe scroll happen normally
-      if (isUnlocked) {
+      if (isUnlockedRef.current) {
         if (window.scrollY > 0) {
           return;
         }
         const touchY = e.touches[0].clientY;
+        if (touchStartY === 0) {
+          touchStartY = touchY;
+          return;
+        }
         const diffY = touchStartY - touchY;
         // If at the absolute top of the page and user swipes DOWN (scrolling up), relock the viewport and scrub backward
         if (diffY < -8) {
@@ -598,11 +613,15 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
       e.preventDefault();
       setIsAutoplay(false); // Pause autoplay immediately on manual touch swipe scrub!
       const touchY = e.touches[0].clientY;
+      if (touchStartY === 0) {
+        touchStartY = touchY;
+        return;
+      }
       const diffY = touchStartY - touchY; // Swipe up moves forward (diffY > 0)
       touchStartY = touchY; // Update base Y for next touchmove
 
       // Adjust touch sensitivity dynamically based on active chapter's length
-      const currentChapter = CHAPTERS[activeChapterIndex];
+      const currentChapter = CHAPTERS[activeChapterIndexRef.current];
       const chapterLength = currentChapter ? (currentChapter.endFrame - currentChapter.startFrame + 1) : 100;
 
       let touchSensitivity = 0.45; // Significantly higher base sensitivity for mobile response
@@ -645,7 +664,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchmove", handleTouchMove);
     };
-  }, [isUnlocked, isPreloading, isParentLoading, activeChapterIndex]);
+  }, [isPreloading, isParentLoading]);
 
   // CONCURRENT SEAMLESS BACKGROUND PRELOADER (Loads Chapter 1 priority first, then loads f1-f5 concurrently)
   useEffect(() => {
