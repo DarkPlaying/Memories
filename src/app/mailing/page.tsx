@@ -954,27 +954,49 @@ export default function MailingPage() {
         contentDiv.innerHTML = formattedHTML;
         pageDiv.appendChild(contentDiv);
         
-        // Add attachments for this page
+        // Add attachments for this page (positioned dynamically next to the exact line of text)
         activeLetter.attachments?.forEach((a: any) => {
-          const isPage1 = i === 0;
-          const isLastPage = i === pagesContent.length - 1;
-          const shouldRenderOnThisPage = (isPage1 && a.y < 45) || (isLastPage && a.y >= 45) || (pagesContent.length > 2 && !isPage1 && !isLastPage && a.y >= 45 && a.y < 75);
+          const totalLines = allLines.length;
+          const targetLine = Math.floor((a.y / 100) * totalLines);
           
-          if (shouldRenderOnThisPage) {
+          // Find which page this line belongs to
+          let lineAccumulator = 0;
+          let targetPageIdx = 0;
+          let relativeLineIdx = 0;
+          
+          for (let pIdx = 0; pIdx < pagesContent.length; pIdx++) {
+            const pageLineCount = pagesContent[pIdx].split("\n").length;
+            if (targetLine >= lineAccumulator && targetLine < lineAccumulator + pageLineCount) {
+              targetPageIdx = pIdx;
+              relativeLineIdx = targetLine - lineAccumulator;
+              break;
+            }
+            // Fallback for edge cases where targetLine is exactly the total length or out of bounds
+            if (pIdx === pagesContent.length - 1 && targetLine >= lineAccumulator) {
+              targetPageIdx = pIdx;
+              relativeLineIdx = Math.min(pageLineCount - 1, targetLine - lineAccumulator);
+            }
+            lineAccumulator += pageLineCount;
+          }
+          
+          if (targetPageIdx === i) {
             const attImg = document.createElement("img");
             attImg.style.position = "absolute";
             
-            let relativeY = a.y;
-            if (isPage1) {
-              relativeY = a.y * 2.0;
-            } else {
-              relativeY = (a.y - 45) * 1.8;
-            }
-            relativeY = Math.max(5, Math.min(85, relativeY));
+            const imageWidth = a.width || 80;
+            const contentTop = i === 0 ? 485 : 165;
+            let topOffset = contentTop + (relativeLineIdx * 29.5);
             
-            attImg.style.left = `${a.x}%`;
-            attImg.style.top = `${relativeY}%`;
-            attImg.style.width = `${a.width || 80}px`;
+            // Clamp top and left coordinates to keep them safely within page & margins
+            const maxTop = i === 0 ? 1000 : 960;
+            topOffset = Math.max(contentTop, Math.min(maxTop, topOffset));
+            
+            let leftOffset = 160 + (a.x / 100) * 480;
+            leftOffset = Math.max(160, Math.min(640 - imageWidth, leftOffset));
+            
+            attImg.style.left = `${leftOffset}px`;
+            attImg.style.top = `${topOffset}px`;
+            attImg.style.width = `${imageWidth}px`;
             attImg.style.height = "auto";
             attImg.style.objectFit = "contain";
             attImg.style.borderRadius = "4px";
