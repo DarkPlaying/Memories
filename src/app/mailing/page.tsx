@@ -789,7 +789,12 @@ export default function MailingPage() {
     const formattedDate = `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}/${date.getFullYear()}`;
     
     // Preload background images to ensure they render in html-to-image
-    const bgImages = ["/love_letter_bg_1.jpg", "/love_letter_bg_2.jpg", "/stamp.png"];
+    const bgImgVersion = "1.0.4";
+    const bgImages = [
+      `/love_letter_bg_1.jpg?v=${bgImgVersion}`,
+      `/love_letter_bg_2.jpg?v=${bgImgVersion}`,
+      `/stamp.png?v=${bgImgVersion}`
+    ];
     if (activeLetter.signature) {
       bgImages.push(activeLetter.signature);
     }
@@ -870,10 +875,9 @@ export default function MailingPage() {
         pageDiv.style.backgroundColor = "#f2eeeb";
         pageDiv.style.overflow = "hidden";
         pageDiv.style.boxSizing = "border-box";
-        
-        let bgImg = "/love_letter_bg_2.jpg"; // Default page 2 (blank)
+        let bgImg = `/love_letter_bg_2.jpg?v=${bgImgVersion}`; // Default page 2 (blank)
         if (i === 0) {
-          bgImg = "/love_letter_bg_1.jpg"; // Page 1
+          bgImg = `/love_letter_bg_1.jpg?v=${bgImgVersion}`; // Page 1
         }
         
         // Append background image as an absolute img element to ensure precise positioning & prevent shift in html-to-image
