@@ -93,8 +93,8 @@ export default function MailingPage() {
   const [composerScale, setComposerScale] = useState(1);
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 504) { // 480px + 24px margins
-        setComposerScale((window.innerWidth - 24) / 480);
+      if (window.innerWidth < 536) { // 512px + 24px margins
+        setComposerScale((window.innerWidth - 24) / 512);
       } else {
         setComposerScale(1);
       }
@@ -990,15 +990,9 @@ export default function MailingPage() {
         activeLetter.attachments?.forEach((a: any) => {
           const totalLines = allLines.length;
           const editorRows = Math.max(activeLetter.textareaRows || 0, totalLines);
-          
-          // H_parent in editor was: 24 + editorRows * 28
-          const H_parent = 24 + editorRows * 28;
-          const Y_px = (a.y / 100) * H_parent;
-          // In the editor: Y_text = Y_px - 12 (top padding is 4px parent + 8px textarea = 12px)
-          // Each line is 28px
           const targetLine = Math.min(
             Math.max(0, totalLines - 1),
-            Math.round((Y_px - 12) / 28)
+            Math.round((a.y / 100) * editorRows)
           );
           
           // Find which page this line belongs to
@@ -1198,7 +1192,7 @@ export default function MailingPage() {
 
     const textarea = document.getElementById("letter-textarea") as HTMLTextAreaElement;
     const actualRows = textarea 
-      ? Math.round((textarea.scrollHeight - 16) / 28) 
+      ? Math.round(textarea.scrollHeight / 29.5) 
       : Math.max(textareaRows, letterContent.split("\n").length);
 
     setFormState("loading");
@@ -1314,7 +1308,7 @@ export default function MailingPage() {
     }
   };
 
-  const dynamicPopoverWidth = "480px";
+  const dynamicPopoverWidth = "512px";
   // Dynamically increase height based on rows added
   const dynamicPopoverHeight = `${Math.min(620, 430 + (textareaRows - 6) * 24)}px`;
 
@@ -2318,7 +2312,7 @@ export default function MailingPage() {
             {/* PopoverForm wrapper triggered by primary button */}
             <div className={openWritePopover ? "fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-auto transition-all duration-300" : "absolute opacity-0 pointer-events-none"}>
               <div
-                className="flex-shrink-0 min-w-[480px] w-[480px]"
+                className="flex-shrink-0 min-w-[512px] w-[512px]"
                 style={{
                   transform: composerScale < 1 ? `scale(${composerScale})` : undefined,
                   transformOrigin: "center center"
@@ -2439,7 +2433,10 @@ export default function MailingPage() {
                         </div>
 
                         {/* ruled notebook styled text area wrapper */}
-                        <div className="relative border border-neutral-850 rounded-md bg-neutral-900/10 p-1" id="composer-paper-parent">
+                        <div 
+                          className="relative border border-neutral-850 rounded-md bg-neutral-900/10 p-0 mx-auto w-[440px]" 
+                          id="composer-paper-parent"
+                        >
                           <textarea
                             id="letter-textarea"
                             autoFocus
@@ -2448,13 +2445,15 @@ export default function MailingPage() {
                             onChange={(e) => setLetterContent(e.target.value)}
                             rows={Math.max(textareaRows, letterContent.split("\n").length)}
                             required
-                            className="w-full resize-none bg-transparent outline-none text-neutral-200 text-sm font-outfit leading-7 p-2 select-text"
+                            className="w-full resize-none bg-transparent outline-none text-neutral-200 text-[14.5px] font-outfit leading-[29.5px] p-0 select-text"
                             style={{
                               backgroundImage: "linear-gradient(to bottom, transparent 95%, rgba(139, 92, 246, 0.1) 95%)",
-                              backgroundSize: "100% 1.75rem",
+                              backgroundSize: "100% 29.5px",
                               backgroundPosition: "0 3px",
                               backgroundAttachment: "local",
                               overflow: "hidden",
+                              lineHeight: "29.5px",
+                              fontFamily: "'Outfit', sans-serif",
                             }}
                           />
                           
@@ -2866,23 +2865,31 @@ export default function MailingPage() {
             {/* Ruled letter paper display */}
             <div 
               id="letter-paper-content"
-              className="flex-1 overflow-y-auto rounded-lg bg-[#FCFBF9] text-neutral-800 font-outfit text-sm border border-[#EADEC9] select-text relative paper-scrollbar p-1"
+              className="flex-1 overflow-y-auto rounded-lg bg-[#FCFBF9] text-neutral-800 font-outfit text-sm border border-[#EADEC9] select-text relative paper-scrollbar p-0"
               style={{ minHeight: "200px" }}
             >
               <div 
                 id="letter-paper-content-inner"
-                className="select-text relative p-2" 
+                className="select-text relative p-0 mx-auto w-[440px]" 
                 style={{ 
                   minHeight: "100%",
                   backgroundImage: "linear-gradient(to bottom, transparent 95%, rgba(139, 92, 246, 0.15) 95%)",
-                  backgroundSize: "100% 1.75rem",
+                  backgroundSize: "100% 29.5px",
                   backgroundPosition: "0 3px",
                   backgroundAttachment: "local",
-                  lineHeight: "1.75rem",
+                  lineHeight: "29.5px",
                   backgroundColor: "#FCFBF9",
+                  fontFamily: "'Outfit', sans-serif",
                 }}
               >
-                <div dangerouslySetInnerHTML={renderFormattedContent(activeLetter.content)} className="whitespace-pre-wrap select-text" />
+                <div 
+                  dangerouslySetInnerHTML={renderFormattedContent(activeLetter.content)} 
+                  className="whitespace-pre-wrap select-text text-[14.5px] text-left w-full animate-fade-in" 
+                  style={{
+                    lineHeight: "29.5px",
+                    fontFamily: "'Outfit', sans-serif",
+                  }}
+                />
                 
                 {activeLetter.signature && (
                   <div className="mt-10 border-t border-[#EADEC9] pt-4 flex flex-col items-start gap-1">
