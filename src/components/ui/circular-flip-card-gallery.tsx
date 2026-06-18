@@ -59,7 +59,6 @@ interface CircularGalleryProps {
 export default function CircularGallery({ images = [] }: CircularGalleryProps) {
   const galleryRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState(0)
-  const [rotation, setRotation] = useState(0)
   const [isMobileWidth, setIsMobileWidth] = useState(false)
 
   const { scrollY } = useScroll()
@@ -83,17 +82,6 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
     }
 
     return () => resizeObserver.disconnect()
-  }, [])
-
-  // Effect for animation loop
-  useEffect(() => {
-    let animationFrameId: number
-    const animate = () => {
-      setRotation((prevRotation) => prevRotation + 0.008) // faster auto-rotation
-      animationFrameId = requestAnimationFrame(animate)
-    }
-    animationFrameId = requestAnimationFrame(animate)
-    return () => cancelAnimationFrame(animationFrameId)
   }, [])
 
   const radius = size * (isMobileWidth ? 0.43 : 0.38) // Wider spacing on mobile to leave elegant gaps between cards
@@ -225,30 +213,36 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
           </a>
         </div>
 
-        {/* Circular arrangement of cards fanning out and rotating on scroll */}
+        {/* Circular arrangement of cards fanning out and rotating on scroll + auto-spin */}
         {size > 0 && (
           <motion.div
             style={{ rotate: scrollRotation }}
             className="absolute inset-0 pointer-events-none"
           >
-            {dynamicCardData.map((card, index) => {
-              const angle = (index / dynamicCardData.length) * 2 * Math.PI - Math.PI / 2 + rotation
-              const x = centerX + radius * Math.cos(angle)
-              const y = centerY + radius * Math.sin(angle)
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+              className="absolute inset-0"
+            >
+              {dynamicCardData.map((card, index) => {
+                const angle = (index / dynamicCardData.length) * 2 * Math.PI - Math.PI / 2
+                const x = centerX + radius * Math.cos(angle)
+                const y = centerY + radius * Math.sin(angle)
 
-              return (
-                <FlipCard
-                  key={index}
-                  {...card}
-                  className="absolute hover:z-20 pointer-events-auto"
-                  style={{
-                    left: `${x}px`,
-                    top: `${y}px`,
-                    transform: `translate(-50%, -50%) rotate(${(angle + Math.PI / 2) * (180 / Math.PI)}deg)`,
-                  }}
-                />
-              )
-            })}
+                return (
+                  <FlipCard
+                    key={index}
+                    {...card}
+                    className="absolute hover:z-20 pointer-events-auto"
+                    style={{
+                      left: `${x}px`,
+                      top: `${y}px`,
+                      transform: `translate(-50%, -50%) rotate(${(angle + Math.PI / 2) * (180 / Math.PI)}deg)`,
+                    }}
+                  />
+                )
+              })}
+            </motion.div>
           </motion.div>
         )}
       </div>
