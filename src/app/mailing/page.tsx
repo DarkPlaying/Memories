@@ -949,12 +949,10 @@ export default function MailingPage() {
     fetchPagePreviews();
   }, [chatGalleryPage]);
 
-  // Filter letters to only show letters sent by or received by the loggedInUser, or legacy letters (no senderId and recipientId)
+  // Filter letters to only show letters written/sent by the loggedInUser
   const filteredLetters = letters.filter(l => 
     !loggedInUser || 
-    l.senderId === loggedInUser.id || 
-    l.recipientId === loggedInUser.id ||
-    (!l.senderId && !l.recipientId)
+    l.senderId === loggedInUser.id
   );
 
   // Pagination boundary guard
