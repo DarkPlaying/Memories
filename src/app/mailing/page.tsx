@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Mail, Calendar, FileText, Trash2, Download, Eye, EyeOff, LogOut, Globe } from "lucide-react";
+import { ArrowLeft, Plus, Mail, Calendar, FileText, Trash2, Download, Eye, EyeOff, LogOut, Globe, Bookmark, RotateCcw, X, ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
 import { Github, Linkedin, Twitter } from "@/components/ui/brand-icons";
 import { collection, addDoc, getDocs, orderBy, query, doc, updateDoc, deleteDoc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -32,7 +32,7 @@ import { AlertCard } from "@/components/ui/alert-card";
 import { MorphingCardStack } from "@/components/ui/morphing-card-stack";
 import ImageCropper from "@/components/ui/image-cropper";
 import { hashPassword } from "@/lib/password-security";
-import { CircularGallery, GalleryItem } from "@/components/ui/circular-gallery";
+import { CircularGallery, GalleryItem, CircularGalleryRef } from "@/components/ui/circular-gallery";
 
 
 type PageState = "landing" | "visit" | "loading-visit" | "chat-world";
@@ -70,6 +70,9 @@ interface UserProfile {
   password?: string;
   avatarAdjust?: { scale: number; x: number; y: number };
   avatarCrop?: { x: number; y: number; width: number; height: number; zoom: number; rotation: number };
+  chatReadingIndex?: number | null;
+  chatReadingRotation?: number;
+  chatReadingPage?: number;
 }
 
 const getLetterLockTargetTime = (letter?: any) => {
@@ -163,6 +166,96 @@ const chatGalleryItems: GalleryItem[] = [
     binomial: "05/08/2025",
     photo: {
       url: "/chats/chat_10.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "First Photo",
+    binomial: "05/08/2025",
+    photo: {
+      url: "/chats/chat_11.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Choki Winner 2",
+    binomial: "05/08/2025",
+    photo: {
+      url: "/chats/chat_12.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Next Dare 2",
+    binomial: "05/08/2025",
+    photo: {
+      url: "/chats/chat_13.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Akka's Dare List 2",
+    binomial: "05/08/2025",
+    photo: {
+      url: "/chats/chat_14.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Stranger's Number 2",
+    binomial: "05/08/2025",
+    photo: {
+      url: "/chats/chat_15.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Something Normal 2",
+    binomial: "05/08/2025",
+    photo: {
+      url: "/chats/chat_16.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Pregnant Joke 2",
+    binomial: "05/08/2025",
+    photo: {
+      url: "/chats/chat_17.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Dare Effect 2",
+    binomial: "05/08/2025",
+    photo: {
+      url: "/chats/chat_18.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Sir to Da 2",
+    binomial: "05/08/2025",
+    photo: {
+      url: "/chats/chat_19.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Rice Kuduka 2",
+    binomial: "05/08/2025",
+    photo: {
+      url: "/chats/chat_20.png",
       text: "WhatsApp conversation between Sanjay and Divya",
       by: "Sanjay & Divya"
     }
@@ -346,6 +439,215 @@ export default function MailingPage() {
   const [formState, setFormState] = useState<FormState>("idle");
   const [chatGalleryPage, setChatGalleryPage] = useState(0);
   const [openWritePopover, setOpenWritePopover] = useState(false);
+  const galleryRef = useRef<CircularGalleryRef>(null);
+  const [saveNotification, setSaveNotification] = useState<string | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [savedReadingIndex, setSavedReadingIndex] = useState<number | null>(null);
+
+  // Keyboard navigation for Lightbox
+  useEffect(() => {
+    if (lightboxIndex === null) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        setLightboxIndex(prev => {
+          if (prev === null) return null;
+          return (prev - 1 + chatGalleryItems.length) % chatGalleryItems.length;
+        });
+      } else if (e.key === "ArrowRight") {
+        setLightboxIndex(prev => {
+          if (prev === null) return null;
+          return (prev + 1) % chatGalleryItems.length;
+        });
+      } else if (e.key === "Escape") {
+        setLightboxIndex(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxIndex]);
+
+  // Synchronize background slider rotation with Lightbox index
+  useEffect(() => {
+    if (lightboxIndex !== null) {
+      const targetPage = Math.floor(lightboxIndex / 10);
+      const targetItemOffset = lightboxIndex % 10;
+      const targetRotation = -targetItemOffset * 36;
+      
+      setChatGalleryPage(targetPage);
+      const timer = setTimeout(() => {
+        if (galleryRef.current) {
+          galleryRef.current.setRotation(targetRotation);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [lightboxIndex]);
+
+  const saveReadingPointToFirebase = async (index: number | null, rotation: number = 0, page: number = 0) => {
+    if (!loggedInUser) return;
+    try {
+      await updateDoc(doc(db, "profiles", loggedInUser.id), {
+        chatReadingIndex: index,
+        chatReadingRotation: rotation,
+        chatReadingPage: page
+      });
+      const updatedProfiles = profiles.map(p => 
+        p.id === loggedInUser.id ? { ...p, chatReadingIndex: index, chatReadingRotation: rotation, chatReadingPage: page } : p
+      );
+      setProfiles(updatedProfiles);
+      localStorage.setItem("user_profiles", JSON.stringify(updatedProfiles));
+    } catch (err) {
+      console.error("Failed to save reading point to Firebase:", err);
+    }
+  };
+
+  const handleSaveReadingPoint = async () => {
+    if (galleryRef.current) {
+      const currentRot = galleryRef.current.getRotation();
+      const itemsCount = 10;
+      const anglePerItem = 360 / itemsCount;
+      const totalRotation = currentRot % 360;
+      
+      let minAngle = 360;
+      let activeIdx = 0;
+      for (let i = 0; i < itemsCount; i++) {
+        const itemAngle = i * anglePerItem;
+        const relativeAngle = (itemAngle + totalRotation + 360) % 360;
+        const normalizedAngle = Math.abs(relativeAngle > 180 ? 360 - relativeAngle : relativeAngle);
+        if (normalizedAngle < minAngle) {
+          minAngle = normalizedAngle;
+          activeIdx = i;
+        }
+      }
+      const activeIndex = chatGalleryPage * 10 + activeIdx;
+      const activeNum = activeIndex + 1;
+      
+      const isAlreadyMarked = savedReadingIndex === activeIndex;
+      
+      if (isAlreadyMarked) {
+        localStorage.removeItem("chat_reading_index");
+        localStorage.removeItem("chat_reading_rotation");
+        localStorage.removeItem("chat_reading_page");
+        setSavedReadingIndex(null);
+        await saveReadingPointToFirebase(null);
+        setSaveNotification("Reading Point unmarked!");
+      } else {
+        localStorage.setItem("chat_reading_rotation", String(currentRot));
+        localStorage.setItem("chat_reading_page", String(chatGalleryPage));
+        localStorage.setItem("chat_reading_index", String(activeIndex));
+        setSavedReadingIndex(activeIndex);
+        await saveReadingPointToFirebase(activeIndex, currentRot, chatGalleryPage);
+        setSaveNotification(`Saved Reading Point at Slide #${activeNum}!`);
+      }
+      setTimeout(() => setSaveNotification(null), 3000);
+    }
+  };
+
+  const handleGoToStart = async () => {
+    setChatGalleryPage(0);
+    if (galleryRef.current) {
+      galleryRef.current.setRotation(0);
+    }
+    localStorage.removeItem("chat_reading_index");
+    localStorage.removeItem("chat_reading_rotation");
+    localStorage.removeItem("chat_reading_page");
+    setSavedReadingIndex(null);
+    await saveReadingPointToFirebase(null);
+    setSaveNotification("Returned to Starting Point (#01)!");
+    setTimeout(() => setSaveNotification(null), 3000);
+  };
+
+  useEffect(() => {
+    if (pageState === "chat-world") {
+      const applyLocalOrDefaults = () => {
+        const savedRotation = localStorage.getItem("chat_reading_rotation");
+        const savedPage = localStorage.getItem("chat_reading_page");
+        const savedIndex = localStorage.getItem("chat_reading_index");
+        
+        if (savedPage !== null) {
+          setChatGalleryPage(Number(savedPage));
+        } else {
+          setChatGalleryPage(0);
+        }
+
+        if (savedIndex !== null) {
+          const index = Number(savedIndex);
+          setLightboxIndex(index);
+          setSavedReadingIndex(index);
+          setSaveNotification(`Resumed from your saved Reading Point (Slide #${index + 1})!`);
+          setTimeout(() => setSaveNotification(null), 3000);
+        } else if (savedRotation !== null) {
+          const timer = setTimeout(() => {
+            if (galleryRef.current) {
+              galleryRef.current.setRotation(Number(savedRotation));
+            }
+          }, 100);
+          setSaveNotification("Resumed from your saved Reading Point!");
+          setTimeout(() => setSaveNotification(null), 3000);
+        } else {
+          const timer = setTimeout(() => {
+            if (galleryRef.current) {
+              galleryRef.current.setRotation(0);
+            }
+          }, 100);
+        }
+      };
+
+      if (loggedInUser) {
+        getDoc(doc(db, "profiles", loggedInUser.id)).then((docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            const firestoreIndex = data.chatReadingIndex;
+            const firestoreRotation = data.chatReadingRotation;
+            const firestorePage = data.chatReadingPage;
+            
+            if (firestoreIndex !== undefined && firestoreIndex !== null) {
+              const index = Number(firestoreIndex);
+              localStorage.setItem("chat_reading_index", String(firestoreIndex));
+              localStorage.setItem("chat_reading_rotation", String(firestoreRotation));
+              localStorage.setItem("chat_reading_page", String(firestorePage));
+              
+              setSavedReadingIndex(index);
+              setLightboxIndex(index);
+              setChatGalleryPage(Number(firestorePage));
+              
+              setTimeout(() => {
+                if (galleryRef.current) {
+                  galleryRef.current.setRotation(Number(firestoreRotation));
+                }
+              }, 100);
+              setSaveNotification(`Resumed from your saved Reading Point (Slide #${index + 1})!`);
+              setTimeout(() => setSaveNotification(null), 3000);
+            } else if (firestoreIndex === null) {
+              // Explicitly unmarked on Firebase
+              localStorage.removeItem("chat_reading_index");
+              localStorage.removeItem("chat_reading_rotation");
+              localStorage.removeItem("chat_reading_page");
+              setSavedReadingIndex(null);
+              setLightboxIndex(null);
+              
+              setTimeout(() => {
+                if (galleryRef.current) {
+                  galleryRef.current.setRotation(0);
+                }
+              }, 100);
+            } else {
+              applyLocalOrDefaults();
+            }
+          } else {
+            applyLocalOrDefaults();
+          }
+        }).catch((err) => {
+          console.error("Failed to fetch reading point from Firestore:", err);
+          applyLocalOrDefaults();
+        });
+      } else {
+        applyLocalOrDefaults();
+      }
+    }
+  }, [pageState]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -588,6 +890,11 @@ export default function MailingPage() {
     const handleResize = () => setIsMobile(window.innerWidth < 640);
     window.addEventListener("resize", handleResize);
 
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("state") === "chat-world") {
+      setPageState("chat-world");
+    }
+
     const savedSalutation = localStorage.getItem("default_salutation");
     if (savedSalutation) {
       setSalutation(savedSalutation);
@@ -596,6 +903,11 @@ export default function MailingPage() {
     const savedSignature = localStorage.getItem("default_signature");
     if (savedSignature) {
       setSignatureUrl(savedSignature);
+    }
+
+    const savedReadingIdx = localStorage.getItem("chat_reading_index");
+    if (savedReadingIdx !== null) {
+      setSavedReadingIndex(Number(savedReadingIdx));
     }
 
     const generatedStars = Array.from({ length: 80 }).map(() => ({
@@ -1872,7 +2184,7 @@ export default function MailingPage() {
 
       {/* Top Header Bar */}
       {loggedInUser && (
-        <div className="absolute top-4 sm:top-6 left-4 sm:left-8 right-4 sm:right-8 flex items-center justify-between z-50 pointer-events-none">
+        <div className={`${pageState === "chat-world" ? "fixed" : "absolute"} top-4 sm:top-6 left-4 sm:left-8 right-4 sm:right-8 flex items-center justify-between z-50 pointer-events-none`}>
           <div className="pointer-events-auto">
             {pageState === "landing" ? (
               <button 
@@ -1899,6 +2211,17 @@ export default function MailingPage() {
               </button>
             )}
           </div>
+
+          {pageState === "chat-world" && (
+            <div className="text-center flex flex-col items-center mx-2 sm:mx-4 pointer-events-auto max-w-[90vw] sm:max-w-3xl">
+              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/5 border border-white/10 mb-2 shadow-[inset_0_0_8px_rgba(168,85,247,0.05)]">
+                <span className="text-[9px] sm:text-[10px] md:text-[11px] font-outfit uppercase tracking-[0.2em] text-purple-300">✦ Chat World ✦</span>
+              </div>
+              <p className="text-[10px] sm:text-[11px] md:text-xs font-outfit text-gray-400 font-light mt-1 max-w-[90vw] sm:max-w-none text-center leading-relaxed sm:leading-loose">
+                Scroll the page to rotate the 3D gallery of our sweetest messages. Use the buttons below to paginate.
+              </p>
+            </div>
+          )}
           
           <div className="flex items-center gap-3 pointer-events-auto">
             {pageState !== "chat-world" && (
@@ -3194,60 +3517,253 @@ export default function MailingPage() {
 
         {/* CHAT WORLD STATE */}
         {pageState === "chat-world" && (
-          <div className="w-full flex flex-col items-center pt-24 pb-12 sm:pt-28" style={{ minHeight: "220vh" }}>
-            <div className="w-full h-[90vh] sticky top-0 flex flex-col items-center justify-center overflow-hidden z-10">
-              
-              {/* Header and Title */}
-              <div className="text-center absolute top-20 z-20 pointer-events-auto flex flex-col items-center">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-2.5 shadow-[inset_0_0_10px_rgba(168,85,247,0.05)]">
-                  <span className="text-[9px] font-outfit uppercase tracking-[0.2em] text-purple-300">✦ Chat Archive ✦</span>
-                </div>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-playfair font-black text-white tracking-tight leading-tight">
-                  Chat World
-                </h2>
-                <p className="text-xs sm:text-sm font-outfit text-gray-400 font-light mt-2 max-w-md text-center">
-                  Scroll the page to rotate the 3D gallery of our sweetest messages. Use the buttons below to paginate.
-                </p>
-              </div>
+          <div className="fixed inset-0 w-full h-screen bg-[#030308]/95 backdrop-blur-sm z-40 flex flex-col items-center justify-between pt-28 pb-8 px-4 overflow-hidden select-none">
+            
+            {/* 3D Rotating Gallery taking up the middle */}
+            <div className="w-full flex-1 flex items-center justify-center overflow-visible select-none my-6 sm:my-10 min-h-0">
+              <CircularGallery 
+                ref={galleryRef}
+                items={chatGalleryItems.slice(chatGalleryPage * 10, chatGalleryPage * 10 + 10)} 
+                radius={isMobile ? 280 : 420} 
+                autoRotateSpeed={0.015}
+                cardWidth={isMobile ? 180 : 220}
+                cardHeight={isMobile ? 320 : 391}
+                onItemClick={(idx) => setLightboxIndex(chatGalleryPage * 10 + idx)}
+              />
+            </div>
 
-              {/* 3D Rotating Gallery */}
-              <div className="w-full h-[520px] mt-16 flex items-center justify-center overflow-visible">
-                <CircularGallery 
-                  items={chatGalleryPage === 0 ? chatGalleryItems.slice(0, 5) : chatGalleryItems.slice(5, 10)} 
-                  radius={isMobile ? 360 : 520} 
-                  autoRotateSpeed={0.015}
-                />
-              </div>
-
+            {/* Bottom Controls (Reading Point Actions) */}
+            <div className="flex flex-col items-center gap-3 z-50 pointer-events-auto mt-6 sm:mt-10">
               {/* Pagination Controls */}
-              <div className="flex items-center gap-6 mt-8 z-20 pointer-events-auto">
+              <div className="flex items-center gap-3 mb-1">
                 <button
                   disabled={chatGalleryPage === 0}
-                  onClick={() => setChatGalleryPage(0)}
-                  className="p-3 bg-neutral-900 border border-neutral-800 rounded-full disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-850 transition cursor-pointer text-white flex items-center justify-center size-10 shadow-md"
+                  onClick={() => {
+                    setChatGalleryPage(0);
+                    if (galleryRef.current) galleryRef.current.setRotation(0);
+                  }}
+                  className="p-1 bg-neutral-900 border border-neutral-800 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-850 text-xs font-semibold text-neutral-300 transition cursor-pointer font-outfit shadow-md flex items-center justify-center size-8"
                   aria-label="Previous Page"
                 >
                   ←
                 </button>
-                <span className="text-sm font-outfit text-neutral-400">
+                <span className="text-xs font-semibold text-neutral-400 font-outfit select-none">
                   Page {chatGalleryPage + 1} of 2
                 </span>
                 <button
                   disabled={chatGalleryPage === 1}
-                  onClick={() => setChatGalleryPage(1)}
-                  className="p-3 bg-neutral-900 border border-neutral-800 rounded-full disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-850 transition cursor-pointer text-white flex items-center justify-center size-10 shadow-md"
+                  onClick={() => {
+                    setChatGalleryPage(1);
+                    if (galleryRef.current) galleryRef.current.setRotation(0);
+                  }}
+                  className="p-1 bg-neutral-900 border border-neutral-800 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-850 text-xs font-semibold text-neutral-300 transition cursor-pointer font-outfit shadow-md flex items-center justify-center size-8"
                   aria-label="Next Page"
                 >
                   →
                 </button>
               </div>
 
+              {/* Action Buttons */}
+              <div className="flex items-center gap-4 mt-0.5">
+                <button
+                  onClick={handleSaveReadingPoint}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border transition cursor-pointer font-outfit shadow-md ${
+                    savedReadingIndex !== null
+                      ? "border-red-500/30 bg-red-950/20 hover:bg-red-900/40 hover:border-red-500/50 text-red-300"
+                      : "border-purple-500/30 bg-purple-950/20 hover:bg-purple-900/40 hover:border-purple-500/50 text-purple-300"
+                  }`}
+                >
+                  {savedReadingIndex !== null ? (
+                    <>
+                      <Trash2 size={12} className="text-red-300" />
+                      Unmark Reading Point
+                    </>
+                  ) : (
+                    <>
+                      <Bookmark size={12} className="text-purple-300" />
+                      Mark Reading Point
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleGoToStart}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-neutral-800 bg-neutral-900 hover:bg-neutral-850 text-xs font-semibold text-neutral-300 transition cursor-pointer font-outfit shadow-md"
+                >
+                  <RotateCcw size={12} className="text-neutral-400" />
+                  Go to Starting Point
+                </button>
+                <Link
+                  href="/mailing/full-chat"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-purple-800/40 bg-purple-950/20 hover:bg-purple-900/40 hover:border-purple-500/50 text-xs font-semibold text-purple-300 transition cursor-pointer font-outfit shadow-md"
+                >
+                  <MessageSquare size={12} className="text-purple-400" />
+                  Full Chat
+                </Link>
+              </div>
+
+              {/* Save/Resume Toast Notification */}
+              {saveNotification && (
+                <div className="absolute bottom-24 bg-purple-900/90 border border-purple-500/30 text-purple-200 px-4 py-1.5 rounded-full text-xs font-semibold font-outfit shadow-lg animate-bounce z-50 whitespace-nowrap">
+                  {saveNotification}
+                </div>
+              )}
             </div>
+
           </div>
         )}
       </>
     )}
   </div>
+
+      {/* Fullscreen Lightbox Modal */}
+      {lightboxIndex !== null && (
+        <div 
+          className="fixed inset-0 bg-black/95 z-[150] flex flex-col items-center justify-center backdrop-blur-md transition-all duration-305 select-none animate-fade-in"
+          onClick={() => setLightboxIndex(null)}
+        >
+          {/* Top Panel */}
+          <div 
+            className="absolute top-0 right-0 p-6 z-[160] text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setLightboxIndex(null)}
+              className="p-2.5 bg-neutral-900/60 border border-neutral-800 rounded-full hover:bg-neutral-800 text-white cursor-pointer transition flex items-center justify-center shadow-lg"
+              aria-label="Close Lightbox"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Main Image Container */}
+          <div className="relative max-w-4xl max-h-[85vh] w-full px-12 flex items-center justify-center -translate-y-4">
+            {/* Left Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex(prev => {
+                  if (prev === null) return null;
+                  return (prev - 1 + chatGalleryItems.length) % chatGalleryItems.length;
+                });
+              }}
+              className="absolute left-4 p-3.5 bg-neutral-900/60 border border-neutral-800 rounded-full hover:bg-neutral-800 text-white cursor-pointer transition flex items-center justify-center shadow-lg"
+              aria-label="Previous Slide"
+            >
+              <ChevronLeft size={20} />
+            </button>
+
+            <img
+              src={chatGalleryItems[lightboxIndex].photo.url}
+              alt={chatGalleryItems[lightboxIndex].photo.text}
+              className="max-h-[84vh] max-w-full object-contain rounded-xl border border-neutral-800/80 shadow-2xl animate-fade-in"
+              onClick={(e) => e.stopPropagation()} // Prevent closing when clicking the image
+            />
+
+            {/* Right Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex(prev => {
+                  if (prev === null) return null;
+                  return (prev + 1) % chatGalleryItems.length;
+                });
+              }}
+              className="absolute right-4 p-3.5 bg-neutral-900/60 border border-neutral-800 rounded-full hover:bg-neutral-800 text-white cursor-pointer transition flex items-center justify-center shadow-lg"
+              aria-label="Next Slide"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+
+          {/* Bottom Panel Actions */}
+          <div 
+            className="absolute bottom-6 left-0 w-full flex items-center justify-center gap-4 z-[160]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={async () => {
+                if (lightboxIndex !== null) {
+                  const isLightboxMarked = savedReadingIndex === lightboxIndex;
+                  if (isLightboxMarked) {
+                    localStorage.removeItem("chat_reading_index");
+                    localStorage.removeItem("chat_reading_rotation");
+                    localStorage.removeItem("chat_reading_page");
+                    setSavedReadingIndex(null);
+                    await saveReadingPointToFirebase(null);
+                    setSaveNotification("Reading Point unmarked!");
+                  } else {
+                    const targetPage = Math.floor(lightboxIndex / 10);
+                    const targetItemOffset = lightboxIndex % 10;
+                    const targetRotation = -targetItemOffset * 36;
+                    
+                    localStorage.setItem("chat_reading_index", String(lightboxIndex));
+                    localStorage.setItem("chat_reading_rotation", String(targetRotation));
+                    localStorage.setItem("chat_reading_page", String(targetPage));
+                    setSavedReadingIndex(lightboxIndex);
+                    
+                    setChatGalleryPage(targetPage);
+                    if (galleryRef.current) {
+                      galleryRef.current.setRotation(targetRotation);
+                    }
+                    await saveReadingPointToFirebase(lightboxIndex, targetRotation, targetPage);
+                    setSaveNotification(`Saved Reading Point at Slide #${lightboxIndex + 1}!`);
+                  }
+                  setTimeout(() => setSaveNotification(null), 3000);
+                }
+              }}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full border transition cursor-pointer font-outfit shadow-md ${
+                savedReadingIndex === lightboxIndex
+                  ? "border-red-500/30 bg-red-950/40 hover:bg-red-900/60 hover:border-red-500/50 text-red-300"
+                  : "border-purple-500/30 bg-purple-950/40 hover:bg-purple-900/60 hover:border-purple-500/50 text-purple-300"
+              }`}
+            >
+              {savedReadingIndex === lightboxIndex ? (
+                <>
+                  <Trash2 size={12} className="text-red-300" />
+                  Unmark Reading Point
+                </>
+              ) : (
+                <>
+                  <Bookmark size={12} className="text-purple-300" />
+                  Mark Reading Point
+                </>
+              )}
+            </button>
+
+            <span className="text-xs font-semibold font-outfit text-neutral-400 bg-neutral-900/60 border border-neutral-800/80 px-4 py-2 rounded-full shadow-lg whitespace-nowrap select-none">
+              Slide {lightboxIndex + 1} of {chatGalleryItems.length}
+            </span>
+
+            <button
+              onClick={async () => {
+                setLightboxIndex(0);
+                setChatGalleryPage(0);
+                if (galleryRef.current) {
+                  galleryRef.current.setRotation(0);
+                }
+                localStorage.removeItem("chat_reading_index");
+                localStorage.removeItem("chat_reading_rotation");
+                localStorage.removeItem("chat_reading_page");
+                setSavedReadingIndex(null);
+                await saveReadingPointToFirebase(null);
+                setSaveNotification("Returned to Starting Point (#01)!");
+                setTimeout(() => setSaveNotification(null), 3000);
+              }}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-neutral-800 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-semibold text-neutral-300 transition cursor-pointer font-outfit shadow-md"
+            >
+              <RotateCcw size={12} className="text-neutral-400" />
+              Go to Starting Point
+            </button>
+          </div>
+
+          {/* Save/Resume Toast Notification inside Lightbox */}
+          {saveNotification && (
+            <div className="absolute bottom-20 bg-purple-900/90 border border-purple-500/30 text-purple-200 px-4 py-1.5 rounded-full text-xs font-semibold font-outfit shadow-lg animate-bounce z-[170] whitespace-nowrap">
+              {saveNotification}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Create Profile Image Cropper Modal */}
       {showCreateCropModal && createUploadImageSrc && (
