@@ -80,7 +80,18 @@ interface UserProfile {
 }
 
 const getLetterLockTargetTime = (letter?: any) => {
-  return new Date("May 23, 2031 00:00:00").getTime();
+  if (!letter || !letter.id) return Date.now() + 5 * 60 * 1000;
+  if (typeof window !== "undefined") {
+    const key = `letter_lock_time_${letter.id}`;
+    let lockTimeStr = localStorage.getItem(key);
+    if (!lockTimeStr) {
+      const lockTime = Date.now() + 5 * 60 * 1000; // 5 minutes from now
+      localStorage.setItem(key, lockTime.toString());
+      return lockTime;
+    }
+    return parseInt(lockTimeStr, 10);
+  }
+  return Date.now() + 5 * 60 * 1000;
 };
 
 const chatGalleryItems: GalleryItem[] = [
@@ -532,7 +543,15 @@ export default function MailingPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const [pageState, setPageState] = useState<PageState>("landing");
+  const [pageState, setPageState] = useState<PageState>(() => {
+    if (typeof window !== "undefined") {
+      const savedUserId = sessionStorage.getItem("logged_in_user_id");
+      if (savedUserId) {
+        return "visit";
+      }
+    }
+    return "landing";
+  });
   const [isWorldHovered, setIsWorldHovered] = useState(false);
   const [isLogoutHovered, setIsLogoutHovered] = useState(false);
   const [formState, setFormState] = useState<FormState>("idle");
@@ -858,8 +877,8 @@ export default function MailingPage() {
     let expiryTime = expiry ? parseInt(expiry, 10) : 0;
     const now = Date.now();
 
-    if (!expiry || expiryTime <= now) {
-      expiryTime = now + 5 * 60 * 1000; // 5 minutes
+    if (!expiry || expiryTime <= now || (expiryTime - now) > 2 * 60 * 60 * 1000) {
+      expiryTime = now + 2 * 60 * 60 * 1000; // 2 hours
       localStorage.setItem(sessionKey, expiryTime.toString());
     }
 
@@ -1070,10 +1089,6 @@ export default function MailingPage() {
     const handleResize = () => setIsMobile(window.innerWidth < 640);
     window.addEventListener("resize", handleResize);
 
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("state") === "chat-world") {
-      setPageState("chat-world");
-    }
 
     const savedSalutation = localStorage.getItem("default_salutation");
     if (savedSalutation) {
@@ -1288,17 +1303,6 @@ export default function MailingPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      if (pageState === "chat-world") {
-        url.searchParams.set("state", "chat-world");
-      } else {
-        url.searchParams.delete("state");
-      }
-      window.history.replaceState({}, "", url.pathname + url.search);
-    }
-  }, [pageState]);
 
   const handleOpenLetter = (letter: Letter) => {
     const targetTime = getLetterLockTargetTime(letter);
@@ -2422,7 +2426,7 @@ export default function MailingPage() {
 
       {/* Top Header Bar */}
       {loggedInUser && (
-        <div className={`${pageState === "chat-world" ? "fixed" : "absolute"} top-4 sm:top-6 left-4 sm:left-8 right-4 sm:right-8 flex items-center justify-between z-50 pointer-events-none`}>
+        <div className={`${pageState === "chat-world" ? "fixed" : "absolute"} top-4 sm:top-6 left-4 sm:left-8 right-4 sm:right-8 h-[52px] flex items-center justify-between z-50 pointer-events-none`}>
           <div className="pointer-events-auto">
             {pageState === "landing" ? (
               <button 
@@ -2645,7 +2649,7 @@ export default function MailingPage() {
                       }
                       setLoggedInUser(profile);
                       sessionStorage.setItem("logged_in_user_id", profile.id);
-                      localStorage.setItem(`session_expiry_${profile.id}`, (Date.now() + 5 * 60 * 1000).toString());
+                      localStorage.setItem(`session_expiry_${profile.id}`, (Date.now() + 2 * 60 * 60 * 1000).toString());
                       setLoginPasswordInput("");
                       setLoginPasswordError("");
                     } else {
@@ -2780,7 +2784,7 @@ export default function MailingPage() {
                   if (activeP) {
                     setLoggedInUser(activeP);
                     sessionStorage.setItem("logged_in_user_id", activeP.id);
-                    localStorage.setItem(`session_expiry_${activeP.id}`, (Date.now() + 5 * 60 * 1000).toString());
+                    localStorage.setItem(`session_expiry_${activeP.id}`, (Date.now() + 2 * 60 * 60 * 1000).toString());
                   }
                   setLoginState("select-profile");
                   setTempNewPassword("");
@@ -2973,7 +2977,7 @@ export default function MailingPage() {
                   if (activeP) {
                     setLoggedInUser(activeP);
                     sessionStorage.setItem("logged_in_user_id", activeP.id);
-                    localStorage.setItem(`session_expiry_${activeP.id}`, (Date.now() + 5 * 60 * 1000).toString());
+                    localStorage.setItem(`session_expiry_${activeP.id}`, (Date.now() + 2 * 60 * 60 * 1000).toString());
                   }
                   setLoginState("select-profile");
                   setTempNewPassword("");

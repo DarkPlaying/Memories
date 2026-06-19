@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useEffect, useState, useMemo, useRef, Suspense, useImperativeHandle } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Loader2, Send, Phone, Video, MoreVertical, Wifi, Battery, Bookmark, RotateCcw, ChevronUp, ChevronDown, Check, Clock, LogOut } from "lucide-react";
@@ -52,12 +51,12 @@ interface ChatScreenRef {
   getFirstVisibleMessage: () => { msgId: string; wordText: string; globalIndex: number } | null;
 }
 
-const ChatScreen = React.forwardRef<ChatScreenRef, ChatScreenProps>(({ 
-  messages, 
-  loading, 
-  hasMore, 
-  onScroll, 
-  timeStr, 
+const ChatScreen = React.forwardRef<ChatScreenRef, ChatScreenProps>(({
+  messages,
+  loading,
+  hasMore,
+  onScroll,
+  timeStr,
   selectedDate,
   isSelectingMarkPoint,
   tempSelectedWordInfo,
@@ -75,7 +74,7 @@ const ChatScreen = React.forwardRef<ChatScreenRef, ChatScreenProps>(({
       if (!listRef.current || messages.length === 0) return null;
       const container = listRef.current;
       const containerScrollTop = container.scrollTop;
-      
+
       const bubbleElements = container.querySelectorAll('[data-message-bubble="true"]');
       for (let i = 0; i < bubbleElements.length; i++) {
         const el = bubbleElements[i] as HTMLElement;
@@ -131,7 +130,7 @@ const ChatScreen = React.forwardRef<ChatScreenRef, ChatScreenProps>(({
             }
           };
           tryScroll();
-        } 
+        }
         // 2. Scroll to selected date separator if intent is date
         else if (scrollTargetIntent === "date" && selectedDate) {
           if (hasScrolledToDateRef.current === selectedDate) {
@@ -185,11 +184,11 @@ const ChatScreen = React.forwardRef<ChatScreenRef, ChatScreenProps>(({
       <div className="bg-[#FAF6F0] border-b border-[#ede6df] px-4 py-2.5 flex items-center justify-between shrink-0 select-none z-10 shadow-sm">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full overflow-hidden border border-[#ede6df]/85 bg-neutral-900 flex items-center justify-center relative">
-            <img 
-              src="/stamp.png" 
-              alt="Website Stamp Logo" 
-              className="w-full h-full object-cover p-1.5 filter brightness-95" 
-              />
+            <img
+              src="/stamp.png"
+              alt="Website Stamp Logo"
+              className="w-full h-full object-cover p-1.5 filter brightness-95"
+            />
           </div>
           <div className="flex flex-col">
             <span className="text-xs font-bold text-neutral-800 font-outfit leading-tight">Our Story'26</span>
@@ -204,7 +203,7 @@ const ChatScreen = React.forwardRef<ChatScreenRef, ChatScreenProps>(({
       </div>
 
       {/* Chat Messages Body */}
-      <div 
+      <div
         ref={listRef}
         onScroll={onScroll}
         className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-[#FAF6F0] scrollbar-none relative"
@@ -249,16 +248,16 @@ const ChatScreen = React.forwardRef<ChatScreenRef, ChatScreenProps>(({
               const globalIndex = currentStartIndex + (messages.findIndex(m => m.id === msg.id));
               const isMsgSaved = (savedMarkedWordInfo && savedMarkedWordInfo.msgId === msg.id) || (savedReadingIndex !== null && globalIndex === savedReadingIndex);
               const isMsgTempSelected = tempSelectedWordInfo && tempSelectedWordInfo.msgId === msg.id;
-              
+
               return (
-                <div 
-                  key={msg.id} 
+                <div
+                  key={msg.id}
                   data-message-bubble="true"
                   data-msg-id={msg.id}
                   data-marked-message={isMsgSaved ? "true" : undefined}
                   className={`flex w-full ${isRight ? "justify-end" : "justify-start"}`}
                 >
-                  <div 
+                  <div
                     onClick={(e) => {
                       if (isSelectingMarkPoint) {
                         e.stopPropagation();
@@ -270,19 +269,16 @@ const ChatScreen = React.forwardRef<ChatScreenRef, ChatScreenProps>(({
                         });
                       }
                     }}
-                    className={`max-w-[80%] rounded-[18px] px-3.5 py-2 text-xs font-outfit leading-relaxed shadow-sm transition-all ${
-                      isSelectingMarkPoint ? "cursor-pointer" : ""
-                    } ${
-                      isRight 
-                        ? "bg-[#b09581] text-white rounded-tr-none" 
+                    className={`max-w-[80%] rounded-[18px] px-3.5 py-2 text-xs font-outfit leading-relaxed shadow-sm transition-all ${isSelectingMarkPoint ? "cursor-pointer" : ""
+                      } ${isRight
+                        ? "bg-[#b09581] text-white rounded-tr-none"
                         : "bg-white text-[#40352f] border border-[#ede6df] rounded-tl-none"
-                    } ${
-                      isMsgTempSelected 
-                        ? "ring-2 ring-purple-600 shadow-[0_0_12px_rgba(168,85,247,0.45)]" 
-                        : isMsgSaved 
-                          ? "ring-2 ring-purple-500/50 shadow-[0_0_12px_rgba(168,85,247,0.2)]" 
+                      } ${isMsgTempSelected
+                        ? "ring-2 ring-purple-600 shadow-[0_0_12px_rgba(168,85,247,0.45)]"
+                        : isMsgSaved
+                          ? "ring-2 ring-purple-500/50 shadow-[0_0_12px_rgba(168,85,247,0.2)]"
                           : ""
-                    }`}
+                      }`}
                   >
                     <MessageContent content={msg.content} />
                     <div className={`text-[8px] mt-1 text-right select-none ${isRight ? "text-white/70" : "text-neutral-400"}`}>
@@ -359,9 +355,9 @@ function FullChatContent() {
     try {
       const hashedInput = await hashPassword(passwordInput);
       const defaultChatPasswordHash = "160fba6868d2070e5ae03ce0fb9988d58231c4a56b8a94b4e9b5133cbf17d922";
-      
+
       let isMatch = hashedInput === defaultChatPasswordHash;
-      
+
       const userId = sessionStorage.getItem("logged_in_user_id");
       if (userId) {
         const profileRef = doc(db, "profiles", userId);
@@ -373,7 +369,7 @@ function FullChatContent() {
           }
         }
       }
-      
+
       if (isMatch) {
         sessionStorage.setItem("full_chat_authorized", "true");
         setIsAuthorized(true);
@@ -439,8 +435,8 @@ function FullChatContent() {
     let expiryTime = expiry ? parseInt(expiry, 10) : 0;
     const now = Date.now();
 
-    if (!expiry || expiryTime <= now) {
-      expiryTime = now + 5 * 60 * 1000; // 5 minutes
+    if (!expiry || expiryTime <= now || (expiryTime - now) > 2 * 60 * 60 * 1000) {
+      expiryTime = now + 2 * 60 * 60 * 1000; // 2 hours
       localStorage.setItem(sessionKey, expiryTime.toString());
     }
 
@@ -567,7 +563,7 @@ function FullChatContent() {
   // Initial mount configurations (Stars and fake progress)
   useEffect(() => {
     setMounted(true);
-    
+
     // Generate stars
     const generatedStars = Array.from({ length: 80 }).map(() => ({
       x: Math.random() * 100,
@@ -614,14 +610,14 @@ function FullChatContent() {
           const localWordInfoKey = `full_chat_marked_word_info_${userId}`;
           const localIdx = localStorage.getItem(localIndexKey);
           const localWord = localStorage.getItem(localWordInfoKey);
-          
+
           if (localIdx !== null) {
             firestoreIndex = Number(localIdx);
             if (isNaN(firestoreIndex)) firestoreIndex = null;
             if (localWord) {
               try {
                 firestoreWordInfo = JSON.parse(localWord);
-              } catch (e) {}
+              } catch (e) { }
             }
           }
         }
@@ -631,10 +627,10 @@ function FullChatContent() {
           setSavedReadingIndex(firestoreIndex);
           setSavedMarkedWordInfo(firestoreWordInfo);
           setScrollTargetIntent("marked-word");
-          
+
           const matched = matchDateToIndex(firestoreIndex, datesList);
           setCurrentDateIndex(matched);
-          
+
           let fetchIndex = firestoreIndex;
           let limit = 100;
           if (matched > 0) {
@@ -652,10 +648,10 @@ function FullChatContent() {
             if (foundIdx !== -1) {
               setCurrentDateIndex(foundIdx);
               setScrollTargetIntent("date");
-              
+
               let fetchIndex = datesList[foundIdx].index;
               let limit = 40;
-              
+
               if (foundIdx > 0) {
                 fetchIndex = datesList[foundIdx - 1].index;
                 if (foundIdx + 1 < datesList.length) {
@@ -718,7 +714,7 @@ function FullChatContent() {
                     setScrollTargetIntent("marked-word");
                     const matched = matchDateToIndex(fsIndex, datesList);
                     setCurrentDateIndex(matched);
-                    
+
                     let fetchIndex = fsIndex;
                     let limit = 100;
                     if (matched > 0) {
@@ -786,10 +782,10 @@ function FullChatContent() {
     setIsManualSelecting(true);
     setCurrentDateIndex(idx);
     setScrollTargetIntent("date");
-    
+
     let fetchIndex = datesList[idx].index;
     let limit = 40;
-    
+
     if (idx > 0) {
       fetchIndex = datesList[idx - 1].index;
       if (idx + 1 < datesList.length) {
@@ -802,10 +798,10 @@ function FullChatContent() {
         limit = datesList[idx + 1].index - fetchIndex;
       }
     }
-    
+
     // Add buffer
     limit = Math.max(100, limit + 50);
-    
+
     setMessages([]);
     setHasMore(true);
     fetchMessagesFromIndex(fetchIndex, false, limit);
@@ -842,7 +838,7 @@ function FullChatContent() {
   // Save/Unmark Reading Point
   const handleSaveReadingPoint = () => {
     if (!loggedInUserId) return;
-    
+
     let targetMsg: WordInfo | null = null;
     if (chatScreenRef.current) {
       const firstVisible = chatScreenRef.current.getFirstVisibleMessage();
@@ -855,7 +851,7 @@ function FullChatContent() {
         };
       }
     }
-    
+
     if (!targetMsg && messages.length > 0) {
       targetMsg = {
         msgId: messages[0].id,
@@ -883,7 +879,7 @@ function FullChatContent() {
       wordIndex: targetMsg.wordIndex,
       wordText: targetMsg.wordText
     });
-    
+
     setSaveNotification("Reading point marked successfully!");
     setTimeout(() => setSaveNotification(null), 3000);
 
@@ -931,7 +927,7 @@ function FullChatContent() {
       setScrollTargetIntent("marked-word");
       setMessages([]);
       setHasMore(true);
-      
+
       const matched = matchDateToIndex(savedReadingIndex, datesList);
       let fetchIndex = savedReadingIndex;
       let limit = 100;
@@ -942,7 +938,7 @@ function FullChatContent() {
       } else {
         limit = Math.max(100, savedReadingIndex + 100);
       }
-      
+
       fetchMessagesFromIndex(fetchIndex, false, limit);
     }
   };
@@ -952,7 +948,8 @@ function FullChatContent() {
   if (!isAuthorized) {
     return (
       <main className="relative min-h-screen w-full bg-[#030308] text-white flex flex-col items-center justify-center p-4 overflow-hidden select-none font-sans">
-        <style dangerouslySetInnerHTML={{ __html: `
+        <style dangerouslySetInnerHTML={{
+          __html: `
           @keyframes shake {
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-6px); }
@@ -962,11 +959,11 @@ function FullChatContent() {
             animation: shake 0.3s ease-in-out;
           }
         ` }} />
-        
+
         {/* Ambient background glows */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] bg-purple-900/10 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute top-1/3 left-1/3 w-[250px] h-[250px] bg-pink-900/5 rounded-full blur-[80px] pointer-events-none" />
-        
+
         {/* Blinking stars background */}
         <div className="absolute inset-0 bg-[#030308] z-0 overflow-hidden pointer-events-none">
           {stars.map((star, idx) => (
@@ -989,10 +986,10 @@ function FullChatContent() {
           <div className="flex flex-col items-center text-center">
             {/* Stamp Logo Circle */}
             <div className="w-16 h-16 rounded-full border border-purple-500/20 bg-neutral-950 flex items-center justify-center relative shadow-[0_0_20px_rgba(168,85,247,0.15)] mb-4">
-              <img 
-                src="/stamp.png" 
-                alt="Stamp" 
-                className="w-10 h-10 object-contain p-0.5 filter brightness-95" 
+              <img
+                src="/stamp.png"
+                alt="Stamp"
+                className="w-10 h-10 object-contain p-0.5 filter brightness-95"
               />
               <div className="absolute inset-0 rounded-full border border-purple-500/10 animate-ping opacity-75" />
             </div>
@@ -1013,11 +1010,10 @@ function FullChatContent() {
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
                   placeholder="Enter secret password..."
-                  className={`w-full bg-white/5 border rounded-full py-2.5 px-4 text-xs text-white placeholder-neutral-500 font-outfit outline-none transition-all ${
-                    passwordError 
-                      ? "border-red-500/50 focus:border-red-500" 
-                      : "border-white/10 focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30"
-                  }`}
+                  className={`w-full bg-white/5 border rounded-full py-2.5 px-4 text-xs text-white placeholder-neutral-500 font-outfit outline-none transition-all ${passwordError
+                    ? "border-red-500/50 focus:border-red-500"
+                    : "border-white/10 focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30"
+                    }`}
                   autoFocus
                 />
               </div>
@@ -1053,10 +1049,10 @@ function FullChatContent() {
       <main className="relative min-h-screen w-full bg-[#030308] text-white flex flex-col items-center justify-center p-4">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] sm:w-[450px] sm:h-[450px] bg-purple-900/10 rounded-full blur-[90px] pointer-events-none" />
         <div className="flex flex-col items-center justify-center relative z-10">
-          <img 
-            src="/loader.gif" 
-            alt="Loading..." 
-            className="w-32 h-32 sm:w-44 sm:h-44 object-contain filter drop-shadow-[0_0_12px_rgba(168,85,247,0.25)]" 
+          <img
+            src="/loader.gif"
+            alt="Loading..."
+            className="w-32 h-32 sm:w-44 sm:h-44 object-contain filter drop-shadow-[0_0_12px_rgba(168,85,247,0.25)]"
           />
           <div className="mt-4 flex flex-col items-center gap-1.5">
             <p className="text-purple-400/90 text-[10px] sm:text-xs font-outfit uppercase tracking-[0.25em] font-semibold animate-pulse">
@@ -1066,8 +1062,8 @@ function FullChatContent() {
               {loadingProgress}%
             </span>
             <div className="w-28 sm:w-36 h-1.5 bg-white/10 rounded-full overflow-hidden mt-1.5">
-              <div 
-                className="h-full bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.5)] rounded-full" 
+              <div
+                className="h-full bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.5)] rounded-full"
                 style={{ width: `${loadingProgress}%` }}
               />
             </div>
@@ -1078,11 +1074,12 @@ function FullChatContent() {
   }
 
   return (
-    <div 
+    <div
       className="relative w-full h-screen overflow-hidden bg-black font-sans select-none flex items-start justify-center pt-2 sm:pt-4"
       style={{ perspective: "1000px" }}
     >
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @media (max-height: 950px) {
           .phone-simulator-container {
             transform: scale(1.08) !important;
@@ -1109,7 +1106,7 @@ function FullChatContent() {
       <div className="absolute inset-0 bg-[#030308] z-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] sm:w-[550px] sm:h-[550px] bg-purple-900/5 rounded-full blur-[130px] pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] bg-pink-900/5 rounded-full blur-[130px] pointer-events-none" />
-        
+
         {stars.map((star, idx) => (
           <div
             key={idx}
@@ -1126,10 +1123,10 @@ function FullChatContent() {
       </div>
 
       {/* Main Interactive Phone Container */}
-      <div 
+      <div
         className="relative z-10 flex flex-col items-center justify-start pt-1 sm:pt-2 p-2 max-h-screen"
       >
-        <div 
+        <div
           className="phone-simulator-container relative w-[365px] bg-[#1a1a1e] rounded-[52px] p-3 pt-12 pb-12 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.95),_0_0_50px_rgba(168,85,247,0.15)] border-[4px] border-[#2c2c2e] flex flex-col items-center justify-center scale-[0.78] min-[370px]:scale-[0.85] min-[400px]:scale-100 origin-top transition-transform"
         >
           {/* Top Bezel: Camera & Speaker */}
@@ -1144,11 +1141,11 @@ function FullChatContent() {
 
           {/* Screen Wrapper */}
           <div className="w-full rounded-[24px] overflow-hidden relative border border-neutral-950/20 shadow-inner">
-            <ChatScreen 
+            <ChatScreen
               ref={chatScreenRef}
-              messages={messages} 
-              loading={loading} 
-              hasMore={hasMore} 
+              messages={messages}
+              loading={loading}
+              hasMore={hasMore}
               onScroll={handleScroll}
               timeStr={timeStr}
               selectedDate={datesList[currentDateIndex]?.date}
@@ -1173,95 +1170,93 @@ function FullChatContent() {
 
       {/* Floating date selector and Reading Point navigation bar at bottom */}
       <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-3 bg-neutral-950/80 border border-neutral-850 px-3 py-2 sm:px-4 sm:py-2.5 rounded-full backdrop-blur-md shadow-2xl pointer-events-auto max-w-[95%] sm:max-w-none scale-[0.82] sm:scale-100 origin-bottom transition-all">
-          {/* Date drop down selection */}
-          <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="bg-neutral-900 border border-neutral-800 rounded-full px-3 py-1.5 text-[10px] font-semibold text-neutral-300 font-outfit outline-none cursor-pointer hover:border-neutral-700 hover:text-white transition-all flex items-center gap-1.5 min-w-[110px] justify-between shadow-inner"
-            >
-              <div className="flex items-center gap-1.5 truncate">
-                {datesList[currentDateIndex]?.isMatched && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-pink-500 shrink-0" />
-                )}
-                <span className="truncate">{datesList[currentDateIndex]?.date || "Select Date"}</span>
-              </div>
-              <ChevronUp size={10} className={`text-neutral-400 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} />
-            </button>
-            
-            {isDropdownOpen && (
-              <div className="absolute bottom-full mb-2 left-0 w-36 max-h-48 overflow-y-auto bg-neutral-950/95 border border-neutral-800 rounded-xl py-1 shadow-2xl z-30 scrollbar-none flex flex-col backdrop-blur-md">
-                {datesList.map((item, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                      setCurrentDateIndex(idx);
-                      jumpToDateIndex(idx);
-                      setIsDropdownOpen(false);
-                    }}
-                    className={`w-full text-left px-3 py-1.5 text-[10px] font-outfit font-medium hover:bg-neutral-800/80 transition-colors flex items-center gap-1.5 ${
-                      idx === currentDateIndex ? "text-purple-400 bg-purple-950/20" : "text-neutral-300"
+        {/* Date drop down selection */}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="bg-neutral-900 border border-neutral-800 rounded-full px-3 py-1.5 text-[10px] font-semibold text-neutral-300 font-outfit outline-none cursor-pointer hover:border-neutral-700 hover:text-white transition-all flex items-center gap-1.5 min-w-[110px] justify-between shadow-inner"
+          >
+            <div className="flex items-center gap-1.5 truncate">
+              {datesList[currentDateIndex]?.isMatched && (
+                <span className="w-1.5 h-1.5 rounded-full bg-pink-500 shrink-0" />
+              )}
+              <span className="truncate">{datesList[currentDateIndex]?.date || "Select Date"}</span>
+            </div>
+            <ChevronUp size={10} className={`text-neutral-400 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} />
+          </button>
+
+          {isDropdownOpen && (
+            <div className="absolute bottom-full mb-2 left-0 w-36 max-h-48 overflow-y-auto bg-neutral-950/95 border border-neutral-800 rounded-xl py-1 shadow-2xl z-30 scrollbar-none flex flex-col backdrop-blur-md">
+              {datesList.map((item, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    setCurrentDateIndex(idx);
+                    jumpToDateIndex(idx);
+                    setIsDropdownOpen(false);
+                  }}
+                  className={`w-full text-left px-3 py-1.5 text-[10px] font-outfit font-medium hover:bg-neutral-800/80 transition-colors flex items-center gap-1.5 ${idx === currentDateIndex ? "text-purple-400 bg-purple-950/20" : "text-neutral-300"
                     }`}
-                  >
-                    {item.isMatched && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-pink-500 shrink-0" />
-                    )}
-                    {!item.isMatched && (
-                      <span className="w-1.5 h-1.5 shrink-0 opacity-0" />
-                    )}
-                    <span>{item.date}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Up/Down date navigators */}
-          <div className="flex items-center gap-1.5 border-l border-neutral-800 pl-3">
-            <button
-              onClick={handlePrevDate}
-              disabled={currentDateIndex === 0}
-              className="p-1 bg-neutral-900 border border-neutral-800 rounded-full disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-850 text-white flex items-center justify-center size-7 cursor-pointer transition shadow-md"
-              aria-label="Previous Day"
-            >
-              <ChevronUp size={14} />
-            </button>
-            <button
-              onClick={handleNextDate}
-              disabled={currentDateIndex >= datesList.length - 1}
-              className="p-1 bg-neutral-900 border border-neutral-800 rounded-full disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-850 text-white flex items-center justify-center size-7 cursor-pointer transition shadow-md"
-              aria-label="Next Day"
-            >
-              <ChevronDown size={14} />
-            </button>
-          </div>
-
-          {/* Mark Reading Point toggle */}
-          <div className="flex items-center gap-2 border-l border-neutral-800 pl-3">
-            <button
-              onClick={savedReadingIndex !== null ? handleUnmarkReadingPoint : handleSaveReadingPoint}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-full border text-[10px] font-bold font-outfit transition cursor-pointer shadow-md ${
-                savedReadingIndex !== null
-                  ? "border-red-500/30 bg-red-950/20 hover:bg-red-900/40 text-red-300"
-                  : "border-purple-500/30 bg-purple-950/20 hover:bg-purple-900/40 text-purple-300"
-              }`}
-            >
-              <Bookmark size={10} />
-              <span>{savedReadingIndex !== null ? "Unmark Point" : "Mark Point"}</span>
-            </button>
-
-            {/* Jump to marked reading point button if exists */}
-            {savedReadingIndex !== null && (
-              <button
-                onClick={handleGoToReadingPoint}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-neutral-800 bg-neutral-900 hover:bg-neutral-850 text-[10px] font-bold text-neutral-300 font-outfit transition cursor-pointer shadow-md"
-                title="Return to Marked Reading Point"
-              >
-                <RotateCcw size={10} className="text-neutral-400" />
-                <span>Go to Point</span>
-              </button>
-            )}
-          </div>
+                >
+                  {item.isMatched && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-pink-500 shrink-0" />
+                  )}
+                  {!item.isMatched && (
+                    <span className="w-1.5 h-1.5 shrink-0 opacity-0" />
+                  )}
+                  <span>{item.date}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+
+        {/* Up/Down date navigators */}
+        <div className="flex items-center gap-1.5 border-l border-neutral-800 pl-3">
+          <button
+            onClick={handlePrevDate}
+            disabled={currentDateIndex === 0}
+            className="p-1 bg-neutral-900 border border-neutral-800 rounded-full disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-850 text-white flex items-center justify-center size-7 cursor-pointer transition shadow-md"
+            aria-label="Previous Day"
+          >
+            <ChevronUp size={14} />
+          </button>
+          <button
+            onClick={handleNextDate}
+            disabled={currentDateIndex >= datesList.length - 1}
+            className="p-1 bg-neutral-900 border border-neutral-800 rounded-full disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-850 text-white flex items-center justify-center size-7 cursor-pointer transition shadow-md"
+            aria-label="Next Day"
+          >
+            <ChevronDown size={14} />
+          </button>
+        </div>
+
+        {/* Mark Reading Point toggle */}
+        <div className="flex items-center gap-2 border-l border-neutral-800 pl-3">
+          <button
+            onClick={savedReadingIndex !== null ? handleUnmarkReadingPoint : handleSaveReadingPoint}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full border text-[10px] font-bold font-outfit transition cursor-pointer shadow-md ${savedReadingIndex !== null
+              ? "border-red-500/30 bg-red-950/20 hover:bg-red-900/40 text-red-300"
+              : "border-purple-500/30 bg-purple-950/20 hover:bg-purple-900/40 text-purple-300"
+              }`}
+          >
+            <Bookmark size={10} />
+            <span>{savedReadingIndex !== null ? "Unmark Point" : "Mark Point"}</span>
+          </button>
+
+          {/* Jump to marked reading point button if exists */}
+          {savedReadingIndex !== null && (
+            <button
+              onClick={handleGoToReadingPoint}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-neutral-800 bg-neutral-900 hover:bg-neutral-850 text-[10px] font-bold text-neutral-300 font-outfit transition cursor-pointer shadow-md"
+              title="Return to Marked Reading Point"
+            >
+              <RotateCcw size={10} className="text-neutral-400" />
+              <span>Go to Point</span>
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Back button */}
       <div className="absolute top-3 left-3 sm:top-8 sm:left-8 z-20 flex items-center">
