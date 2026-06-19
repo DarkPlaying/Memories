@@ -2492,9 +2492,9 @@ export default function MailingPage() {
                       animate={{ opacity: 1, width: "auto" }}
                       exit={{ opacity: 0, width: 0 }}
                       transition={{ duration: 0.2 }}
-                      className="font-outfit text-xs font-semibold whitespace-nowrap overflow-hidden pr-4"
+                      className="font-outfit text-[11px] sm:text-xs font-semibold whitespace-nowrap overflow-hidden pr-3.5"
                     >
-                      Visit Chat World
+                      Chat World
                     </motion.span>
                   )}
                 </AnimatePresence>
@@ -2534,7 +2534,7 @@ export default function MailingPage() {
                     animate={{ opacity: 1, width: "auto" }}
                     exit={{ opacity: 0, width: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="font-outfit text-xs font-semibold whitespace-nowrap overflow-hidden pr-4"
+                    className="font-outfit text-[11px] sm:text-xs font-semibold whitespace-nowrap overflow-hidden pr-3.5"
                   >
                     Logout
                   </motion.span>

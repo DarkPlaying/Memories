@@ -113,8 +113,8 @@ export function MorphingCardStack({
 
   const containerStyles = {
     stack: "relative h-[260px] w-[296px] sm:h-80 sm:w-80",
-    grid: "grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto pr-1 paper-scrollbar p-1",
-    list: "flex flex-col gap-4 max-h-[60vh] overflow-y-auto pr-1 paper-scrollbar p-1",
+    grid: "grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[60vh] overflow-x-hidden overflow-y-auto pr-1 paper-scrollbar p-1",
+    list: "flex flex-col gap-2 max-h-[60vh] overflow-x-hidden overflow-y-auto pr-1 paper-scrollbar p-1",
   }
 
   const displayCards = layout === "stack" ? getStackOrder() : pageCards.map((c, i) => ({ ...c, stackPosition: i }))
@@ -159,7 +159,7 @@ export function MorphingCardStack({
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{
                     opacity: 1,
-                    scale: isExpanded ? 1.02 : 1,
+                    scale: 1,
                     x: 0,
                     ...styles,
                   }}
@@ -186,7 +186,7 @@ export function MorphingCardStack({
                     layout === "stack" && "absolute w-[280px] h-[240px] sm:w-80 sm:h-72 flex-col justify-between",
                     layout === "stack" && isTopCard && "cursor-grab active:cursor-grabbing",
                     layout === "grid" && "w-full min-h-[160px] flex-col justify-between",
-                    layout === "list" && "w-full min-h-[72px] sm:min-h-[80px] flex-row items-center justify-between gap-4 p-3",
+                    layout === "list" && "w-full flex-row items-center justify-between gap-4 px-4 py-2.5",
                     isExpanded && "ring-1 ring-purple-500 bg-neutral-900/80 border-purple-500",
                   )}
                   style={{
@@ -203,7 +203,8 @@ export function MorphingCardStack({
                       <h3 className="font-semibold text-white truncate font-playfair">{card.title}</h3>
                       <p
                         className={cn(
-                          "text-xs text-neutral-450 mt-1.5 font-outfit leading-relaxed select-text",
+                          "text-xs text-neutral-450 font-outfit leading-relaxed select-text",
+                          layout === "list" ? "mt-0.5" : "mt-1.5",
                           layout === "stack" && "line-clamp-4",
                           layout === "grid" && "line-clamp-4",
                           layout === "list" && "line-clamp-2",
@@ -227,8 +228,8 @@ export function MorphingCardStack({
                       <button
                         onClick={() => onOpen?.(card)}
                         className={cn(
-                          "py-2 px-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5 font-outfit border-none outline-none",
-                          layout === "list" ? "w-20 sm:w-24 shrink-0 text-[10px] sm:text-xs px-2.5 py-1.5 sm:px-3 sm:py-2" : "flex-1 py-2 px-3"
+                          "bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5 font-outfit border-none outline-none",
+                          layout === "list" ? "px-2.5 py-1.5 sm:px-3.5 sm:py-2 text-[10px] sm:text-xs shrink-0" : "flex-1 py-2 px-3 text-xs"
                         )}
                       >
                         <BookOpen size={12} />
@@ -237,8 +238,8 @@ export function MorphingCardStack({
                       <button
                         onClick={() => onDownload?.(card)}
                         className={cn(
-                          "border border-neutral-700 bg-neutral-850/50 hover:bg-neutral-800 text-neutral-200 hover:text-white rounded-lg text-xs font-semibold shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1.5 font-outfit outline-none",
-                          layout === "list" ? "w-20 sm:w-24 shrink-0 text-[10px] sm:text-xs px-2.5 py-1.5 sm:px-3 sm:py-2" : "flex-1 py-2 px-3"
+                          "border border-neutral-700 bg-neutral-850/50 hover:bg-neutral-800 text-neutral-200 hover:text-white rounded-lg font-semibold shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1.5 font-outfit outline-none",
+                          layout === "list" ? "px-2.5 py-1.5 sm:px-3.5 sm:py-2 text-[10px] sm:text-xs shrink-0" : "flex-1 py-2 px-3 text-xs"
                         )}
                       >
                         <Download size={12} />
