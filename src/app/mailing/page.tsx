@@ -32,9 +32,10 @@ import { AlertCard } from "@/components/ui/alert-card";
 import { MorphingCardStack } from "@/components/ui/morphing-card-stack";
 import ImageCropper from "@/components/ui/image-cropper";
 import { hashPassword } from "@/lib/password-security";
+import { CircularGallery, GalleryItem } from "@/components/ui/circular-gallery";
 
 
-type PageState = "landing" | "visit" | "loading-visit";
+type PageState = "landing" | "visit" | "loading-visit" | "chat-world";
 type FormState = "idle" | "loading" | "success";
 
 interface Attachment {
@@ -74,6 +75,99 @@ interface UserProfile {
 const getLetterLockTargetTime = (letter?: any) => {
   return new Date("May 23, 2031 00:00:00").getTime();
 };
+
+const chatGalleryItems: GalleryItem[] = [
+  {
+    common: "Choki Winner",
+    binomial: "04/08/2025",
+    photo: {
+      url: "/chats/chat_1.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Next Dare",
+    binomial: "05/08/2025",
+    photo: {
+      url: "/chats/chat_2.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Akka's Dare List",
+    binomial: "05/08/2025",
+    photo: {
+      url: "/chats/chat_3.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Stranger's Number",
+    binomial: "05/08/2025",
+    photo: {
+      url: "/chats/chat_4.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Something Normal",
+    binomial: "05/08/2025",
+    photo: {
+      url: "/chats/chat_5.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Pregnant Joke",
+    binomial: "05/08/2025",
+    photo: {
+      url: "/chats/chat_6.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Dare Effect",
+    binomial: "05/08/2025",
+    photo: {
+      url: "/chats/chat_7.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Sir to Da",
+    binomial: "05/08/2025",
+    photo: {
+      url: "/chats/chat_8.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Rice Kuduka",
+    binomial: "05/08/2025",
+    photo: {
+      url: "/chats/chat_9.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Insta Propose",
+    binomial: "05/08/2025",
+    photo: {
+      url: "/chats/chat_10.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  }
+];
 
 const getLinesOfText = (text: string, font: string = "400 14.5px 'Outfit', sans-serif", width: number = 440): string[] => {
   // Strip highlights so they don't count towards the character widths of visual lines
@@ -250,7 +344,12 @@ export default function MailingPage() {
 
   const [pageState, setPageState] = useState<PageState>("landing");
   const [formState, setFormState] = useState<FormState>("idle");
+  const [chatGalleryPage, setChatGalleryPage] = useState(0);
   const [openWritePopover, setOpenWritePopover] = useState(false);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pageState]);
   const [letterContent, setLetterContent] = useState("");
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [isSignatureOpen, setIsSignatureOpen] = useState(false);
@@ -1802,6 +1901,15 @@ export default function MailingPage() {
           </div>
           
           <div className="flex items-center gap-3 pointer-events-auto">
+            {pageState !== "chat-world" && (
+              <button
+                onClick={() => setPageState("chat-world")}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-purple-500/20 bg-purple-950/20 hover:bg-purple-900/40 hover:border-purple-500/40 text-xs font-semibold text-purple-300 transition cursor-pointer font-outfit shadow-[0_0_15px_rgba(168,85,247,0.05)]"
+              >
+                <Globe size={12} className="animate-pulse" />
+                Visit Chat World
+              </button>
+            )}
             <ProfileCard
               imageSrc={loggedInUser.avatarUrl}
               name={loggedInUser.name}
@@ -3081,6 +3189,60 @@ export default function MailingPage() {
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {/* CHAT WORLD STATE */}
+        {pageState === "chat-world" && (
+          <div className="w-full flex flex-col items-center pt-24 pb-12 sm:pt-28" style={{ minHeight: "220vh" }}>
+            <div className="w-full h-[90vh] sticky top-0 flex flex-col items-center justify-center overflow-hidden z-10">
+              
+              {/* Header and Title */}
+              <div className="text-center absolute top-20 z-20 pointer-events-auto flex flex-col items-center">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-2.5 shadow-[inset_0_0_10px_rgba(168,85,247,0.05)]">
+                  <span className="text-[9px] font-outfit uppercase tracking-[0.2em] text-purple-300">✦ Chat Archive ✦</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-playfair font-black text-white tracking-tight leading-tight">
+                  Chat World
+                </h2>
+                <p className="text-xs sm:text-sm font-outfit text-gray-400 font-light mt-2 max-w-md text-center">
+                  Scroll the page to rotate the 3D gallery of our sweetest messages. Use the buttons below to paginate.
+                </p>
+              </div>
+
+              {/* 3D Rotating Gallery */}
+              <div className="w-full h-[520px] mt-16 flex items-center justify-center overflow-visible">
+                <CircularGallery 
+                  items={chatGalleryPage === 0 ? chatGalleryItems.slice(0, 5) : chatGalleryItems.slice(5, 10)} 
+                  radius={isMobile ? 360 : 520} 
+                  autoRotateSpeed={0.015}
+                />
+              </div>
+
+              {/* Pagination Controls */}
+              <div className="flex items-center gap-6 mt-8 z-20 pointer-events-auto">
+                <button
+                  disabled={chatGalleryPage === 0}
+                  onClick={() => setChatGalleryPage(0)}
+                  className="p-3 bg-neutral-900 border border-neutral-800 rounded-full disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-850 transition cursor-pointer text-white flex items-center justify-center size-10 shadow-md"
+                  aria-label="Previous Page"
+                >
+                  ←
+                </button>
+                <span className="text-sm font-outfit text-neutral-400">
+                  Page {chatGalleryPage + 1} of 2
+                </span>
+                <button
+                  disabled={chatGalleryPage === 1}
+                  onClick={() => setChatGalleryPage(1)}
+                  className="p-3 bg-neutral-900 border border-neutral-800 rounded-full disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-850 transition cursor-pointer text-white flex items-center justify-center size-10 shadow-md"
+                  aria-label="Next Page"
+                >
+                  →
+                </button>
+              </div>
+
+            </div>
           </div>
         )}
       </>
