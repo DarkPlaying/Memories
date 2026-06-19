@@ -606,77 +606,33 @@ function FullChatContent() {
         let firestoreIndex: number | null = null;
         let firestoreWordInfo: any = null;
 
+        // 1. Try to read from localStorage synchronously to fetch immediately
         if (userId) {
-          const profileRef = doc(db, "profiles", userId);
-          try {
-            const snap = await getDoc(profileRef);
-            if (snap && snap.exists()) {
-              const data = snap.data();
-              setLoggedInUser({
-                id: userId,
-                name: data.name || "Partner",
-                avatarUrl: data.avatarUrl || "/stamp.png",
-                title: data.title || "User",
-                socials: data.socials || {},
-                avatarAdjust: data.avatarAdjust || { scale: 1, x: 0, y: 0 }
-              });
-              if (data.fullChatReadingIndex !== undefined && data.fullChatReadingIndex !== null) {
-                firestoreIndex = Number(data.fullChatReadingIndex);
-                if (isNaN(firestoreIndex)) firestoreIndex = null;
-                firestoreWordInfo = data.fullChatMarkedWordInfo || null;
-
-                // Sync to local storage
-                const localIndexKey = `full_chat_reading_index_${userId}`;
-                const localWordInfoKey = `full_chat_marked_word_info_${userId}`;
-                if (firestoreIndex !== null) {
-                  localStorage.setItem(localIndexKey, String(firestoreIndex));
-                  if (firestoreWordInfo) {
-                    localStorage.setItem(localWordInfoKey, JSON.stringify(firestoreWordInfo));
-                  } else {
-                    localStorage.removeItem(localWordInfoKey);
-                  }
-                } else {
-                  localStorage.removeItem(localIndexKey);
-                  localStorage.removeItem(localWordInfoKey);
-                }
-              }
-            }
-          } catch (err) {
-            console.error("Failed to load reading point from Firebase, falling back to local storage:", err);
-          }
-
-          // Fallback to local storage if Firebase read failed or has no marked point
-          if (firestoreIndex === null) {
-            const localIndexKey = `full_chat_reading_index_${userId}`;
-            const localWordInfoKey = `full_chat_marked_word_info_${userId}`;
-            const localIdx = localStorage.getItem(localIndexKey);
-            const localWord = localStorage.getItem(localWordInfoKey);
-            
-            if (localIdx !== null) {
-              firestoreIndex = Number(localIdx);
-              if (localWord) {
-                try {
-                  firestoreWordInfo = JSON.parse(localWord);
-                } catch (e) {
-                  console.error("Failed to parse local marked word info:", e);
-                }
-              }
+          const localIndexKey = `full_chat_reading_index_${userId}`;
+          const localWordInfoKey = `full_chat_marked_word_info_${userId}`;
+          const localIdx = localStorage.getItem(localIndexKey);
+          const localWord = localStorage.getItem(localWordInfoKey);
+          
+          if (localIdx !== null) {
+            firestoreIndex = Number(localIdx);
+            if (isNaN(firestoreIndex)) firestoreIndex = null;
+            if (localWord) {
+              try {
+                firestoreWordInfo = JSON.parse(localWord);
+              } catch (e) {}
             }
           }
         }
 
+        // 2. Start initial fetch immediately if we found a local index
         if (firestoreIndex !== null) {
           setSavedReadingIndex(firestoreIndex);
           setSavedMarkedWordInfo(firestoreWordInfo);
-          
-          // Auto redirection to saved reading point on visit
           setScrollTargetIntent("marked-word");
           
-          // Determine page/date index for this index
           const matched = matchDateToIndex(firestoreIndex, datesList);
           setCurrentDateIndex(matched);
           
-          // Fetch messages around this index, starting from the previous day's date if possible
           let fetchIndex = firestoreIndex;
           let limit = 100;
           if (matched > 0) {
@@ -686,7 +642,6 @@ function FullChatContent() {
           } else {
             limit = Math.max(100, firestoreIndex + 100);
           }
-          
           fetchMessagesFromIndex(fetchIndex, true, limit);
         } else {
           // Fallback to dateParam if present
@@ -721,6 +676,73 @@ function FullChatContent() {
             setScrollTargetIntent(null);
             fetchMessagesFromIndex(0, true);
           }
+        }
+
+        // 3. Query Firestore in the background for profile details and latest marked point
+        if (userId) {
+          const profileRef = doc(db, "profiles", userId);
+          getDoc(profileRef).then((snap) => {
+            if (snap && snap.exists()) {
+              const data = snap.data();
+              setLoggedInUser({
+                id: userId,
+                name: data.name || "Partner",
+                avatarUrl: data.avatarUrl || "/stamp.png",
+                title: data.title || "User",
+                socials: data.socials || {},
+                avatarAdjust: data.avatarAdjust || { scale: 1, x: 0, y: 0 }
+              });
+
+              if (data.fullChatReadingIndex !== undefined && data.fullChatReadingIndex !== null) {
+                const fsIndex = Number(data.fullChatReadingIndex);
+                if (!isNaN(fsIndex)) {
+                  const fsWordInfo = data.fullChatMarkedWordInfo || null;
+
+                  const localIndexKey = `full_chat_reading_index_${userId}`;
+                  const localWordInfoKey = `full_chat_marked_word_info_${userId}`;
+                  const localIdx = localStorage.getItem(localIndexKey);
+
+                  // If Firestore has a different index, we sync and update state/messages
+                  if (localIdx === null || Number(localIdx) !== fsIndex) {
+                    localStorage.setItem(localIndexKey, String(fsIndex));
+                    if (fsWordInfo) {
+                      localStorage.setItem(localWordInfoKey, JSON.stringify(fsWordInfo));
+                    } else {
+                      localStorage.removeItem(localWordInfoKey);
+                    }
+
+                    setSavedReadingIndex(fsIndex);
+                    setSavedMarkedWordInfo(fsWordInfo);
+                    setScrollTargetIntent("marked-word");
+                    const matched = matchDateToIndex(fsIndex, datesList);
+                    setCurrentDateIndex(matched);
+                    
+                    let fetchIndex = fsIndex;
+                    let limit = 100;
+                    if (matched > 0) {
+                      fetchIndex = datesList[matched - 1].index;
+                      const diff = fsIndex - fetchIndex;
+                      limit = Math.max(100, diff + 100);
+                    } else {
+                      limit = Math.max(100, fsIndex + 100);
+                    }
+                    fetchMessagesFromIndex(fetchIndex, true, limit);
+                  }
+                }
+              } else if (data.fullChatReadingIndex === null) {
+                const localIndexKey = `full_chat_reading_index_${userId}`;
+                const localWordInfoKey = `full_chat_marked_word_info_${userId}`;
+                if (localStorage.getItem(localIndexKey) !== null) {
+                  localStorage.removeItem(localIndexKey);
+                  localStorage.removeItem(localWordInfoKey);
+                  setSavedReadingIndex(null);
+                  setSavedMarkedWordInfo(null);
+                }
+              }
+            }
+          }).catch((err) => {
+            console.error("Failed to load profile in background:", err);
+          });
         }
       } catch (err) {
         console.error("Initialization failed:", err);
