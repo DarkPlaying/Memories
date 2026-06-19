@@ -145,7 +145,7 @@ export function MorphingCardStack({
 
       {/* Cards Container */}
       <LayoutGroup>
-        <motion.div layout className={cn(containerStyles[layout], "mx-auto")}>
+        <div className={cn(containerStyles[layout], "mx-auto transition-all duration-300")}>
           <AnimatePresence mode="popLayout">
             {displayCards.map((card) => {
               const styles = getLayoutStyles(card.stackPosition)
@@ -181,19 +181,19 @@ export function MorphingCardStack({
                     onCardClick?.(card)
                   }}
                   className={cn(
-                    "cursor-pointer rounded-xl border border-neutral-800 bg-neutral-900/40 p-4 flex flex-col justify-between backdrop-blur-md shadow-lg",
+                    "cursor-pointer rounded-xl border border-neutral-800 bg-neutral-900/40 p-4 flex backdrop-blur-md shadow-lg",
                     "hover:border-purple-500/45 transition-colors",
-                    layout === "stack" && "absolute w-[280px] h-[240px] sm:w-80 sm:h-72",
+                    layout === "stack" && "absolute w-[280px] h-[240px] sm:w-80 sm:h-72 flex-col justify-between",
                     layout === "stack" && isTopCard && "cursor-grab active:cursor-grabbing",
-                    layout === "grid" && "w-full min-h-[160px]",
-                    layout === "list" && "w-full min-h-[100px]",
+                    layout === "grid" && "w-full min-h-[160px] flex-col justify-between",
+                    layout === "list" && "w-full min-h-[72px] sm:min-h-[80px] flex-row items-center justify-between gap-4 p-3",
                     isExpanded && "ring-1 ring-purple-500 bg-neutral-900/80 border-purple-500",
                   )}
                   style={{
                     backgroundColor: card.color || undefined,
                   }}
                 >
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <div className={cn("flex gap-3 flex-1 min-w-0", layout === "list" ? "items-center" : "items-start")}>
                     {card.icon && (
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-purple-400">
                         {card.icon}
@@ -218,21 +218,28 @@ export function MorphingCardStack({
                   {!card.isEmptyCard && (
                     <div 
                       className={cn(
-                        "mt-4 flex gap-2 w-full justify-between items-center z-30",
+                        "flex gap-2 shrink-0 z-30",
+                        layout === "list" ? "mt-0 w-auto justify-end" : "mt-4 w-full justify-between items-center",
                         layout === "stack" && "mb-6 sm:mb-8"
                       )}
                       onClick={(e) => e.stopPropagation()} // Prevent card toggle on button clicks
                     >
                       <button
                         onClick={() => onOpen?.(card)}
-                        className="flex-1 py-2 px-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5 font-outfit border-none outline-none"
+                        className={cn(
+                          "py-2 px-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5 font-outfit border-none outline-none",
+                          layout === "list" ? "w-20 sm:w-24 shrink-0 text-[10px] sm:text-xs px-2.5 py-1.5 sm:px-3 sm:py-2" : "flex-1 py-2 px-3"
+                        )}
                       >
                         <BookOpen size={12} />
                         Open
                       </button>
                       <button
                         onClick={() => onDownload?.(card)}
-                        className="flex-1 py-2 px-3 border border-neutral-700 bg-neutral-850/50 hover:bg-neutral-800 text-neutral-200 hover:text-white rounded-lg text-xs font-semibold shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1.5 font-outfit outline-none"
+                        className={cn(
+                          "border border-neutral-700 bg-neutral-850/50 hover:bg-neutral-800 text-neutral-200 hover:text-white rounded-lg text-xs font-semibold shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1.5 font-outfit outline-none",
+                          layout === "list" ? "w-20 sm:w-24 shrink-0 text-[10px] sm:text-xs px-2.5 py-1.5 sm:px-3 sm:py-2" : "flex-1 py-2 px-3"
+                        )}
                       >
                         <Download size={12} />
                         Download
@@ -249,7 +256,7 @@ export function MorphingCardStack({
               )
             })}
           </AnimatePresence>
-        </motion.div>
+        </div>
       </LayoutGroup>
 
       {layout === "stack" && pageCards.length > 1 && (
