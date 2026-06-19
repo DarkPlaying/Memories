@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo, useRef, Suspense, useImperativeHandle } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Loader2, Send, Phone, Video, MoreVertical, Wifi, Battery, Bookmark, RotateCcw, ChevronUp, ChevronDown, Check, Clock, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -341,6 +342,7 @@ function FullChatContent() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [stars, setStars] = useState<{ x: number; y: number; size: number; duration: number }[]>([]);
   const [timeStr, setTimeStr] = useState("12:00 PM");
+  const [isLogoutHovered, setIsLogoutHovered] = useState(false);
 
   // Password Verification State
   const [isAuthorized, setIsAuthorized] = useState(() => {
@@ -1329,7 +1331,7 @@ function FullChatContent() {
               avatarAdjust={loggedInUser.avatarAdjust}
             />
           </div>
-          <button
+          <motion.button
             onClick={() => {
               sessionStorage.removeItem("full_chat_authorized");
               sessionStorage.removeItem("logged_in_user_id");
@@ -1341,11 +1343,30 @@ function FullChatContent() {
               setIsAuthorized(false);
               router.push("/mailing?state=chat-world");
             }}
-            className="w-[52px] h-[52px] rounded-full flex items-center justify-center border border-red-500/30 bg-red-950/30 hover:bg-red-900/50 hover:border-red-500/60 text-red-300 transition cursor-pointer shadow-lg hover:shadow-red-500/10 pointer-events-auto shrink-0"
+            onMouseEnter={() => setIsLogoutHovered(true)}
+            onMouseLeave={() => setIsLogoutHovered(false)}
+            layout
+            initial={{ width: 52, height: 52, borderRadius: 26 }}
+            animate={{ width: isLogoutHovered ? "auto" : 52 }}
+            transition={{ type: "spring", stiffness: 260, damping: 28 }}
+            className="h-[52px] flex items-center justify-start overflow-hidden border border-red-500/30 bg-red-950/30 hover:bg-red-900/50 hover:border-red-500/60 text-red-300 cursor-pointer shadow-lg hover:shadow-red-500/10 pointer-events-auto shrink-0 select-none pl-[17px] gap-2 rounded-full"
             title="Logout Profile"
           >
-            <LogOut size={18} />
-          </button>
+            <LogOut size={18} className="shrink-0" />
+            <AnimatePresence>
+              {isLogoutHovered && (
+                <motion.span
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: "auto" }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="font-outfit text-xs font-semibold whitespace-nowrap overflow-hidden pr-4"
+                >
+                  Logout
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.button>
         </div>
       )}
 

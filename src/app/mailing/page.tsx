@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { ArrowLeft, Plus, Mail, Calendar, FileText, Trash2, Download, Eye, EyeOff, LogOut, Globe, Bookmark, RotateCcw, X, ChevronLeft, ChevronRight, MessageSquare, Clock } from "lucide-react";
 import { Github, Linkedin, Twitter } from "@/components/ui/brand-icons";
@@ -532,6 +533,8 @@ export default function MailingPage() {
   }, []);
 
   const [pageState, setPageState] = useState<PageState>("landing");
+  const [isWorldHovered, setIsWorldHovered] = useState(false);
+  const [isLogoutHovered, setIsLogoutHovered] = useState(false);
   const [formState, setFormState] = useState<FormState>("idle");
   const [chatGalleryPage, setChatGalleryPage] = useState(0);
   const [openWritePopover, setOpenWritePopover] = useState(false);
@@ -1286,6 +1289,18 @@ export default function MailingPage() {
 
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (pageState === "chat-world") {
+        url.searchParams.set("state", "chat-world");
+      } else {
+        url.searchParams.delete("state");
+      }
+      window.history.replaceState({}, "", url.pathname + url.search);
+    }
+  }, [pageState]);
 
   const handleOpenLetter = (letter: Letter) => {
     const targetTime = getLetterLockTargetTime(letter);
@@ -2438,7 +2453,7 @@ export default function MailingPage() {
           </div>
 
           {pageState === "chat-world" && (
-            <div className="text-center flex flex-col items-center mx-2 sm:mx-4 pointer-events-auto max-w-[90vw] sm:max-w-3xl">
+            <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 text-center flex flex-col items-center pointer-events-auto max-w-[90vw] sm:max-w-2xl z-10">
               <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/5 border border-white/10 mb-2 shadow-[inset_0_0_8px_rgba(168,85,247,0.05)]">
                 <span className="text-[9px] sm:text-[10px] md:text-[11px] font-outfit uppercase tracking-[0.2em] text-purple-300">✦ Chat World ✦</span>
               </div>
@@ -2449,20 +2464,39 @@ export default function MailingPage() {
           )}
           
           <div className="flex items-center gap-3 pointer-events-auto">
-            {pageState !== "chat-world" && (
-              <button
-                onClick={() => setPageState("chat-world")}
-                className="w-[52px] h-[52px] rounded-full flex items-center justify-center border border-purple-500/30 bg-purple-950/30 hover:bg-purple-900/50 hover:border-purple-500/60 text-purple-300 transition cursor-pointer shadow-lg hover:shadow-purple-500/10 shrink-0"
-                title="Visit Chat World"
-              >
-                <Globe size={18} className="animate-pulse" />
-              </button>
-            )}
             {sessionTimeLeft !== null && (
               <div className="flex items-center gap-1.5 bg-neutral-950/80 border border-neutral-800 rounded-full px-3.5 py-2 text-xs sm:text-sm font-bold font-mono text-purple-300 shadow-md animate-pulse">
                 <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-ping shrink-0" />
                 <span>Session: {formatTimeLeft(sessionTimeLeft)}</span>
               </div>
+            )}
+            {pageState !== "chat-world" && (
+              <motion.button
+                onClick={() => setPageState("chat-world")}
+                onMouseEnter={() => setIsWorldHovered(true)}
+                onMouseLeave={() => setIsWorldHovered(false)}
+                layout
+                initial={{ width: 52, height: 52, borderRadius: 26 }}
+                animate={{ width: isWorldHovered ? "auto" : 52 }}
+                transition={{ type: "spring", stiffness: 260, damping: 28 }}
+                className="h-[52px] flex items-center justify-start overflow-hidden border border-purple-500/30 bg-purple-950/30 hover:bg-purple-900/50 hover:border-purple-500/60 text-purple-300 cursor-pointer shadow-lg hover:shadow-purple-500/10 shrink-0 select-none pl-[17px] gap-2 rounded-full"
+                title="Visit Chat World"
+              >
+                <Globe size={18} className="animate-pulse shrink-0" />
+                <AnimatePresence>
+                  {isWorldHovered && (
+                    <motion.span
+                      initial={{ opacity: 0, width: 0 }}
+                      animate={{ opacity: 1, width: "auto" }}
+                      exit={{ opacity: 0, width: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="font-outfit text-xs font-semibold whitespace-nowrap overflow-hidden pr-4"
+                    >
+                      Visit Chat World
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.button>
             )}
             <ProfileCard
               imageSrc={loggedInUser.avatarUrl}
@@ -2472,7 +2506,7 @@ export default function MailingPage() {
               avatarAdjust={loggedInUser.avatarAdjust}
               onClick={() => setIsDetailedCardOpen(true)}
             />
-            <button
+            <motion.button
               onClick={() => {
                 const sessionKey = `session_expiry_${loggedInUser.id}`;
                 localStorage.removeItem(sessionKey);
@@ -2481,11 +2515,30 @@ export default function MailingPage() {
                 setPageState("landing");
                 setLoginState("select-profile");
               }}
-              className="w-[52px] h-[52px] rounded-full flex items-center justify-center border border-red-500/30 bg-red-950/30 hover:bg-red-900/50 hover:border-red-500/60 text-red-300 transition cursor-pointer shadow-lg hover:shadow-red-500/10 shrink-0"
+              onMouseEnter={() => setIsLogoutHovered(true)}
+              onMouseLeave={() => setIsLogoutHovered(false)}
+              layout
+              initial={{ width: 52, height: 52, borderRadius: 26 }}
+              animate={{ width: isLogoutHovered ? "auto" : 52 }}
+              transition={{ type: "spring", stiffness: 260, damping: 28 }}
+              className="h-[52px] flex items-center justify-start overflow-hidden border border-red-500/30 bg-red-950/30 hover:bg-red-900/50 hover:border-red-500/60 text-red-300 cursor-pointer shadow-lg hover:shadow-red-500/10 shrink-0 select-none pl-[17px] gap-2 rounded-full"
               title="Logout Profile"
             >
-              <LogOut size={18} />
-            </button>
+              <LogOut size={18} className="shrink-0" />
+              <AnimatePresence>
+                {isLogoutHovered && (
+                  <motion.span
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: "auto" }}
+                    exit={{ opacity: 0, width: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="font-outfit text-xs font-semibold whitespace-nowrap overflow-hidden pr-4"
+                  >
+                    Logout
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.button>
           </div>
         </div>
       )}
