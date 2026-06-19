@@ -120,7 +120,7 @@ const ChatScreen = React.forwardRef<ChatScreenRef, ChatScreenProps>(({
             const markedMsgEl = container.querySelector('[data-marked-message="true"]') as HTMLElement;
             if (markedMsgEl) {
               if (hasScrolledToDateRef.current !== "marked-word") {
-                const scrollPos = markedMsgEl.offsetTop - container.clientHeight / 2 + markedMsgEl.clientHeight / 2;
+                const scrollPos = markedMsgEl.offsetTop - 10;
                 container.scrollTo({ top: Math.max(0, scrollPos), behavior: "smooth" });
                 hasScrolledToDateRef.current = "marked-word";
               }
