@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { ArrowLeft, Plus, Mail, Calendar, FileText, Trash2, Download, Eye, EyeOff, LogOut, Globe, Bookmark, RotateCcw, X, ChevronLeft, ChevronRight, MessageSquare, Clock } from "lucide-react";
 import { Github, Linkedin, Twitter } from "@/components/ui/brand-icons";
-import { collection, addDoc, getDocs, orderBy, query, doc, updateDoc, deleteDoc, setDoc, getDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs, orderBy, query, doc, updateDoc, deleteDoc, setDoc, getDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { MailboxFullState } from "@/components/ui/state";
 import { PopoverForm } from "@/components/ui/popover-form";
@@ -79,20 +79,6 @@ interface UserProfile {
   chatReadingPage?: number;
 }
 
-const getLetterLockTargetTime = (letter?: any) => {
-  if (!letter || !letter.id) return Date.now() + 5 * 60 * 1000;
-  if (typeof window !== "undefined") {
-    const key = `letter_lock_time_${letter.id}`;
-    let lockTimeStr = localStorage.getItem(key);
-    if (!lockTimeStr) {
-      const lockTime = Date.now() + 5 * 60 * 1000; // 5 minutes from now
-      localStorage.setItem(key, lockTime.toString());
-      return lockTime;
-    }
-    return parseInt(lockTimeStr, 10);
-  }
-  return Date.now() + 5 * 60 * 1000;
-};
 
 const chatGalleryItems: GalleryItem[] = [
   {
@@ -562,6 +548,76 @@ export default function MailingPage() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [savedReadingIndex, setSavedReadingIndex] = useState<number | null>(null);
 
+  const [sharedLetterLockTime, setSharedLetterLockTime] = useState<number | null>(null);
+
+  const getLetterLockTargetTime = (letter?: any) => {
+    if (sharedLetterLockTime) {
+      return sharedLetterLockTime;
+    }
+    if (typeof window !== "undefined") {
+      const key = "shared_letter_lock_time";
+      const lockTimeStr = localStorage.getItem(key);
+      if (lockTimeStr) {
+        return parseInt(lockTimeStr, 10);
+      }
+    }
+    return Date.now() + 5 * 60 * 1000;
+  };
+
+  // Real-time synchronization of universal countdown timer from Firestore
+  useEffect(() => {
+    const countdownDocRef = doc(db, "config", "countdown");
+    const unsubscribe = onSnapshot(countdownDocRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data.targetTime) {
+          setSharedLetterLockTime(data.targetTime);
+          localStorage.setItem("shared_letter_lock_time", data.targetTime.toString());
+        }
+      }
+    }, (error) => {
+      console.error("Error listening to countdown doc:", error);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const syncOrCreateCountdown = async () => {
+    try {
+      const countdownDocRef = doc(db, "config", "countdown");
+      const snapshot = await getDoc(countdownDocRef);
+      let needsNewCountdown = true;
+
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data.targetTime && Date.now() < data.targetTime) {
+          needsNewCountdown = false;
+        }
+      }
+
+      if (needsNewCountdown) {
+        const newTargetTime = Date.now() + 5 * 60 * 1000;
+        await setDoc(countdownDocRef, { targetTime: newTargetTime }, { merge: true });
+        setSharedLetterLockTime(newTargetTime);
+        localStorage.setItem("shared_letter_lock_time", newTargetTime.toString());
+        console.log("Initialized new universal 5-minute countdown in Firestore:", newTargetTime);
+      } else {
+        const existingTarget = snapshot.data()?.targetTime;
+        if (existingTarget) {
+          setSharedLetterLockTime(existingTarget);
+          localStorage.setItem("shared_letter_lock_time", existingTarget.toString());
+          console.log("Using existing active universal countdown in Firestore:", existingTarget);
+        }
+      }
+    } catch (error) {
+      console.error("Error synchronizing/creating countdown in Firestore:", error);
+      // Fallback to local storage if Firestore fails
+      const localTime = Date.now() + 5 * 60 * 1000;
+      setSharedLetterLockTime(localTime);
+      localStorage.setItem("shared_letter_lock_time", localTime.toString());
+    }
+  };
+
   // Keyboard navigation for Lightbox
   useEffect(() => {
     if (lightboxIndex === null) return;
@@ -891,6 +947,8 @@ export default function MailingPage() {
         setLoggedInUser(null);
         sessionStorage.removeItem("logged_in_user_id");
         localStorage.removeItem(sessionKey);
+        localStorage.removeItem("shared_letter_lock_time");
+        setSharedLetterLockTime(null);
         setPageState("landing");
         setLoginState("select-profile");
       }
@@ -2434,6 +2492,8 @@ export default function MailingPage() {
                   setLoggedInUser(null);
                   setLoginState("select-profile");
                   sessionStorage.removeItem("logged_in_user_id");
+                  localStorage.removeItem("shared_letter_lock_time");
+                  setSharedLetterLockTime(null);
                 }}
                 className="flex items-center gap-1.5 text-sm text-neutral-400 hover:text-white transition duration-200 font-outfit cursor-pointer bg-transparent border-none outline-none"
               >
@@ -2513,6 +2573,8 @@ export default function MailingPage() {
                 const sessionKey = `session_expiry_${loggedInUser.id}`;
                 localStorage.removeItem(sessionKey);
                 sessionStorage.removeItem("logged_in_user_id");
+                localStorage.removeItem("shared_letter_lock_time");
+                setSharedLetterLockTime(null);
                 setLoggedInUser(null);
                 setPageState("landing");
                 setLoginState("select-profile");
@@ -2650,6 +2712,7 @@ export default function MailingPage() {
                       setLoggedInUser(profile);
                       sessionStorage.setItem("logged_in_user_id", profile.id);
                       localStorage.setItem(`session_expiry_${profile.id}`, (Date.now() + 2 * 60 * 60 * 1000).toString());
+                      await syncOrCreateCountdown();
                       setLoginPasswordInput("");
                       setLoginPasswordError("");
                     } else {
@@ -2785,6 +2848,7 @@ export default function MailingPage() {
                     setLoggedInUser(activeP);
                     sessionStorage.setItem("logged_in_user_id", activeP.id);
                     localStorage.setItem(`session_expiry_${activeP.id}`, (Date.now() + 2 * 60 * 60 * 1000).toString());
+                    await syncOrCreateCountdown();
                   }
                   setLoginState("select-profile");
                   setTempNewPassword("");
@@ -2978,6 +3042,7 @@ export default function MailingPage() {
                     setLoggedInUser(activeP);
                     sessionStorage.setItem("logged_in_user_id", activeP.id);
                     localStorage.setItem(`session_expiry_${activeP.id}`, (Date.now() + 2 * 60 * 60 * 1000).toString());
+                    await syncOrCreateCountdown();
                   }
                   setLoginState("select-profile");
                   setTempNewPassword("");

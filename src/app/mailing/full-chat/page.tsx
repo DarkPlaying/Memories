@@ -449,6 +449,7 @@ function FullChatContent() {
         sessionStorage.removeItem("full_chat_authorized");
         sessionStorage.removeItem("logged_in_user_id");
         localStorage.removeItem(sessionKey);
+        localStorage.removeItem("shared_letter_lock_time");
         setIsAuthorized(false);
         setLoggedInUser(null);
         router.push("/mailing?state=chat-world");
@@ -1295,6 +1296,7 @@ function FullChatContent() {
                 const sessionKey = `session_expiry_${loggedInUserId}`;
                 localStorage.removeItem(sessionKey);
               }
+              localStorage.removeItem("shared_letter_lock_time");
               setLoggedInUser(null);
               setIsAuthorized(false);
               router.push("/mailing?state=chat-world");
