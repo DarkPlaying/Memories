@@ -841,95 +841,88 @@ function FullChatContent() {
 
   // Save/Unmark Reading Point
   const handleSaveReadingPoint = () => {
-    setIsSelectingMarkPoint(true);
+    if (!loggedInUserId) return;
+    
+    let targetMsg: WordInfo | null = null;
     if (chatScreenRef.current) {
       const firstVisible = chatScreenRef.current.getFirstVisibleMessage();
       if (firstVisible) {
-        setTempSelectedWordInfo({
+        targetMsg = {
           msgId: firstVisible.msgId,
           wordIndex: 0,
           wordText: firstVisible.wordText,
           globalIndex: firstVisible.globalIndex
-        });
-        return;
+        };
       }
     }
-    if (messages.length > 0) {
-      setTempSelectedWordInfo({
+    
+    if (!targetMsg && messages.length > 0) {
+      targetMsg = {
         msgId: messages[0].id,
         wordIndex: 0,
         wordText: messages[0].content.length > 30 ? messages[0].content.substring(0, 30) + "..." : messages[0].content,
         globalIndex: currentStartIndex
-      });
-    } else {
-      setTempSelectedWordInfo(null);
+      };
     }
+
+    if (!targetMsg) return;
+
+    // Optimistically save locally for instant UI update
+    const localIndexKey = `full_chat_reading_index_${loggedInUserId}`;
+    const localWordInfoKey = `full_chat_marked_word_info_${loggedInUserId}`;
+    localStorage.setItem(localIndexKey, String(targetMsg.globalIndex));
+    localStorage.setItem(localWordInfoKey, JSON.stringify({
+      msgId: targetMsg.msgId,
+      wordIndex: targetMsg.wordIndex,
+      wordText: targetMsg.wordText
+    }));
+
+    setSavedReadingIndex(targetMsg.globalIndex ?? null);
+    setSavedMarkedWordInfo({
+      msgId: targetMsg.msgId,
+      wordIndex: targetMsg.wordIndex,
+      wordText: targetMsg.wordText
+    });
+    
+    setSaveNotification("Reading point marked successfully!");
+    setTimeout(() => setSaveNotification(null), 3000);
+
+    // Save to Firestore in background
+    const profileRef = doc(db, "profiles", loggedInUserId);
+    setDoc(profileRef, {
+      fullChatReadingIndex: targetMsg.globalIndex,
+      fullChatMarkedWordInfo: {
+        msgId: targetMsg.msgId,
+        wordIndex: targetMsg.wordIndex,
+        wordText: targetMsg.wordText
+      }
+    }, { merge: true }).catch((err) => {
+      console.error("Failed to save marked word to Firestore in background:", err);
+    });
   };
 
-  const handleCancelSelection = () => {
-    setIsSelectingMarkPoint(false);
-    setTempSelectedWordInfo(null);
-  };
-
-  const handleConfirmSelection = async () => {
-    if (!loggedInUserId || !tempSelectedWordInfo) return;
-    try {
-      const localIndexKey = `full_chat_reading_index_${loggedInUserId}`;
-      const localWordInfoKey = `full_chat_marked_word_info_${loggedInUserId}`;
-      localStorage.setItem(localIndexKey, String(tempSelectedWordInfo.globalIndex));
-      localStorage.setItem(localWordInfoKey, JSON.stringify({
-        msgId: tempSelectedWordInfo.msgId,
-        wordIndex: tempSelectedWordInfo.wordIndex,
-        wordText: tempSelectedWordInfo.wordText
-      }));
-
-      const profileRef = doc(db, "profiles", loggedInUserId);
-      await setDoc(profileRef, {
-        fullChatReadingIndex: tempSelectedWordInfo.globalIndex,
-        fullChatMarkedWordInfo: {
-          msgId: tempSelectedWordInfo.msgId,
-          wordIndex: tempSelectedWordInfo.wordIndex,
-          wordText: tempSelectedWordInfo.wordText
-        }
-      }, { merge: true });
-
-      setSavedReadingIndex(tempSelectedWordInfo.globalIndex ?? null);
-      setSavedMarkedWordInfo({
-        msgId: tempSelectedWordInfo.msgId,
-        wordIndex: tempSelectedWordInfo.wordIndex,
-        wordText: tempSelectedWordInfo.wordText
-      });
-      
-      setSaveNotification("Reading point marked successfully!");
-      setTimeout(() => setSaveNotification(null), 3000);
-      setIsSelectingMarkPoint(false);
-      setTempSelectedWordInfo(null);
-    } catch (err) {
-      console.error("Failed to save marked word:", err);
-    }
-  };
-
-  const handleUnmarkReadingPoint = async () => {
+  const handleUnmarkReadingPoint = () => {
     if (!loggedInUserId) return;
-    try {
-      const localIndexKey = `full_chat_reading_index_${loggedInUserId}`;
-      const localWordInfoKey = `full_chat_marked_word_info_${loggedInUserId}`;
-      localStorage.removeItem(localIndexKey);
-      localStorage.removeItem(localWordInfoKey);
 
-      const profileRef = doc(db, "profiles", loggedInUserId);
-      await setDoc(profileRef, {
-        fullChatReadingIndex: null,
-        fullChatMarkedWordInfo: null
-      }, { merge: true });
-      
-      setSavedReadingIndex(null);
-      setSavedMarkedWordInfo(null);
-      setSaveNotification("Reading point cleared!");
-      setTimeout(() => setSaveNotification(null), 3000);
-    } catch (err) {
-      console.error("Failed to clear reading point:", err);
-    }
+    // Optimistically remove locally for instant UI update
+    const localIndexKey = `full_chat_reading_index_${loggedInUserId}`;
+    const localWordInfoKey = `full_chat_marked_word_info_${loggedInUserId}`;
+    localStorage.removeItem(localIndexKey);
+    localStorage.removeItem(localWordInfoKey);
+
+    setSavedReadingIndex(null);
+    setSavedMarkedWordInfo(null);
+    setSaveNotification("Reading point cleared!");
+    setTimeout(() => setSaveNotification(null), 3000);
+
+    // Remove from Firestore in background
+    const profileRef = doc(db, "profiles", loggedInUserId);
+    setDoc(profileRef, {
+      fullChatReadingIndex: null,
+      fullChatMarkedWordInfo: null
+    }, { merge: true }).catch((err) => {
+      console.error("Failed to clear reading point in Firestore in background:", err);
+    });
   };
 
   // Go to saved reading point
@@ -1072,9 +1065,9 @@ function FullChatContent() {
             <span className="text-white/80 font-mono text-xs sm:text-sm font-bold">
               {loadingProgress}%
             </span>
-            <div className="w-28 sm:w-36 h-[3px] bg-white/5 rounded-full overflow-hidden mt-1 border border-white/5">
+            <div className="w-28 sm:w-36 h-1.5 bg-white/10 rounded-full overflow-hidden mt-1.5">
               <div 
-                className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-75 ease-out" 
+                className="h-full bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-500 transition-all duration-75 ease-out shadow-[0_0_8px_rgba(236,72,153,0.5)] rounded-full" 
                 style={{ width: `${loadingProgress}%` }}
               />
             </div>
@@ -1179,38 +1172,7 @@ function FullChatContent() {
       </div>
 
       {/* Floating date selector and Reading Point navigation bar at bottom */}
-      {isSelectingMarkPoint ? (
-        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center justify-between gap-4 bg-gradient-to-r from-purple-900/95 to-indigo-900/95 border border-purple-500/40 px-5 py-2.5 rounded-full backdrop-blur-md shadow-[0_10px_35px_rgba(168,85,247,0.3)] pointer-events-auto w-[90%] sm:w-auto scale-[0.82] sm:scale-100 origin-bottom transition-all">
-          <div className="flex items-center gap-2 text-white text-[10px] font-bold font-outfit uppercase tracking-wider">
-            <span className="w-2 h-2 rounded-full bg-purple-400 animate-ping shrink-0" />
-            <span className="truncate">
-              {tempSelectedWordInfo 
-                ? `Selected: "${tempSelectedWordInfo.wordText}"` 
-                : "Select a chat bubble..."}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Cancel (Wrong) button */}
-            <button
-              onClick={handleCancelSelection}
-              className="p-1.5 bg-red-900/50 hover:bg-red-800 border border-red-500/30 rounded-full text-white flex items-center justify-center size-8 cursor-pointer transition shadow-md font-sans text-xs font-bold"
-              title="Cancel"
-            >
-              ✕
-            </button>
-            {/* Confirm (Tick) button */}
-            <button
-              onClick={handleConfirmSelection}
-              disabled={!tempSelectedWordInfo}
-              className="p-1.5 bg-green-600/80 hover:bg-green-500 border border-green-500/30 rounded-full text-white flex items-center justify-center size-8 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition shadow-md"
-              title="Confirm Selection"
-            >
-              <Check size={14} />
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-3 bg-neutral-950/80 border border-neutral-850 px-3 py-2 sm:px-4 sm:py-2.5 rounded-full backdrop-blur-md shadow-2xl pointer-events-auto max-w-[95%] sm:max-w-none scale-[0.82] sm:scale-100 origin-bottom transition-all">
+      <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-3 bg-neutral-950/80 border border-neutral-850 px-3 py-2 sm:px-4 sm:py-2.5 rounded-full backdrop-blur-md shadow-2xl pointer-events-auto max-w-[95%] sm:max-w-none scale-[0.82] sm:scale-100 origin-bottom transition-all">
           {/* Date drop down selection */}
           <div className="relative" ref={dropdownRef}>
             <button
@@ -1300,7 +1262,6 @@ function FullChatContent() {
             )}
           </div>
         </div>
-      )}
 
       {/* Back button */}
       <div className="absolute top-3 left-3 sm:top-8 sm:left-8 z-20 flex items-center">
