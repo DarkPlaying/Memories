@@ -1067,7 +1067,7 @@ function FullChatContent() {
             </span>
             <div className="w-28 sm:w-36 h-1.5 bg-white/10 rounded-full overflow-hidden mt-1.5">
               <div 
-                className="h-full bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-500 transition-all duration-75 ease-out shadow-[0_0_8px_rgba(236,72,153,0.5)] rounded-full" 
+                className="h-full bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.5)] rounded-full" 
                 style={{ width: `${loadingProgress}%` }}
               />
             </div>
