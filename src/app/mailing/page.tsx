@@ -3524,10 +3524,10 @@ export default function MailingPage() {
               <CircularGallery 
                 ref={galleryRef}
                 items={chatGalleryItems.slice(chatGalleryPage * 10, chatGalleryPage * 10 + 10)} 
-                radius={isMobile ? 280 : 420} 
+                radius={isMobile ? 250 : 380} 
                 autoRotateSpeed={0.015}
-                cardWidth={isMobile ? 180 : 220}
-                cardHeight={isMobile ? 320 : 391}
+                cardWidth={isMobile ? 160 : 200}
+                cardHeight={isMobile ? 285 : 356}
                 onItemClick={(idx) => setLightboxIndex(chatGalleryPage * 10 + idx)}
               />
             </div>
