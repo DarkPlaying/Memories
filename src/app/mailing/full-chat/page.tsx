@@ -676,8 +676,18 @@ function FullChatContent() {
           const matched = matchDateToIndex(firestoreIndex, datesList);
           setCurrentDateIndex(matched);
           
-          // Fetch messages around this index
-          fetchMessagesFromIndex(firestoreIndex, true, 100);
+          // Fetch messages around this index, starting from the previous day's date if possible
+          let fetchIndex = firestoreIndex;
+          let limit = 100;
+          if (matched > 0) {
+            fetchIndex = datesList[matched - 1].index;
+            const diff = firestoreIndex - fetchIndex;
+            limit = Math.max(100, diff + 100);
+          } else {
+            limit = Math.max(100, firestoreIndex + 100);
+          }
+          
+          fetchMessagesFromIndex(fetchIndex, true, limit);
         } else {
           // Fallback to dateParam if present
           if (dateParam) {
@@ -904,7 +914,19 @@ function FullChatContent() {
       setScrollTargetIntent("marked-word");
       setMessages([]);
       setHasMore(true);
-      fetchMessagesFromIndex(savedReadingIndex);
+      
+      const matched = matchDateToIndex(savedReadingIndex, datesList);
+      let fetchIndex = savedReadingIndex;
+      let limit = 100;
+      if (matched > 0) {
+        fetchIndex = datesList[matched - 1].index;
+        const diff = savedReadingIndex - fetchIndex;
+        limit = Math.max(100, diff + 100);
+      } else {
+        limit = Math.max(100, savedReadingIndex + 100);
+      }
+      
+      fetchMessagesFromIndex(fetchIndex, false, limit);
     }
   };
 
@@ -1297,10 +1319,10 @@ function FullChatContent() {
               setIsAuthorized(false);
               router.push("/mailing?state=chat-world");
             }}
-            className="w-[68px] h-[68px] rounded-full flex items-center justify-center border border-red-500/30 bg-red-950/30 hover:bg-red-900/50 hover:border-red-500/60 text-red-300 transition cursor-pointer shadow-lg hover:shadow-red-500/10 pointer-events-auto shrink-0"
+            className="w-[52px] h-[52px] rounded-full flex items-center justify-center border border-red-500/30 bg-red-950/30 hover:bg-red-900/50 hover:border-red-500/60 text-red-300 transition cursor-pointer shadow-lg hover:shadow-red-500/10 pointer-events-auto shrink-0"
             title="Logout Profile"
           >
-            <LogOut size={22} />
+            <LogOut size={18} />
           </button>
         </div>
       )}

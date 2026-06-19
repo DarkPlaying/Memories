@@ -2481,10 +2481,10 @@ export default function MailingPage() {
                 setPageState("landing");
                 setLoginState("select-profile");
               }}
-              className="w-[68px] h-[68px] rounded-full flex items-center justify-center border border-red-500/30 bg-red-950/30 hover:bg-red-900/50 hover:border-red-500/60 text-red-300 transition cursor-pointer shadow-lg hover:shadow-red-500/10 shrink-0"
+              className="w-[52px] h-[52px] rounded-full flex items-center justify-center border border-red-500/30 bg-red-950/30 hover:bg-red-900/50 hover:border-red-500/60 text-red-300 transition cursor-pointer shadow-lg hover:shadow-red-500/10 shrink-0"
               title="Logout Profile"
             >
-              <LogOut size={22} />
+              <LogOut size={18} />
             </button>
           </div>
         </div>
