@@ -2452,11 +2452,17 @@ export default function MailingPage() {
             {pageState !== "chat-world" && (
               <button
                 onClick={() => setPageState("chat-world")}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-purple-500/20 bg-purple-950/20 hover:bg-purple-900/40 hover:border-purple-500/40 text-xs font-semibold text-purple-300 transition cursor-pointer font-outfit shadow-[0_0_15px_rgba(168,85,247,0.05)]"
+                className="w-[52px] h-[52px] rounded-full flex items-center justify-center border border-purple-500/30 bg-purple-950/30 hover:bg-purple-900/50 hover:border-purple-500/60 text-purple-300 transition cursor-pointer shadow-lg hover:shadow-purple-500/10 shrink-0"
+                title="Visit Chat World"
               >
-                <Globe size={12} className="animate-pulse" />
-                Visit Chat World
+                <Globe size={18} className="animate-pulse" />
               </button>
+            )}
+            {sessionTimeLeft !== null && (
+              <div className="flex items-center gap-1.5 bg-neutral-950/80 border border-neutral-800 rounded-full px-3.5 py-2 text-xs sm:text-sm font-bold font-mono text-purple-300 shadow-md animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-ping shrink-0" />
+                <span>Session: {formatTimeLeft(sessionTimeLeft)}</span>
+              </div>
             )}
             <ProfileCard
               imageSrc={loggedInUser.avatarUrl}
@@ -2466,12 +2472,6 @@ export default function MailingPage() {
               avatarAdjust={loggedInUser.avatarAdjust}
               onClick={() => setIsDetailedCardOpen(true)}
             />
-            {sessionTimeLeft !== null && (
-              <div className="flex items-center gap-1.5 bg-neutral-950/80 border border-neutral-800 rounded-full px-3.5 py-2 text-xs sm:text-sm font-bold font-mono text-purple-300 shadow-md animate-pulse">
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-ping shrink-0" />
-                <span>Session: {formatTimeLeft(sessionTimeLeft)}</span>
-              </div>
-            )}
             <button
               onClick={() => {
                 const sessionKey = `session_expiry_${loggedInUser.id}`;
