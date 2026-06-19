@@ -859,7 +859,7 @@ export default function MailingPage() {
     const now = Date.now();
 
     if (!expiry || expiryTime <= now) {
-      expiryTime = now + 2 * 60 * 60 * 1000; // 2 hours
+      expiryTime = now + 5 * 60 * 1000; // 5 minutes
       localStorage.setItem(sessionKey, expiryTime.toString());
     }
 
@@ -2645,7 +2645,7 @@ export default function MailingPage() {
                       }
                       setLoggedInUser(profile);
                       sessionStorage.setItem("logged_in_user_id", profile.id);
-                      localStorage.setItem(`session_expiry_${profile.id}`, (Date.now() + 2 * 60 * 60 * 1000).toString());
+                      localStorage.setItem(`session_expiry_${profile.id}`, (Date.now() + 5 * 60 * 1000).toString());
                       setLoginPasswordInput("");
                       setLoginPasswordError("");
                     } else {
@@ -2780,7 +2780,7 @@ export default function MailingPage() {
                   if (activeP) {
                     setLoggedInUser(activeP);
                     sessionStorage.setItem("logged_in_user_id", activeP.id);
-                    localStorage.setItem(`session_expiry_${activeP.id}`, (Date.now() + 2 * 60 * 60 * 1000).toString());
+                    localStorage.setItem(`session_expiry_${activeP.id}`, (Date.now() + 5 * 60 * 1000).toString());
                   }
                   setLoginState("select-profile");
                   setTempNewPassword("");
@@ -2973,7 +2973,7 @@ export default function MailingPage() {
                   if (activeP) {
                     setLoggedInUser(activeP);
                     sessionStorage.setItem("logged_in_user_id", activeP.id);
-                    localStorage.setItem(`session_expiry_${activeP.id}`, (Date.now() + 2 * 60 * 60 * 1000).toString());
+                    localStorage.setItem(`session_expiry_${activeP.id}`, (Date.now() + 5 * 60 * 1000).toString());
                   }
                   setLoginState("select-profile");
                   setTempNewPassword("");
