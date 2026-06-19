@@ -12,6 +12,30 @@ function parseChatFile() {
     return [];
   }
 
+  const cacheDir = path.join(process.cwd(), "scratch");
+  const cachePath = path.join(cacheDir, "chat_cache.json");
+
+  // Create scratch folder if not exists
+  if (!fs.existsSync(cacheDir)) {
+    fs.mkdirSync(cacheDir, { recursive: true });
+  }
+
+  const txtStats = fs.statSync(filePath);
+
+  if (fs.existsSync(cachePath)) {
+    const cacheStats = fs.statSync(cachePath);
+    if (cacheStats.mtimeMs >= txtStats.mtimeMs) {
+      try {
+        console.log("Loading chat from fast JSON cache...");
+        const cachedData = fs.readFileSync(cachePath, "utf-8");
+        return JSON.parse(cachedData);
+      } catch (err) {
+        console.error("Failed to read JSON cache, parsing txt file instead:", err);
+      }
+    }
+  }
+
+  console.log("Parsing raw chat txt file (this may take several seconds)...");
   const content = fs.readFileSync(filePath, "utf-8");
   const lines = content.split("\n");
   const parsed: any[] = [];
@@ -48,10 +72,20 @@ function parseChatFile() {
   }
 
   // Filter valid senders
-  return parsed.filter(m => {
+  const filtered = parsed.filter(m => {
     const senderLower = m.sender.toLowerCase();
     return senderLower.includes("sanjay") || senderLower.includes("divya");
   });
+
+  // Save to JSON cache asynchronously
+  try {
+    fs.writeFileSync(cachePath, JSON.stringify(filtered), "utf-8");
+    console.log("Saved parsed chat to fast JSON cache!");
+  } catch (err) {
+    console.error("Failed to write JSON cache:", err);
+  }
+
+  return filtered;
 }
 
 export async function GET(request: Request) {
