@@ -149,7 +149,7 @@ export function GlassmorphismProfileCard({
   const getIcon = (id: string) => {
     if (id === 'github') return Github;
     if (id === 'linkedin') return Linkedin;
-    if (id === 'twitter' || id === 'website') return Globe;
+    if (id === 'twitter' || id === 'website' || id === 'about') return Globe;
     return Github;
   };
 

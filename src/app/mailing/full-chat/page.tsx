@@ -1,10 +1,13 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, useRef } from "react";
-import { ArrowLeft, Loader2, Send, Phone, Video, MoreVertical, Wifi, Battery, Bookmark, RotateCcw, ChevronUp, ChevronDown, Check } from "lucide-react";
+import React, { useEffect, useState, useMemo, useRef, Suspense, useImperativeHandle } from "react";
+import { ArrowLeft, Loader2, Send, Phone, Video, MoreVertical, Wifi, Battery, Bookmark, RotateCcw, ChevronUp, ChevronDown, Check, Clock, LogOut } from "lucide-react";
 import Link from "next/link";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { useRouter, useSearchParams } from "next/navigation";
+import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { hashPassword } from "@/lib/password-security";
+import ProfileCard from "@/components/ui/profile-card";
 
 // ============================================================================
 // Chat Client Screen (The embedded scrollable UI)
@@ -17,16 +20,139 @@ interface ChatMessage {
   content: string;
 }
 
+interface WordInfo {
+  msgId: string;
+  wordIndex: number;
+  wordText: string;
+  globalIndex?: number;
+}
+
+function MessageContent({ content }: { content: string }) {
+  return <span className="whitespace-pre-wrap break-words">{content}</span>;
+}
+
 interface ChatScreenProps {
   messages: ChatMessage[];
   loading: boolean;
   hasMore: boolean;
   onScroll: (e: React.UIEvent<HTMLDivElement>) => void;
   timeStr: string;
+  selectedDate?: string;
+  isSelectingMarkPoint: boolean;
+  tempSelectedWordInfo: WordInfo | null;
+  onSelectWord: (info: (WordInfo & { globalIndex: number }) | null) => void;
+  savedMarkedWordInfo: WordInfo | null;
+  savedReadingIndex: number | null;
+  scrollTargetIntent: "date" | "marked-word" | null;
+  currentStartIndex: number;
 }
 
-function ChatScreen({ messages, loading, hasMore, onScroll, timeStr }: ChatScreenProps) {
+interface ChatScreenRef {
+  getFirstVisibleMessage: () => { msgId: string; wordText: string; globalIndex: number } | null;
+}
+
+const ChatScreen = React.forwardRef<ChatScreenRef, ChatScreenProps>(({ 
+  messages, 
+  loading, 
+  hasMore, 
+  onScroll, 
+  timeStr, 
+  selectedDate,
+  isSelectingMarkPoint,
+  tempSelectedWordInfo,
+  onSelectWord,
+  savedMarkedWordInfo,
+  savedReadingIndex,
+  scrollTargetIntent,
+  currentStartIndex
+}, ref) => {
   const listRef = useRef<HTMLDivElement>(null);
+  const hasScrolledToDateRef = useRef<string | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    getFirstVisibleMessage: () => {
+      if (!listRef.current || messages.length === 0) return null;
+      const container = listRef.current;
+      const containerScrollTop = container.scrollTop;
+      
+      const bubbleElements = container.querySelectorAll('[data-message-bubble="true"]');
+      for (let i = 0; i < bubbleElements.length; i++) {
+        const el = bubbleElements[i] as HTMLElement;
+        if (el.offsetTop >= containerScrollTop - 15) {
+          const msgId = el.getAttribute('data-msg-id');
+          if (msgId) {
+            const msgIdx = messages.findIndex(m => m.id === msgId);
+            if (msgIdx !== -1) {
+              const msg = messages[msgIdx];
+              return {
+                msgId: msg.id,
+                wordText: msg.content.length > 30 ? msg.content.substring(0, 30) + "..." : msg.content,
+                globalIndex: currentStartIndex + msgIdx
+              };
+            }
+          }
+        }
+      }
+      return {
+        msgId: messages[0].id,
+        wordText: messages[0].content.length > 30 ? messages[0].content.substring(0, 30) + "..." : messages[0].content,
+        globalIndex: currentStartIndex
+      };
+    }
+  }), [messages, currentStartIndex]);
+
+  // Reset scroll lock when messages list is cleared (e.g. on new date selection)
+  useEffect(() => {
+    if (messages.length === 0) {
+      hasScrolledToDateRef.current = null;
+    }
+  }, [messages]);
+
+  // Scroll to selected date separator OR saved marked message word
+  useEffect(() => {
+    if (listRef.current) {
+      const container = listRef.current;
+      const timer = setTimeout(() => {
+        // 1. Center the marked message if the intent is marked-word
+        if (scrollTargetIntent === "marked-word") {
+          let attempts = 0;
+          const tryScroll = () => {
+            const markedMsgEl = container.querySelector('[data-marked-message="true"]') as HTMLElement;
+            if (markedMsgEl) {
+              if (hasScrolledToDateRef.current !== "marked-word") {
+                const scrollPos = markedMsgEl.offsetTop - container.clientHeight / 2 + markedMsgEl.clientHeight / 2;
+                container.scrollTo({ top: Math.max(0, scrollPos), behavior: "smooth" });
+                hasScrolledToDateRef.current = "marked-word";
+              }
+            } else if (attempts < 8) {
+              attempts++;
+              setTimeout(tryScroll, 100);
+            }
+          };
+          tryScroll();
+        } 
+        // 2. Scroll to selected date separator if intent is date
+        else if (scrollTargetIntent === "date" && selectedDate) {
+          if (hasScrolledToDateRef.current === selectedDate) {
+            return;
+          }
+          let attempts = 0;
+          const tryScrollDate = () => {
+            const target = container.querySelector(`[data-date-separator="${selectedDate}"]`) as HTMLElement;
+            if (target) {
+              container.scrollTo({ top: target.offsetTop - 10, behavior: "smooth" });
+              hasScrolledToDateRef.current = selectedDate;
+            } else if (attempts < 8) {
+              attempts++;
+              setTimeout(tryScrollDate, 100);
+            }
+          };
+          tryScrollDate();
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [messages, selectedDate, scrollTargetIntent, savedMarkedWordInfo]);
 
   // Group messages to insert date separators dynamically
   const renderedItems = useMemo(() => {
@@ -62,7 +188,7 @@ function ChatScreen({ messages, loading, hasMore, onScroll, timeStr }: ChatScree
               src="/stamp.png" 
               alt="Website Stamp Logo" 
               className="w-full h-full object-cover p-1.5 filter brightness-95" 
-            />
+              />
           </div>
           <div className="flex flex-col">
             <span className="text-xs font-bold text-neutral-800 font-outfit leading-tight">Our Story'26</span>
@@ -80,25 +206,36 @@ function ChatScreen({ messages, loading, hasMore, onScroll, timeStr }: ChatScree
       <div 
         ref={listRef}
         onScroll={onScroll}
-        className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-[#FAF6F0] scrollbar-none"
+        className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-[#FAF6F0] scrollbar-none relative"
         style={{
           backgroundImage: "radial-gradient(rgba(176,149,129,0.06) 1.5px, transparent 1.5px)",
           backgroundSize: "20px 20px"
         }}
       >
-        {messages.length === 0 && loading ? (
-          <div className="h-full w-full flex flex-col items-center justify-center py-10">
-            <img src="/loader.gif" alt="Loading chat..." className="w-16 h-16 object-contain" />
-            <p className="text-[10px] text-[#8c7e74] font-semibold font-outfit mt-3 animate-pulse uppercase tracking-widest">
-              Loading chat...
-            </p>
-          </div>
+        {messages.length === 0 ? (
+          loading ? (
+            <div className="h-full w-full flex flex-col items-center justify-center py-10">
+              <img src="/loader.gif" alt="Loading chat..." className="w-16 h-16 object-contain" />
+              <p className="text-[10px] text-[#8c7e74] font-semibold font-outfit mt-3 animate-pulse uppercase tracking-widest">
+                Loading chat...
+              </p>
+            </div>
+          ) : (
+            <div className="h-full w-full flex flex-col items-center justify-center py-10 px-6 text-center select-text">
+              <p className="text-xs text-[#8c7e74] font-bold font-outfit leading-normal">
+                No chat messages found.
+              </p>
+              <p className="text-[10px] text-neutral-400 font-outfit mt-1 max-w-[200px] leading-relaxed">
+                Please ensure the chat history database is properly initialized in the project directory.
+              </p>
+            </div>
+          )
         ) : (
           <>
             {renderedItems.map((item) => {
               if (item.type === "date-separator") {
                 return (
-                  <div key={item.id} className="flex justify-center my-3 select-none">
+                  <div key={item.id} data-date-separator={item.date} className="flex justify-center my-3 select-none">
                     <span className="px-3.5 py-1 rounded-full bg-[#ede6df]/60 border border-[#ede6df]/40 text-[9px] font-semibold text-[#8c7e74] font-outfit uppercase tracking-wider shadow-sm">
                       {item.date}
                     </span>
@@ -108,20 +245,45 @@ function ChatScreen({ messages, loading, hasMore, onScroll, timeStr }: ChatScree
 
               const msg = item.msg;
               const isRight = msg.sender.toLowerCase().includes("sanjay");
+              const globalIndex = currentStartIndex + (messages.findIndex(m => m.id === msg.id));
+              const isMsgSaved = (savedMarkedWordInfo && savedMarkedWordInfo.msgId === msg.id) || (savedReadingIndex !== null && globalIndex === savedReadingIndex);
+              const isMsgTempSelected = tempSelectedWordInfo && tempSelectedWordInfo.msgId === msg.id;
               
               return (
                 <div 
                   key={msg.id} 
+                  data-message-bubble="true"
+                  data-msg-id={msg.id}
+                  data-marked-message={isMsgSaved ? "true" : undefined}
                   className={`flex w-full ${isRight ? "justify-end" : "justify-start"}`}
                 >
                   <div 
-                    className={`max-w-[80%] rounded-[18px] px-3.5 py-2 text-xs font-outfit leading-relaxed shadow-sm ${
+                    onClick={(e) => {
+                      if (isSelectingMarkPoint) {
+                        e.stopPropagation();
+                        onSelectWord({
+                          msgId: msg.id,
+                          wordIndex: 0,
+                          wordText: msg.content.length > 30 ? msg.content.substring(0, 30) + "..." : msg.content,
+                          globalIndex
+                        });
+                      }
+                    }}
+                    className={`max-w-[80%] rounded-[18px] px-3.5 py-2 text-xs font-outfit leading-relaxed shadow-sm transition-all ${
+                      isSelectingMarkPoint ? "cursor-pointer" : ""
+                    } ${
                       isRight 
                         ? "bg-[#b09581] text-white rounded-tr-none" 
                         : "bg-white text-[#40352f] border border-[#ede6df] rounded-tl-none"
+                    } ${
+                      isMsgTempSelected 
+                        ? "ring-2 ring-purple-600 shadow-[0_0_12px_rgba(168,85,247,0.45)]" 
+                        : isMsgSaved 
+                          ? "ring-2 ring-purple-500/50 shadow-[0_0_12px_rgba(168,85,247,0.2)]" 
+                          : ""
                     }`}
                   >
-                    <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                    <MessageContent content={msg.content} />
                     <div className={`text-[8px] mt-1 text-right select-none ${isRight ? "text-white/70" : "text-neutral-400"}`}>
                       {msg.time}
                     </div>
@@ -150,17 +312,80 @@ function ChatScreen({ messages, loading, hasMore, onScroll, timeStr }: ChatScree
       </div>
     </div>
   );
-}
+});
+
+ChatScreen.displayName = "ChatScreen";
+
+const formatTimeLeft = (seconds: number) => {
+  if (seconds <= 0) return "00:00:00";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return [
+    h.toString().padStart(2, "0"),
+    m.toString().padStart(2, "0"),
+    s.toString().padStart(2, "0")
+  ].join(":");
+};
 
 // ============================================================================
-// Main Page component
+// Main Page Content component
 // ============================================================================
-export default function FullChatPage() {
+function FullChatContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const dateParam = searchParams.get("date");
   const [mounted, setMounted] = useState(false);
+  const hasInitializedRef = useRef(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [stars, setStars] = useState<{ x: number; y: number; size: number; duration: number }[]>([]);
   const [timeStr, setTimeStr] = useState("12:00 PM");
+
+  // Password Verification State
+  const [isAuthorized, setIsAuthorized] = useState(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("full_chat_authorized") === "true";
+    }
+    return false;
+  });
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordError, setPasswordError] = useState(false);
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const hashedInput = await hashPassword(passwordInput);
+      const defaultChatPasswordHash = "160fba6868d2070e5ae03ce0fb9988d58231c4a56b8a94b4e9b5133cbf17d922";
+      
+      let isMatch = hashedInput === defaultChatPasswordHash;
+      
+      const userId = sessionStorage.getItem("logged_in_user_id");
+      if (userId) {
+        const profileRef = doc(db, "profiles", userId);
+        const snap = await getDoc(profileRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.chatPassword) {
+            isMatch = hashedInput === data.chatPassword;
+          }
+        }
+      }
+      
+      if (isMatch) {
+        sessionStorage.setItem("full_chat_authorized", "true");
+        setIsAuthorized(true);
+        setPasswordError(false);
+      } else {
+        setPasswordError(true);
+        setTimeout(() => setPasswordError(false), 2000);
+      }
+    } catch (err) {
+      console.error("Password verification error:", err);
+      setPasswordError(true);
+      setTimeout(() => setPasswordError(false), 2000);
+    }
+  };
 
   // Chat Data & Navigation State
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -169,13 +394,73 @@ export default function FullChatPage() {
   const [currentStartIndex, setCurrentStartIndex] = useState(0);
 
   // Date lists for dropdown
-  const [datesList, setDatesList] = useState<{ date: string; index: number }[]>([]);
+  const [datesList, setDatesList] = useState<{ date: string; index: number; isMatched?: boolean }[]>([]);
   const [currentDateIndex, setCurrentDateIndex] = useState(0);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isManualSelecting, setIsManualSelecting] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Word selection and scroll intent states
+  const [isSelectingMarkPoint, setIsSelectingMarkPoint] = useState(false);
+  const [tempSelectedWordInfo, setTempSelectedWordInfo] = useState<WordInfo | null>(null);
+  const [savedMarkedWordInfo, setSavedMarkedWordInfo] = useState<WordInfo | null>(null);
+  const [scrollTargetIntent, setScrollTargetIntent] = useState<"date" | "marked-word" | null>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
 
   // Firestore Reading Point Sync
   const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null);
+  const [loggedInUser, setLoggedInUser] = useState<any | null>(null);
+  const [sessionTimeLeft, setSessionTimeLeft] = useState<number | null>(null);
   const [savedReadingIndex, setSavedReadingIndex] = useState<number | null>(null);
   const [saveNotification, setSaveNotification] = useState<string | null>(null);
+
+  const chatScreenRef = useRef<ChatScreenRef>(null);
+
+  // Session Expiry & Timer Countdown
+  useEffect(() => {
+    if (!loggedInUserId) {
+      setSessionTimeLeft(null);
+      return;
+    }
+
+    const sessionKey = `session_expiry_${loggedInUserId}`;
+    let expiry = localStorage.getItem(sessionKey);
+    let expiryTime = expiry ? parseInt(expiry, 10) : 0;
+    const now = Date.now();
+
+    if (!expiry || expiryTime <= now) {
+      expiryTime = now + 2 * 60 * 60 * 1000; // 2 hours
+      localStorage.setItem(sessionKey, expiryTime.toString());
+    }
+
+    const updateTimer = () => {
+      const current = Date.now();
+      const diff = Math.max(0, Math.floor((expiryTime - current) / 1000));
+      setSessionTimeLeft(diff);
+
+      if (diff <= 0) {
+        sessionStorage.removeItem("full_chat_authorized");
+        sessionStorage.removeItem("logged_in_user_id");
+        localStorage.removeItem(sessionKey);
+        setIsAuthorized(false);
+        setLoggedInUser(null);
+        router.push("/mailing?state=chat-world");
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [loggedInUserId, router]);
 
 
 
@@ -211,25 +496,42 @@ export default function FullChatPage() {
     fetchDates();
   }, []);
 
-  // Fetch messages starting from a specific index with a minimum 1-second loader duration to prevent flicker
-  const fetchMessagesFromIndex = async (idxVal: number) => {
+  // Fetch messages starting from a specific index with an optional minimum 1-second loader duration for initial load
+  const fetchMessagesFromIndex = async (idxVal: number, isInitial = false, customLimit = 40) => {
+    let cleanIdx = Number(idxVal);
+    if (isNaN(cleanIdx) || cleanIdx < 0) {
+      cleanIdx = 0;
+    }
     if (loading) return;
     setLoading(true);
-    setCurrentStartIndex(idxVal);
+    setCurrentStartIndex(cleanIdx);
     try {
-      const [res] = await Promise.all([
-        fetch(`/api/chat?startIndex=${idxVal}&limit=40`),
-        new Promise(resolve => setTimeout(resolve, 1000))
-      ]);
+      const fetchPromise = fetch(`/api/chat?startIndex=${cleanIdx}&limit=${customLimit}`);
+      const res = await fetchPromise;
+
       const data = await res.json();
       if (data.messages && data.messages.length > 0) {
         setMessages(data.messages);
         setHasMore(data.hasMore);
       } else {
-        setHasMore(false);
+        if (cleanIdx !== 0) {
+          console.warn(`No messages found at index ${cleanIdx}, falling back to index 0`);
+          setLoading(false);
+          await fetchMessagesFromIndex(0, isInitial);
+        } else {
+          setMessages([]);
+          setHasMore(false);
+        }
       }
     } catch (err) {
       console.error("Failed to fetch messages:", err);
+      if (cleanIdx !== 0) {
+        setLoading(false);
+        await fetchMessagesFromIndex(0, isInitial);
+      } else {
+        setMessages([]);
+        setHasMore(false);
+      }
     } finally {
       setLoading(false);
     }
@@ -260,7 +562,7 @@ export default function FullChatPage() {
     }
   };
 
-  // Load Reading Point from Firestore
+  // Initial mount configurations (Stars and fake progress)
   useEffect(() => {
     setMounted(true);
     
@@ -274,7 +576,7 @@ export default function FullChatPage() {
     setStars(generatedStars);
 
     // Initial page load spinner progress
-    const duration = 600;
+    const duration = 150;
     const intervalTime = 15;
     const steps = duration / intervalTime;
     let step = 0;
@@ -288,39 +590,137 @@ export default function FullChatPage() {
       }
     }, intervalTime);
 
-    // Load Reading Point index from Firestore
-    const userId = sessionStorage.getItem("logged_in_user_id");
-    if (userId) {
-      setLoggedInUserId(userId);
-      const loadReadingPoint = async () => {
-        try {
-          const profileRef = doc(db, "profiles", userId);
-          const snap = await getDoc(profileRef);
-          if (snap.exists()) {
-            const data = snap.data();
-            if (data.fullChatReadingIndex !== undefined && data.fullChatReadingIndex !== null) {
-              const idx = Number(data.fullChatReadingIndex);
-              setSavedReadingIndex(idx);
-              setCurrentStartIndex(idx);
-              fetchMessagesFromIndex(idx);
-            } else {
-              fetchMessagesFromIndex(0);
-            }
-          } else {
-            fetchMessagesFromIndex(0);
-          }
-        } catch (err) {
-          console.error("Failed to load reading point from Firebase:", err);
-          fetchMessagesFromIndex(0);
-        }
-      };
-      loadReadingPoint();
-    } else {
-      fetchMessagesFromIndex(0);
-    }
-
     return () => clearInterval(timer);
   }, []);
+
+  // Load Reading Point and initialize messages/redirection after authorization and dates list are loaded
+  useEffect(() => {
+    if (!isAuthorized || datesList.length === 0 || hasInitializedRef.current) return;
+
+    const userId = sessionStorage.getItem("logged_in_user_id");
+    setLoggedInUserId(userId);
+
+    const initializeChat = async () => {
+      hasInitializedRef.current = true;
+      try {
+        let firestoreIndex: number | null = null;
+        let firestoreWordInfo: any = null;
+
+        if (userId) {
+          const profileRef = doc(db, "profiles", userId);
+          try {
+            const snap = await getDoc(profileRef);
+            if (snap && snap.exists()) {
+              const data = snap.data();
+              setLoggedInUser({
+                id: userId,
+                name: data.name || "Partner",
+                avatarUrl: data.avatarUrl || "/stamp.png",
+                title: data.title || "User",
+                socials: data.socials || {},
+                avatarAdjust: data.avatarAdjust || { scale: 1, x: 0, y: 0 }
+              });
+              if (data.fullChatReadingIndex !== undefined && data.fullChatReadingIndex !== null) {
+                firestoreIndex = Number(data.fullChatReadingIndex);
+                if (isNaN(firestoreIndex)) firestoreIndex = null;
+                firestoreWordInfo = data.fullChatMarkedWordInfo || null;
+
+                // Sync to local storage
+                const localIndexKey = `full_chat_reading_index_${userId}`;
+                const localWordInfoKey = `full_chat_marked_word_info_${userId}`;
+                if (firestoreIndex !== null) {
+                  localStorage.setItem(localIndexKey, String(firestoreIndex));
+                  if (firestoreWordInfo) {
+                    localStorage.setItem(localWordInfoKey, JSON.stringify(firestoreWordInfo));
+                  } else {
+                    localStorage.removeItem(localWordInfoKey);
+                  }
+                } else {
+                  localStorage.removeItem(localIndexKey);
+                  localStorage.removeItem(localWordInfoKey);
+                }
+              }
+            }
+          } catch (err) {
+            console.error("Failed to load reading point from Firebase, falling back to local storage:", err);
+          }
+
+          // Fallback to local storage if Firebase read failed or has no marked point
+          if (firestoreIndex === null) {
+            const localIndexKey = `full_chat_reading_index_${userId}`;
+            const localWordInfoKey = `full_chat_marked_word_info_${userId}`;
+            const localIdx = localStorage.getItem(localIndexKey);
+            const localWord = localStorage.getItem(localWordInfoKey);
+            
+            if (localIdx !== null) {
+              firestoreIndex = Number(localIdx);
+              if (localWord) {
+                try {
+                  firestoreWordInfo = JSON.parse(localWord);
+                } catch (e) {
+                  console.error("Failed to parse local marked word info:", e);
+                }
+              }
+            }
+          }
+        }
+
+        if (firestoreIndex !== null) {
+          setSavedReadingIndex(firestoreIndex);
+          setSavedMarkedWordInfo(firestoreWordInfo);
+          
+          // Auto redirection to saved reading point on visit
+          setScrollTargetIntent("marked-word");
+          
+          // Determine page/date index for this index
+          const matched = matchDateToIndex(firestoreIndex, datesList);
+          setCurrentDateIndex(matched);
+          
+          // Fetch messages around this index
+          fetchMessagesFromIndex(firestoreIndex, true, 100);
+        } else {
+          // Fallback to dateParam if present
+          if (dateParam) {
+            const foundIdx = datesList.findIndex(d => d.date === dateParam);
+            if (foundIdx !== -1) {
+              setCurrentDateIndex(foundIdx);
+              setScrollTargetIntent("date");
+              
+              let fetchIndex = datesList[foundIdx].index;
+              let limit = 40;
+              
+              if (foundIdx > 0) {
+                fetchIndex = datesList[foundIdx - 1].index;
+                if (foundIdx + 1 < datesList.length) {
+                  limit = datesList[foundIdx + 1].index - fetchIndex;
+                } else {
+                  limit = 100;
+                }
+              } else {
+                if (foundIdx + 1 < datesList.length) {
+                  limit = datesList[foundIdx + 1].index - fetchIndex;
+                }
+              }
+              limit = Math.max(100, limit + 50); // Large buffer
+              fetchMessagesFromIndex(fetchIndex, true, limit);
+            } else {
+              setScrollTargetIntent(null);
+              fetchMessagesFromIndex(0, true);
+            }
+          } else {
+            setScrollTargetIntent(null);
+            fetchMessagesFromIndex(0, true);
+          }
+        }
+      } catch (err) {
+        console.error("Initialization failed:", err);
+        setScrollTargetIntent(null);
+        fetchMessagesFromIndex(0, true);
+      }
+    };
+
+    initializeChat();
+  }, [isAuthorized, datesList, dateParam]);
 
   // Match the date dropdown to the current scroll position / starting index
   const matchDateToIndex = (index: number, dates: { date: string; index: number }[]) => {
@@ -337,6 +737,10 @@ export default function FullChatPage() {
 
   useEffect(() => {
     if (datesList.length > 0) {
+      if (isManualSelecting) {
+        setIsManualSelecting(false);
+        return;
+      }
       const matched = matchDateToIndex(currentStartIndex, datesList);
       setCurrentDateIndex(matched);
     }
@@ -345,10 +749,32 @@ export default function FullChatPage() {
   // Jump to selected date index
   const jumpToDateIndex = (idx: number) => {
     if (idx < 0 || idx >= datesList.length) return;
-    const targetIndex = datesList[idx].index;
+    setIsManualSelecting(true);
+    setCurrentDateIndex(idx);
+    setScrollTargetIntent("date");
+    
+    let fetchIndex = datesList[idx].index;
+    let limit = 40;
+    
+    if (idx > 0) {
+      fetchIndex = datesList[idx - 1].index;
+      if (idx + 1 < datesList.length) {
+        limit = datesList[idx + 1].index - fetchIndex;
+      } else {
+        limit = 100; // Last day, load rest of the chat
+      }
+    } else {
+      if (idx + 1 < datesList.length) {
+        limit = datesList[idx + 1].index - fetchIndex;
+      }
+    }
+    
+    // Add buffer
+    limit = Math.max(100, limit + 50);
+    
     setMessages([]);
     setHasMore(true);
-    fetchMessagesFromIndex(targetIndex);
+    fetchMessagesFromIndex(fetchIndex, false, limit);
   };
 
   const handlePrevDate = () => {
@@ -380,29 +806,91 @@ export default function FullChatPage() {
   };
 
   // Save/Unmark Reading Point
-  const handleSaveReadingPoint = async () => {
-    if (!loggedInUserId) return;
-    try {
-      const profileRef = doc(db, "profiles", loggedInUserId);
-      await updateDoc(profileRef, {
-        fullChatReadingIndex: currentStartIndex
+  const handleSaveReadingPoint = () => {
+    setIsSelectingMarkPoint(true);
+    if (chatScreenRef.current) {
+      const firstVisible = chatScreenRef.current.getFirstVisibleMessage();
+      if (firstVisible) {
+        setTempSelectedWordInfo({
+          msgId: firstVisible.msgId,
+          wordIndex: 0,
+          wordText: firstVisible.wordText,
+          globalIndex: firstVisible.globalIndex
+        });
+        return;
+      }
+    }
+    if (messages.length > 0) {
+      setTempSelectedWordInfo({
+        msgId: messages[0].id,
+        wordIndex: 0,
+        wordText: messages[0].content.length > 30 ? messages[0].content.substring(0, 30) + "..." : messages[0].content,
+        globalIndex: currentStartIndex
       });
-      setSavedReadingIndex(currentStartIndex);
+    } else {
+      setTempSelectedWordInfo(null);
+    }
+  };
+
+  const handleCancelSelection = () => {
+    setIsSelectingMarkPoint(false);
+    setTempSelectedWordInfo(null);
+  };
+
+  const handleConfirmSelection = async () => {
+    if (!loggedInUserId || !tempSelectedWordInfo) return;
+    try {
+      const localIndexKey = `full_chat_reading_index_${loggedInUserId}`;
+      const localWordInfoKey = `full_chat_marked_word_info_${loggedInUserId}`;
+      localStorage.setItem(localIndexKey, String(tempSelectedWordInfo.globalIndex));
+      localStorage.setItem(localWordInfoKey, JSON.stringify({
+        msgId: tempSelectedWordInfo.msgId,
+        wordIndex: tempSelectedWordInfo.wordIndex,
+        wordText: tempSelectedWordInfo.wordText
+      }));
+
+      const profileRef = doc(db, "profiles", loggedInUserId);
+      await setDoc(profileRef, {
+        fullChatReadingIndex: tempSelectedWordInfo.globalIndex,
+        fullChatMarkedWordInfo: {
+          msgId: tempSelectedWordInfo.msgId,
+          wordIndex: tempSelectedWordInfo.wordIndex,
+          wordText: tempSelectedWordInfo.wordText
+        }
+      }, { merge: true });
+
+      setSavedReadingIndex(tempSelectedWordInfo.globalIndex ?? null);
+      setSavedMarkedWordInfo({
+        msgId: tempSelectedWordInfo.msgId,
+        wordIndex: tempSelectedWordInfo.wordIndex,
+        wordText: tempSelectedWordInfo.wordText
+      });
+      
       setSaveNotification("Reading point marked successfully!");
       setTimeout(() => setSaveNotification(null), 3000);
+      setIsSelectingMarkPoint(false);
+      setTempSelectedWordInfo(null);
     } catch (err) {
-      console.error("Failed to save reading point:", err);
+      console.error("Failed to save marked word:", err);
     }
   };
 
   const handleUnmarkReadingPoint = async () => {
     if (!loggedInUserId) return;
     try {
+      const localIndexKey = `full_chat_reading_index_${loggedInUserId}`;
+      const localWordInfoKey = `full_chat_marked_word_info_${loggedInUserId}`;
+      localStorage.removeItem(localIndexKey);
+      localStorage.removeItem(localWordInfoKey);
+
       const profileRef = doc(db, "profiles", loggedInUserId);
-      await updateDoc(profileRef, {
-        fullChatReadingIndex: null
-      });
+      await setDoc(profileRef, {
+        fullChatReadingIndex: null,
+        fullChatMarkedWordInfo: null
+      }, { merge: true });
+      
       setSavedReadingIndex(null);
+      setSavedMarkedWordInfo(null);
       setSaveNotification("Reading point cleared!");
       setTimeout(() => setSaveNotification(null), 3000);
     } catch (err) {
@@ -413,6 +901,7 @@ export default function FullChatPage() {
   // Go to saved reading point
   const handleGoToReadingPoint = () => {
     if (savedReadingIndex !== null) {
+      setScrollTargetIntent("marked-word");
       setMessages([]);
       setHasMore(true);
       fetchMessagesFromIndex(savedReadingIndex);
@@ -420,6 +909,105 @@ export default function FullChatPage() {
   };
 
 
+
+  if (!isAuthorized) {
+    return (
+      <main className="relative min-h-screen w-full bg-[#030308] text-white flex flex-col items-center justify-center p-4 overflow-hidden select-none font-sans">
+        <style dangerouslySetInnerHTML={{ __html: `
+          @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+          }
+          .animate-shake {
+            animation: shake 0.3s ease-in-out;
+          }
+        ` }} />
+        
+        {/* Ambient background glows */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] bg-purple-900/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute top-1/3 left-1/3 w-[250px] h-[250px] bg-pink-900/5 rounded-full blur-[80px] pointer-events-none" />
+        
+        {/* Blinking stars background */}
+        <div className="absolute inset-0 bg-[#030308] z-0 overflow-hidden pointer-events-none">
+          {stars.map((star, idx) => (
+            <div
+              key={idx}
+              className="absolute bg-white rounded-full opacity-35 animate-pulse"
+              style={{
+                left: `${star.x}%`,
+                top: `${star.y}%`,
+                width: `${star.size}px`,
+                height: `${star.size}px`,
+                animationDuration: `${star.duration}s`,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Lock Screen Card */}
+        <div className={`relative z-10 w-full max-w-[340px] bg-neutral-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-300 ${passwordError ? "animate-shake" : ""}`}>
+          <div className="flex flex-col items-center text-center">
+            {/* Stamp Logo Circle */}
+            <div className="w-16 h-16 rounded-full border border-purple-500/20 bg-neutral-950 flex items-center justify-center relative shadow-[0_0_20px_rgba(168,85,247,0.15)] mb-4">
+              <img 
+                src="/stamp.png" 
+                alt="Stamp" 
+                className="w-10 h-10 object-contain p-0.5 filter brightness-95" 
+              />
+              <div className="absolute inset-0 rounded-full border border-purple-500/10 animate-ping opacity-75" />
+            </div>
+
+            {/* Header */}
+            <h2 className="text-sm sm:text-base font-bold text-white font-outfit uppercase tracking-widest flex items-center gap-1.5">
+              <span>✦</span> Unlock Memories <span>✦</span>
+            </h2>
+            <p className="text-[10px] text-neutral-400 font-outfit mt-1.5 max-w-[280px] leading-relaxed">
+              This section is password protected to preserve our sweetest memories.
+            </p>
+
+            {/* Form */}
+            <form onSubmit={handlePasswordSubmit} className="w-full mt-6 space-y-4">
+              <div className="relative">
+                <input
+                  type="password"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  placeholder="Enter secret password..."
+                  className={`w-full bg-white/5 border rounded-full py-2.5 px-4 text-xs text-white placeholder-neutral-500 font-outfit outline-none transition-all ${
+                    passwordError 
+                      ? "border-red-500/50 focus:border-red-500" 
+                      : "border-white/10 focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30"
+                  }`}
+                  autoFocus
+                />
+              </div>
+
+              {passwordError && (
+                <p className="text-[9px] text-red-400 font-semibold font-outfit uppercase tracking-wider animate-bounce">
+                  Incorrect secret password
+                </p>
+              )}
+
+              <button
+                type="submit"
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-extrabold font-outfit text-[10px] uppercase tracking-widest py-3 rounded-full shadow-lg hover:shadow-purple-500/10 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <span>Unlock Chat</span>
+              </button>
+            </form>
+
+            <Link
+              href="/mailing?state=chat-world"
+              className="mt-4 text-[9px] font-semibold text-neutral-400 hover:text-white uppercase tracking-wider transition-colors cursor-pointer"
+            >
+              Go Back
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   if (!mounted || isPageLoading) {
     return (
@@ -452,9 +1040,32 @@ export default function FullChatPage() {
 
   return (
     <div 
-      className="relative w-full h-screen overflow-hidden bg-black font-sans select-none flex items-center justify-center"
+      className="relative w-full h-screen overflow-hidden bg-black font-sans select-none flex items-start justify-center pt-2 sm:pt-4"
       style={{ perspective: "1000px" }}
     >
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media (max-height: 950px) {
+          .phone-simulator-container {
+            transform: scale(1.08) !important;
+          }
+        }
+        @media (max-height: 850px) {
+          .phone-simulator-container {
+            transform: scale(1.0) !important;
+          }
+        }
+        @media (max-height: 750px) {
+          .phone-simulator-container {
+            transform: scale(0.92) !important;
+          }
+        }
+        @media (max-height: 650px) {
+          .phone-simulator-container {
+            transform: scale(0.82) !important;
+          }
+        }
+      ` }} />
+
       {/* Immersive space backdrop with blinking stars */}
       <div className="absolute inset-0 bg-[#030308] z-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] sm:w-[550px] sm:h-[550px] bg-purple-900/5 rounded-full blur-[130px] pointer-events-none" />
@@ -477,10 +1088,10 @@ export default function FullChatPage() {
 
       {/* Main Interactive Phone Container */}
       <div 
-        className="relative z-10 flex flex-col items-center justify-center p-4 max-h-screen"
+        className="relative z-10 flex flex-col items-center justify-start pt-1 sm:pt-2 p-2 max-h-screen"
       >
         <div 
-          className="relative w-[365px] bg-[#1a1a1e] rounded-[52px] p-3 pt-12 pb-12 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.95),_0_0_50px_rgba(168,85,247,0.1)] border-[4px] border-[#2c2c2e] flex flex-col items-center justify-center"
+          className="phone-simulator-container relative w-[365px] bg-[#1a1a1e] rounded-[52px] p-3 pt-12 pb-12 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.95),_0_0_50px_rgba(168,85,247,0.15)] border-[4px] border-[#2c2c2e] flex flex-col items-center justify-center scale-[0.78] min-[370px]:scale-[0.85] min-[400px]:scale-100 origin-top transition-transform"
         >
           {/* Top Bezel: Camera & Speaker */}
           <div className="absolute top-4 left-0 right-0 flex flex-col items-center justify-center gap-1.5 z-20">
@@ -495,11 +1106,20 @@ export default function FullChatPage() {
           {/* Screen Wrapper */}
           <div className="w-full rounded-[24px] overflow-hidden relative border border-neutral-950/20 shadow-inner">
             <ChatScreen 
+              ref={chatScreenRef}
               messages={messages} 
               loading={loading} 
               hasMore={hasMore} 
               onScroll={handleScroll}
               timeStr={timeStr}
+              selectedDate={datesList[currentDateIndex]?.date}
+              isSelectingMarkPoint={isSelectingMarkPoint}
+              tempSelectedWordInfo={tempSelectedWordInfo}
+              onSelectWord={setTempSelectedWordInfo}
+              savedMarkedWordInfo={savedMarkedWordInfo}
+              savedReadingIndex={savedReadingIndex}
+              scrollTargetIntent={scrollTargetIntent}
+              currentStartIndex={currentStartIndex}
             />
           </div>
 
@@ -513,74 +1133,131 @@ export default function FullChatPage() {
       </div>
 
       {/* Floating date selector and Reading Point navigation bar at bottom */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 bg-neutral-950/80 border border-neutral-850 px-4 py-2.5 rounded-full backdrop-blur-md shadow-2xl pointer-events-auto">
-        {/* Date drop down selection */}
-        <select
-          value={currentDateIndex}
-          onChange={(e) => {
-            const idx = parseInt(e.target.value, 10);
-            setCurrentDateIndex(idx);
-            jumpToDateIndex(idx);
-          }}
-          className="bg-neutral-900 border border-neutral-800 rounded-full px-3 py-1.5 text-[10px] font-semibold text-neutral-300 font-outfit outline-none cursor-pointer hover:border-neutral-700 max-w-[120px] truncate"
-        >
-          {datesList.map((item, idx) => (
-            <option key={idx} value={idx}>
-              {item.date}
-            </option>
-          ))}
-        </select>
-
-        {/* Up/Down date navigators */}
-        <div className="flex items-center gap-1.5 border-l border-neutral-800 pl-3">
-          <button
-            onClick={handlePrevDate}
-            disabled={currentDateIndex === 0}
-            className="p-1 bg-neutral-900 border border-neutral-800 rounded-full disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-850 text-white flex items-center justify-center size-7 cursor-pointer transition shadow-md"
-            aria-label="Previous Day"
-          >
-            <ChevronUp size={14} />
-          </button>
-          <button
-            onClick={handleNextDate}
-            disabled={currentDateIndex >= datesList.length - 1}
-            className="p-1 bg-neutral-900 border border-neutral-800 rounded-full disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-850 text-white flex items-center justify-center size-7 cursor-pointer transition shadow-md"
-            aria-label="Next Day"
-          >
-            <ChevronDown size={14} />
-          </button>
-        </div>
-
-        {/* Mark Reading Point toggle */}
-        <div className="flex items-center gap-2 border-l border-neutral-800 pl-3">
-          <button
-            onClick={savedReadingIndex === currentStartIndex ? handleUnmarkReadingPoint : handleSaveReadingPoint}
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-full border text-[10px] font-bold font-outfit transition cursor-pointer shadow-md ${
-              savedReadingIndex === currentStartIndex
-                ? "border-red-500/30 bg-red-950/20 hover:bg-red-900/40 text-red-300"
-                : "border-purple-500/30 bg-purple-950/20 hover:bg-purple-900/40 text-purple-300"
-            }`}
-          >
-            <Bookmark size={10} />
-            <span>{savedReadingIndex === currentStartIndex ? "Unmark Point" : "Mark Point"}</span>
-          </button>
-
-          {/* Jump to marked reading point button if exists */}
-          {savedReadingIndex !== null && savedReadingIndex !== currentStartIndex && (
+      {isSelectingMarkPoint ? (
+        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center justify-between gap-4 bg-gradient-to-r from-purple-900/95 to-indigo-900/95 border border-purple-500/40 px-5 py-2.5 rounded-full backdrop-blur-md shadow-[0_10px_35px_rgba(168,85,247,0.3)] pointer-events-auto w-[90%] sm:w-auto scale-[0.82] sm:scale-100 origin-bottom transition-all">
+          <div className="flex items-center gap-2 text-white text-[10px] font-bold font-outfit uppercase tracking-wider">
+            <span className="w-2 h-2 rounded-full bg-purple-400 animate-ping shrink-0" />
+            <span className="truncate">
+              {tempSelectedWordInfo 
+                ? `Selected: "${tempSelectedWordInfo.wordText}"` 
+                : "Select a chat bubble..."}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Cancel (Wrong) button */}
             <button
-              onClick={handleGoToReadingPoint}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-neutral-800 bg-neutral-900 hover:bg-neutral-850 text-[10px] font-bold text-neutral-300 font-outfit transition cursor-pointer shadow-md"
-              title="Return to Marked Reading Point"
+              onClick={handleCancelSelection}
+              className="p-1.5 bg-red-900/50 hover:bg-red-800 border border-red-500/30 rounded-full text-white flex items-center justify-center size-8 cursor-pointer transition shadow-md font-sans text-xs font-bold"
+              title="Cancel"
             >
-              <RotateCcw size={10} className="text-neutral-400" />
-              <span>Go to Point</span>
+              ✕
             </button>
-          )}
+            {/* Confirm (Tick) button */}
+            <button
+              onClick={handleConfirmSelection}
+              disabled={!tempSelectedWordInfo}
+              className="p-1.5 bg-green-600/80 hover:bg-green-500 border border-green-500/30 rounded-full text-white flex items-center justify-center size-8 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition shadow-md"
+              title="Confirm Selection"
+            >
+              <Check size={14} />
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-3 bg-neutral-950/80 border border-neutral-850 px-3 py-2 sm:px-4 sm:py-2.5 rounded-full backdrop-blur-md shadow-2xl pointer-events-auto max-w-[95%] sm:max-w-none scale-[0.82] sm:scale-100 origin-bottom transition-all">
+          {/* Date drop down selection */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="bg-neutral-900 border border-neutral-800 rounded-full px-3 py-1.5 text-[10px] font-semibold text-neutral-300 font-outfit outline-none cursor-pointer hover:border-neutral-700 hover:text-white transition-all flex items-center gap-1.5 min-w-[110px] justify-between shadow-inner"
+            >
+              <div className="flex items-center gap-1.5 truncate">
+                {datesList[currentDateIndex]?.isMatched && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-pink-500 shrink-0" />
+                )}
+                <span className="truncate">{datesList[currentDateIndex]?.date || "Select Date"}</span>
+              </div>
+              <ChevronUp size={10} className={`text-neutral-400 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} />
+            </button>
+            
+            {isDropdownOpen && (
+              <div className="absolute bottom-full mb-2 left-0 w-36 max-h-48 overflow-y-auto bg-neutral-950/95 border border-neutral-800 rounded-xl py-1 shadow-2xl z-30 scrollbar-none flex flex-col backdrop-blur-md">
+                {datesList.map((item, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setCurrentDateIndex(idx);
+                      jumpToDateIndex(idx);
+                      setIsDropdownOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-1.5 text-[10px] font-outfit font-medium hover:bg-neutral-800/80 transition-colors flex items-center gap-1.5 ${
+                      idx === currentDateIndex ? "text-purple-400 bg-purple-950/20" : "text-neutral-300"
+                    }`}
+                  >
+                    {item.isMatched && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-pink-500 shrink-0" />
+                    )}
+                    {!item.isMatched && (
+                      <span className="w-1.5 h-1.5 shrink-0 opacity-0" />
+                    )}
+                    <span>{item.date}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Up/Down date navigators */}
+          <div className="flex items-center gap-1.5 border-l border-neutral-800 pl-3">
+            <button
+              onClick={handlePrevDate}
+              disabled={currentDateIndex === 0}
+              className="p-1 bg-neutral-900 border border-neutral-800 rounded-full disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-850 text-white flex items-center justify-center size-7 cursor-pointer transition shadow-md"
+              aria-label="Previous Day"
+            >
+              <ChevronUp size={14} />
+            </button>
+            <button
+              onClick={handleNextDate}
+              disabled={currentDateIndex >= datesList.length - 1}
+              className="p-1 bg-neutral-900 border border-neutral-800 rounded-full disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-850 text-white flex items-center justify-center size-7 cursor-pointer transition shadow-md"
+              aria-label="Next Day"
+            >
+              <ChevronDown size={14} />
+            </button>
+          </div>
+
+          {/* Mark Reading Point toggle */}
+          <div className="flex items-center gap-2 border-l border-neutral-800 pl-3">
+            <button
+              onClick={savedReadingIndex !== null ? handleUnmarkReadingPoint : handleSaveReadingPoint}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-full border text-[10px] font-bold font-outfit transition cursor-pointer shadow-md ${
+                savedReadingIndex !== null
+                  ? "border-red-500/30 bg-red-950/20 hover:bg-red-900/40 text-red-300"
+                  : "border-purple-500/30 bg-purple-950/20 hover:bg-purple-900/40 text-purple-300"
+              }`}
+            >
+              <Bookmark size={10} />
+              <span>{savedReadingIndex !== null ? "Unmark Point" : "Mark Point"}</span>
+            </button>
+
+            {/* Jump to marked reading point button if exists */}
+            {savedReadingIndex !== null && (
+              <button
+                onClick={handleGoToReadingPoint}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-neutral-800 bg-neutral-900 hover:bg-neutral-850 text-[10px] font-bold text-neutral-300 font-outfit transition cursor-pointer shadow-md"
+                title="Return to Marked Reading Point"
+              >
+                <RotateCcw size={10} className="text-neutral-400" />
+                <span>Go to Point</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Back button */}
-      <div className="absolute top-8 left-8 z-20 flex items-center">
+      <div className="absolute top-3 left-3 sm:top-8 sm:left-8 z-20 flex items-center">
         <Link
           href="/mailing?state=chat-world"
           className="px-5 py-2.5 rounded-full bg-neutral-900/80 border border-neutral-800 backdrop-blur-md text-white font-extrabold font-outfit text-[10px] uppercase tracking-widest hover:bg-neutral-800 flex items-center gap-2 cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-lg"
@@ -589,6 +1266,44 @@ export default function FullChatPage() {
           <span>Back to Chat World</span>
         </Link>
       </div>
+
+      {/* Profile and Session timer in top right */}
+      {loggedInUser && (
+        <div className="absolute top-3 right-3 sm:top-8 sm:right-8 z-20 flex items-center gap-3">
+          {sessionTimeLeft !== null && (
+            <div className="flex items-center gap-1.5 bg-neutral-950/80 border border-neutral-800 rounded-full px-3.5 py-2 text-xs sm:text-sm font-bold font-mono text-purple-300 shadow-md animate-pulse pointer-events-auto">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-ping shrink-0" />
+              <span>Session: {formatTimeLeft(sessionTimeLeft)}</span>
+            </div>
+          )}
+          <div className="pointer-events-auto">
+            <ProfileCard
+              imageSrc={loggedInUser.avatarUrl}
+              name={loggedInUser.name}
+              role={loggedInUser.title}
+              socials={{ github: loggedInUser.socials?.github }}
+              avatarAdjust={loggedInUser.avatarAdjust}
+            />
+          </div>
+          <button
+            onClick={() => {
+              sessionStorage.removeItem("full_chat_authorized");
+              sessionStorage.removeItem("logged_in_user_id");
+              if (loggedInUserId) {
+                const sessionKey = `session_expiry_${loggedInUserId}`;
+                localStorage.removeItem(sessionKey);
+              }
+              setLoggedInUser(null);
+              setIsAuthorized(false);
+              router.push("/mailing?state=chat-world");
+            }}
+            className="w-[68px] h-[68px] rounded-full flex items-center justify-center border border-red-500/30 bg-red-950/30 hover:bg-red-900/50 hover:border-red-500/60 text-red-300 transition cursor-pointer shadow-lg hover:shadow-red-500/10 pointer-events-auto shrink-0"
+            title="Logout Profile"
+          >
+            <LogOut size={22} />
+          </button>
+        </div>
+      )}
 
       {/* Toast Notification */}
       {saveNotification && (
@@ -602,5 +1317,17 @@ export default function FullChatPage() {
         <span>Scroll inside simulator to read chat</span>
       </div>
     </div>
+  );
+}
+
+export default function FullChatPage() {
+  return (
+    <Suspense fallback={
+      <main className="relative min-h-screen w-full bg-[#030308] text-white flex flex-col items-center justify-center p-4">
+        <p className="text-purple-400 text-xs font-outfit uppercase tracking-widest animate-pulse font-semibold">Loading Chat...</p>
+      </main>
+    }>
+      <FullChatContent />
+    </Suspense>
   );
 }

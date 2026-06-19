@@ -30,7 +30,7 @@ function parseChatFile() {
       }
       const [_, dateStr, timeStr, sender, msgContent] = match;
       currentMsg = {
-        id: `msg-${parsed.length}-${i}`,
+        id: `msg-${parsed.length}`,
         date: dateStr,
         time: timeStr,
         sender: sender.trim(),
@@ -57,22 +57,93 @@ function parseChatFile() {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "0", 10);
-    const limit = parseInt(searchParams.get("limit") || "100", 10);
-    const startIndex = parseInt(searchParams.get("startIndex") || "-1", 10);
+    let page = parseInt(searchParams.get("page") || "0", 10);
+    if (isNaN(page)) page = 0;
+    let limit = parseInt(searchParams.get("limit") || "100", 10);
+    if (isNaN(limit)) limit = 100;
+    let startIndex = parseInt(searchParams.get("startIndex") || "-1", 10);
+    if (isNaN(startIndex)) startIndex = -1;
     const action = searchParams.get("action");
 
     if (cachedMessages.length === 0) {
       cachedMessages = parseChatFile();
     }
 
+    if (action === "previews") {
+      const datesParam = searchParams.get("dates");
+      const matchedDatesSet = new Set<string>();
+      
+      if (datesParam) {
+        datesParam.split(",").forEach(d => {
+          const trimmed = d.trim();
+          if (trimmed) matchedDatesSet.add(trimmed);
+        });
+      } else {
+        try {
+          const sortedDatesPath = path.join(process.cwd(), "scratch", "sorted_dates.txt");
+          if (fs.existsSync(sortedDatesPath)) {
+            const content = fs.readFileSync(sortedDatesPath, "utf-8");
+            const matches = content.match(/\d{2}\/\d{2}\/\d{4}/g);
+            if (matches) {
+              matches.forEach(d => matchedDatesSet.add(d));
+            }
+          }
+        } catch (err) {
+          console.error("Failed to read sorted_dates.txt:", err);
+        }
+      }
+
+      const previews: { [date: string]: any[] } = {};
+      const seenDates = new Set<string>();
+
+      for (let i = 0; i < cachedMessages.length; i++) {
+        const msg = cachedMessages[i];
+        if (matchedDatesSet.has(msg.date)) {
+          if (!seenDates.has(msg.date)) {
+            seenDates.add(msg.date);
+            
+            const dateMsgs = [];
+            for (let j = i; j < cachedMessages.length; j++) {
+              if (cachedMessages[j].date === msg.date) {
+                dateMsgs.push(cachedMessages[j]);
+              } else {
+                break;
+              }
+            }
+            previews[msg.date] = dateMsgs;
+          }
+        }
+      }
+      return NextResponse.json({ previews });
+    }
+
     if (action === "dates") {
-      const dates: { date: string; index: number }[] = [];
-      let lastDate = "";
+      const dates: { date: string; index: number; isMatched: boolean }[] = [];
+      const seenDates = new Set<string>();
+      
+      // Load matched dates from sorted_dates.txt
+      const matchedDatesSet = new Set<string>();
+      try {
+        const sortedDatesPath = path.join(process.cwd(), "scratch", "sorted_dates.txt");
+        if (fs.existsSync(sortedDatesPath)) {
+          const content = fs.readFileSync(sortedDatesPath, "utf-8");
+          const matches = content.match(/\d{2}\/\d{2}\/\d{4}/g);
+          if (matches) {
+            matches.forEach(d => matchedDatesSet.add(d));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to read sorted_dates.txt:", err);
+      }
+
       cachedMessages.forEach((m, idx) => {
-        if (m.date !== lastDate) {
-          dates.push({ date: m.date, index: idx });
-          lastDate = m.date;
+        if (!seenDates.has(m.date)) {
+          seenDates.add(m.date);
+          dates.push({
+            date: m.date,
+            index: idx,
+            isMatched: matchedDatesSet.has(m.date)
+          });
         }
       });
       return NextResponse.json({ dates });

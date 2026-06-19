@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Mail, Calendar, FileText, Trash2, Download, Eye, EyeOff, LogOut, Globe, Bookmark, RotateCcw, X, ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
+import { ArrowLeft, Plus, Mail, Calendar, FileText, Trash2, Download, Eye, EyeOff, LogOut, Globe, Bookmark, RotateCcw, X, ChevronLeft, ChevronRight, MessageSquare, Clock } from "lucide-react";
 import { Github, Linkedin, Twitter } from "@/components/ui/brand-icons";
 import { collection, addDoc, getDocs, orderBy, query, doc, updateDoc, deleteDoc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -65,12 +65,15 @@ interface UserProfile {
   avatarUrl: string;
   title: string;
   bio: string;
-  socials: { github?: string; linkedin?: string; twitter?: string };
+  socials: { github?: string; linkedin?: string; about?: string };
   actionButton: { text: string; href: string };
   password?: string;
+  masterPassword?: string;
+  chatPassword?: string;
   avatarAdjust?: { scale: number; x: number; y: number };
   avatarCrop?: { x: number; y: number; width: number; height: number; zoom: number; rotation: number };
   chatReadingIndex?: number | null;
+  fullChatReadingIndex?: number | null;
   chatReadingRotation?: number;
   chatReadingPage?: number;
 }
@@ -81,8 +84,8 @@ const getLetterLockTargetTime = (letter?: any) => {
 
 const chatGalleryItems: GalleryItem[] = [
   {
-    common: "Choki Winner",
-    binomial: "04/08/2025",
+    common: "First Connection",
+    binomial: "07/02/2025",
     photo: {
       url: "/chats/chat_1.png",
       text: "WhatsApp conversation between Sanjay and Divya",
@@ -90,7 +93,7 @@ const chatGalleryItems: GalleryItem[] = [
     }
   },
   {
-    common: "Next Dare",
+    common: "Coconut Water & Care",
     binomial: "05/08/2025",
     photo: {
       url: "/chats/chat_2.png",
@@ -99,8 +102,8 @@ const chatGalleryItems: GalleryItem[] = [
     }
   },
   {
-    common: "Akka's Dare List",
-    binomial: "05/08/2025",
+    common: "Think Brain Health",
+    binomial: "14/08/2025",
     photo: {
       url: "/chats/chat_3.png",
       text: "WhatsApp conversation between Sanjay and Divya",
@@ -108,8 +111,8 @@ const chatGalleryItems: GalleryItem[] = [
     }
   },
   {
-    common: "Stranger's Number",
-    binomial: "05/08/2025",
+    common: "Think No More",
+    binomial: "15/08/2025",
     photo: {
       url: "/chats/chat_4.png",
       text: "WhatsApp conversation between Sanjay and Divya",
@@ -117,8 +120,8 @@ const chatGalleryItems: GalleryItem[] = [
     }
   },
   {
-    common: "Something Normal",
-    binomial: "05/08/2025",
+    common: "Screenshot Gate",
+    binomial: "16/08/2025",
     photo: {
       url: "/chats/chat_5.png",
       text: "WhatsApp conversation between Sanjay and Divya",
@@ -126,8 +129,8 @@ const chatGalleryItems: GalleryItem[] = [
     }
   },
   {
-    common: "Pregnant Joke",
-    binomial: "05/08/2025",
+    common: "No Kovam Promise",
+    binomial: "21/08/2025",
     photo: {
       url: "/chats/chat_6.png",
       text: "WhatsApp conversation between Sanjay and Divya",
@@ -135,8 +138,8 @@ const chatGalleryItems: GalleryItem[] = [
     }
   },
   {
-    common: "Dare Effect",
-    binomial: "05/08/2025",
+    common: "Investigate On Going",
+    binomial: "24/08/2025",
     photo: {
       url: "/chats/chat_7.png",
       text: "WhatsApp conversation between Sanjay and Divya",
@@ -144,8 +147,8 @@ const chatGalleryItems: GalleryItem[] = [
     }
   },
   {
-    common: "Sir to Da",
-    binomial: "05/08/2025",
+    common: "White Heart Meaning",
+    binomial: "25/08/2025",
     photo: {
       url: "/chats/chat_8.png",
       text: "WhatsApp conversation between Sanjay and Divya",
@@ -153,8 +156,8 @@ const chatGalleryItems: GalleryItem[] = [
     }
   },
   {
-    common: "Rice Kuduka",
-    binomial: "05/08/2025",
+    common: "Fast Home Poo",
+    binomial: "26/08/2025",
     photo: {
       url: "/chats/chat_9.png",
       text: "WhatsApp conversation between Sanjay and Divya",
@@ -162,8 +165,8 @@ const chatGalleryItems: GalleryItem[] = [
     }
   },
   {
-    common: "Insta Propose",
-    binomial: "05/08/2025",
+    common: "Yesterday's Confirm",
+    binomial: "29/08/2025",
     photo: {
       url: "/chats/chat_10.png",
       text: "WhatsApp conversation between Sanjay and Divya",
@@ -171,8 +174,8 @@ const chatGalleryItems: GalleryItem[] = [
     }
   },
   {
-    common: "First Photo",
-    binomial: "05/08/2025",
+    common: "First Ever Talk",
+    binomial: "30/08/2025",
     photo: {
       url: "/chats/chat_11.png",
       text: "WhatsApp conversation between Sanjay and Divya",
@@ -180,8 +183,8 @@ const chatGalleryItems: GalleryItem[] = [
     }
   },
   {
-    common: "Choki Winner 2",
-    binomial: "05/08/2025",
+    common: "Find It Out",
+    binomial: "31/08/2025",
     photo: {
       url: "/chats/chat_12.png",
       text: "WhatsApp conversation between Sanjay and Divya",
@@ -189,8 +192,8 @@ const chatGalleryItems: GalleryItem[] = [
     }
   },
   {
-    common: "Next Dare 2",
-    binomial: "05/08/2025",
+    common: "Adhu Seri",
+    binomial: "19/09/2025",
     photo: {
       url: "/chats/chat_13.png",
       text: "WhatsApp conversation between Sanjay and Divya",
@@ -198,8 +201,8 @@ const chatGalleryItems: GalleryItem[] = [
     }
   },
   {
-    common: "Akka's Dare List 2",
-    binomial: "05/08/2025",
+    common: "Full View Stage",
+    binomial: "27/09/2025",
     photo: {
       url: "/chats/chat_14.png",
       text: "WhatsApp conversation between Sanjay and Divya",
@@ -207,8 +210,8 @@ const chatGalleryItems: GalleryItem[] = [
     }
   },
   {
-    common: "Stranger's Number 2",
-    binomial: "05/08/2025",
+    common: "Madam's Birthday",
+    binomial: "05/10/2025",
     photo: {
       url: "/chats/chat_15.png",
       text: "WhatsApp conversation between Sanjay and Divya",
@@ -216,8 +219,8 @@ const chatGalleryItems: GalleryItem[] = [
     }
   },
   {
-    common: "Something Normal 2",
-    binomial: "05/08/2025",
+    common: "Diwali Dress Match",
+    binomial: "22/10/2025",
     photo: {
       url: "/chats/chat_16.png",
       text: "WhatsApp conversation between Sanjay and Divya",
@@ -225,8 +228,8 @@ const chatGalleryItems: GalleryItem[] = [
     }
   },
   {
-    common: "Pregnant Joke 2",
-    binomial: "05/08/2025",
+    common: "Missed Life Matter",
+    binomial: "25/11/2025",
     photo: {
       url: "/chats/chat_17.png",
       text: "WhatsApp conversation between Sanjay and Divya",
@@ -234,8 +237,8 @@ const chatGalleryItems: GalleryItem[] = [
     }
   },
   {
-    common: "Dare Effect 2",
-    binomial: "05/08/2025",
+    common: "Juice For Night",
+    binomial: "09/12/2025",
     photo: {
       url: "/chats/chat_18.png",
       text: "WhatsApp conversation between Sanjay and Divya",
@@ -243,8 +246,8 @@ const chatGalleryItems: GalleryItem[] = [
     }
   },
   {
-    common: "Sir to Da 2",
-    binomial: "05/08/2025",
+    common: "Happy Story Walk",
+    binomial: "12/12/2025",
     photo: {
       url: "/chats/chat_19.png",
       text: "WhatsApp conversation between Sanjay and Divya",
@@ -252,10 +255,91 @@ const chatGalleryItems: GalleryItem[] = [
     }
   },
   {
-    common: "Rice Kuduka 2",
-    binomial: "05/08/2025",
+    common: "Friend Or Butterfly",
+    binomial: "16/12/2025",
     photo: {
       url: "/chats/chat_20.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Care Verification",
+    binomial: "17/12/2025",
+    photo: {
+      url: "/chats/chat_21.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "New Playlist Sync",
+    binomial: "31/12/2025",
+    photo: {
+      url: "/chats/chat_22.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "New Year Dream",
+    binomial: "01/01/2026",
+    photo: {
+      url: "/chats/chat_23.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Move On Debate",
+    binomial: "06/01/2026",
+    photo: {
+      url: "/chats/chat_24.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Nalla Valiiii",
+    binomial: "17/01/2026",
+    photo: {
+      url: "/chats/chat_25.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Health First Promise",
+    binomial: "19/01/2026",
+    photo: {
+      url: "/chats/chat_26.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Impress Attempt",
+    binomial: "28/01/2026",
+    photo: {
+      url: "/chats/chat_27.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Valentine Bucket List",
+    binomial: "15/02/2026",
+    photo: {
+      url: "/chats/chat_28.png",
+      text: "WhatsApp conversation between Sanjay and Divya",
+      by: "Sanjay & Divya"
+    }
+  },
+  {
+    common: "Sapuda Vaikurathu",
+    binomial: "23/04/2026",
+    photo: {
+      url: "/chats/chat_29.png",
       text: "WhatsApp conversation between Sanjay and Divya",
       by: "Sanjay & Divya"
     }
@@ -404,6 +488,18 @@ const convertHtmlToTags = (html: string): string => {
   const decoder = document.createElement("textarea");
   decoder.innerHTML = text;
   return decoder.value;
+};
+
+const formatTimeLeft = (seconds: number) => {
+  if (seconds <= 0) return "00:00:00";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return [
+    h.toString().padStart(2, "0"),
+    m.toString().padStart(2, "0"),
+    s.toString().padStart(2, "0")
+  ].join(":");
 };
 
 export default function MailingPage() {
@@ -744,6 +840,44 @@ export default function MailingPage() {
     }
     return [];
   });
+
+  const [sessionTimeLeft, setSessionTimeLeft] = useState<number | null>(null);
+
+  // Session Expiry & Timer Countdown
+  useEffect(() => {
+    if (!loggedInUser) {
+      setSessionTimeLeft(null);
+      return;
+    }
+
+    const sessionKey = `session_expiry_${loggedInUser.id}`;
+    let expiry = localStorage.getItem(sessionKey);
+    let expiryTime = expiry ? parseInt(expiry, 10) : 0;
+    const now = Date.now();
+
+    if (!expiry || expiryTime <= now) {
+      expiryTime = now + 2 * 60 * 60 * 1000; // 2 hours
+      localStorage.setItem(sessionKey, expiryTime.toString());
+    }
+
+    const updateTimer = () => {
+      const current = Date.now();
+      const diff = Math.max(0, Math.floor((expiryTime - current) / 1000));
+      setSessionTimeLeft(diff);
+
+      if (diff <= 0) {
+        setLoggedInUser(null);
+        sessionStorage.removeItem("logged_in_user_id");
+        localStorage.removeItem(sessionKey);
+        setPageState("landing");
+        setLoginState("select-profile");
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [loggedInUser]);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [loginState, setLoginState] = useState<"select-profile" | "enter-password" | "set-password-enter" | "set-password-confirm" | "master-password" | "add-profile" | "reset-password-master" | "reset-password-new">("select-profile");
 
@@ -762,7 +896,7 @@ export default function MailingPage() {
   const [isNewProfileConfirming, setIsNewProfileConfirming] = useState(false);
   const [newProfileGithub, setNewProfileGithub] = useState("");
   const [newProfileLinkedin, setNewProfileLinkedin] = useState("");
-  const [newProfileTwitter, setNewProfileTwitter] = useState("");
+  const [newProfileAbout, setNewProfileAbout] = useState("");
   const [newProfileBtnText, setNewProfileBtnText] = useState("Contact Me");
   const [newProfileBtnHref, setNewProfileBtnHref] = useState("#");
   const [newProfileCrop, setNewProfileCrop] = useState<{ x: number; y: number; width: number; height: number; zoom: number; rotation: number } | undefined>(undefined);
@@ -782,6 +916,35 @@ export default function MailingPage() {
   const [showStackModal, setShowStackModal] = useState(false);
   const [countdownSource, setCountdownSource] = useState<"landing" | "grid" | null>(null);
   const [activeLetterSource, setActiveLetterSource] = useState<"vault" | "grid" | null>(null);
+
+  // Chat World Gallery Previews & Indexes
+  const [chatPreviews, setChatPreviews] = useState<{ [date: string]: any[] }>({});
+  const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
+
+  useEffect(() => {
+    const fetchPagePreviews = async () => {
+      const startIdx = chatGalleryPage * 10;
+      const endIdx = startIdx + 10;
+      const pageItems = chatGalleryItems.slice(startIdx, endIdx);
+      if (pageItems.length === 0) return;
+      
+      const dates = pageItems.map(item => item.binomial).join(",");
+      
+      try {
+        const res = await fetch(`/api/chat?action=previews&dates=${encodeURIComponent(dates)}`);
+        const data = await res.json();
+        if (data.previews) {
+          setChatPreviews(prev => ({
+            ...prev,
+            ...data.previews
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to load page chat previews:", err);
+      }
+    };
+    fetchPagePreviews();
+  }, [chatGalleryPage]);
 
   // Filter letters to only show letters sent by or received by the loggedInUser, or legacy letters (no senderId and recipientId)
   const filteredLetters = letters.filter(l => 
@@ -874,13 +1037,29 @@ export default function MailingPage() {
   // Define a function to validate master password in Firebase
   const validateMasterPasswordInFirebase = async (passwordInput: string): Promise<boolean> => {
     try {
+      const hashedInput = await hashPassword(passwordInput);
       const uniqueId = Math.random().toString(36).substring(2, 15);
       const verifyRef = doc(db, "validation", `check_${uniqueId}`);
-      await setDoc(verifyRef, { password: passwordInput });
+      await setDoc(verifyRef, { password: hashedInput, type: "master" });
       await deleteDoc(verifyRef);
       return true;
     } catch (error) {
       console.error("Master password validation failed in Firebase:", error);
+      return false;
+    }
+  };
+
+  // Define a function to validate chat password in Firebase
+  const validateChatPasswordInFirebase = async (passwordInput: string): Promise<boolean> => {
+    try {
+      const hashedInput = await hashPassword(passwordInput);
+      const uniqueId = Math.random().toString(36).substring(2, 15);
+      const verifyRef = doc(db, "validation", `check_${uniqueId}`);
+      await setDoc(verifyRef, { password: hashedInput, type: "chat" });
+      await deleteDoc(verifyRef);
+      return true;
+    } catch (error) {
+      console.error("Chat password validation failed in Firebase:", error);
       return false;
     }
   };
@@ -921,10 +1100,13 @@ export default function MailingPage() {
     // Initialize/Retrieve User Profiles and Master Password from Firestore
     const initializeProfilesAndSecurity = async () => {
       try {
-        // 1. Initialize Master Password in Firestore if not present (non-blocking background task)
+        // 1. Initialize Master Password and Chat Password in Firestore if not present or need encoding (non-blocking background task)
         const configRef = doc(db, "config", "security");
-        setDoc(configRef, { masterPassword: "Dark1123@#" }).then(() => {
-          console.log("Initialized default master password in Firestore.");
+        setDoc(configRef, { 
+          masterPassword: "8173d2fe9bb5cd11abee60d32903b1a9fb8f3a2b55a371f93808eb896481c3f0",
+          chatPassword: "160fba6868d2070e5ae03ce0fb9988d58231c4a56b8a94b4e9b5133cbf17d922"
+        }).then(() => {
+          console.log("Initialized default master and chat passwords in Firestore.");
         }).catch((e) => {
           console.log("Master password document already exists or is locked.");
         });
@@ -933,8 +1115,32 @@ export default function MailingPage() {
         const querySnapshot = await getDocs(collection(db, "profiles"));
         let fetchedProfiles: UserProfile[] = [];
         if (!querySnapshot.empty) {
-          querySnapshot.forEach((doc) => {
-            fetchedProfiles.push({ id: doc.id, ...doc.data() } as UserProfile);
+          querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            
+            // Migrate twitter -> about if present
+            const socials = data.socials ? { ...data.socials } : {};
+            if ('twitter' in socials && !('about' in socials)) {
+              socials.about = socials.twitter;
+              delete socials.twitter;
+            }
+            
+            // Force/merge masterPassword and chatPassword in the profile document
+            const updatedProfile = {
+              id: docSnap.id,
+              ...data,
+              socials,
+              masterPassword: data.masterPassword || "8173d2fe9bb5cd11abee60d32903b1a9fb8f3a2b55a371f93808eb896481c3f0",
+              chatPassword: data.chatPassword || "160fba6868d2070e5ae03ce0fb9988d58231c4a56b8a94b4e9b5133cbf17d922",
+            } as UserProfile;
+
+            // Save migrations to Firestore if they were missing
+            if (!data.masterPassword || !data.chatPassword || 'twitter' in (data.socials || {})) {
+              const { id, ...dataToSave } = updatedProfile;
+              setDoc(doc(db, "profiles", docSnap.id), dataToSave, { merge: true }).catch(console.error);
+            }
+            
+            fetchedProfiles.push(updatedProfile);
           });
         } else {
           // Initialize with default profiles
@@ -947,8 +1153,11 @@ export default function MailingPage() {
               bio: "Software Developer & Cybersecurity Enthusiast with practical experience in React, Python, and security bug hunting.",
               socials: { 
                 github: "https://github.com/DarkPlaying", 
-                linkedin: "https://www.linkedin.com/in/m-sanjay-105623258/" 
+                linkedin: "https://www.linkedin.com/in/m-sanjay-105623258/",
+                about: "https://github.com/DarkPlaying"
               },
+              masterPassword: "8173d2fe9bb5cd11abee60d32903b1a9fb8f3a2b55a371f93808eb896481c3f0",
+              chatPassword: "160fba6868d2070e5ae03ce0fb9988d58231c4a56b8a94b4e9b5133cbf17d922",
               actionButton: { text: "Contact Me", href: "mailto:sanjaymofficialmail@gmail.com" }
             },
             {
@@ -959,8 +1168,11 @@ export default function MailingPage() {
               bio: "Dedicated student pursuing B.Sc. Computer Science at Vel Tech. Passionate about coding, learning, and collaborating on meaningful projects.",
               socials: { 
                 github: "https://github.com/", 
-                linkedin: "" 
+                linkedin: "",
+                about: ""
               },
+              masterPassword: "8173d2fe9bb5cd11abee60d32903b1a9fb8f3a2b55a371f93808eb896481c3f0",
+              chatPassword: "160fba6868d2070e5ae03ce0fb9988d58231c4a56b8a94b4e9b5133cbf17d922",
               actionButton: { text: "Email Me", href: "mailto:divya20051123@gmail.com" }
             }
           ];
@@ -1005,7 +1217,20 @@ export default function MailingPage() {
         // Fallback to local storage
         const savedProfilesStr = localStorage.getItem("user_profiles");
         if (savedProfilesStr) {
-          const localParsed = JSON.parse(savedProfilesStr);
+          let localParsed = JSON.parse(savedProfilesStr);
+          localParsed = localParsed.map((p: any) => {
+            if (p.socials && 'twitter' in p.socials && !('about' in p.socials)) {
+              p.socials.about = p.socials.twitter;
+              delete p.socials.twitter;
+            }
+            if (!p.masterPassword) {
+              p.masterPassword = "8173d2fe9bb5cd11abee60d32903b1a9fb8f3a2b55a371f93808eb896481c3f0";
+            }
+            if (!p.chatPassword) {
+              p.chatPassword = "160fba6868d2070e5ae03ce0fb9988d58231c4a56b8a94b4e9b5133cbf17d922";
+            }
+            return p;
+          });
           setProfiles(localParsed);
           const savedUserId = sessionStorage.getItem("logged_in_user_id");
           if (savedUserId) {
@@ -2241,6 +2466,26 @@ export default function MailingPage() {
               avatarAdjust={loggedInUser.avatarAdjust}
               onClick={() => setIsDetailedCardOpen(true)}
             />
+            {sessionTimeLeft !== null && (
+              <div className="flex items-center gap-1.5 bg-neutral-950/80 border border-neutral-800 rounded-full px-3.5 py-2 text-xs sm:text-sm font-bold font-mono text-purple-300 shadow-md animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-ping shrink-0" />
+                <span>Session: {formatTimeLeft(sessionTimeLeft)}</span>
+              </div>
+            )}
+            <button
+              onClick={() => {
+                const sessionKey = `session_expiry_${loggedInUser.id}`;
+                localStorage.removeItem(sessionKey);
+                sessionStorage.removeItem("logged_in_user_id");
+                setLoggedInUser(null);
+                setPageState("landing");
+                setLoginState("select-profile");
+              }}
+              className="w-[68px] h-[68px] rounded-full flex items-center justify-center border border-red-500/30 bg-red-950/30 hover:bg-red-900/50 hover:border-red-500/60 text-red-300 transition cursor-pointer shadow-lg hover:shadow-red-500/10 shrink-0"
+              title="Logout Profile"
+            >
+              <LogOut size={22} />
+            </button>
           </div>
         </div>
       )}
@@ -2349,7 +2594,7 @@ export default function MailingPage() {
                       }
                       setLoggedInUser(profile);
                       sessionStorage.setItem("logged_in_user_id", profile.id);
-                      localStorage.setItem(`session_expiry_${profile.id}`, (Date.now() + 5 * 60 * 1000).toString());
+                      localStorage.setItem(`session_expiry_${profile.id}`, (Date.now() + 2 * 60 * 60 * 1000).toString());
                       setLoginPasswordInput("");
                       setLoginPasswordError("");
                     } else {
@@ -2484,7 +2729,7 @@ export default function MailingPage() {
                   if (activeP) {
                     setLoggedInUser(activeP);
                     sessionStorage.setItem("logged_in_user_id", activeP.id);
-                    localStorage.setItem(`session_expiry_${activeP.id}`, (Date.now() + 5 * 60 * 1000).toString());
+                    localStorage.setItem(`session_expiry_${activeP.id}`, (Date.now() + 2 * 60 * 60 * 1000).toString());
                   }
                   setLoginState("select-profile");
                   setTempNewPassword("");
@@ -2522,7 +2767,7 @@ export default function MailingPage() {
                     setIsNewProfileConfirming(false);
                     setNewProfileGithub("");
                     setNewProfileLinkedin("");
-                    setNewProfileTwitter("");
+                    setNewProfileAbout("");
                   } else {
                     setMasterPasswordError("Incorrect master password.");
                   }
@@ -2677,7 +2922,7 @@ export default function MailingPage() {
                   if (activeP) {
                     setLoggedInUser(activeP);
                     sessionStorage.setItem("logged_in_user_id", activeP.id);
-                    localStorage.setItem(`session_expiry_${activeP.id}`, (Date.now() + 5 * 60 * 1000).toString());
+                    localStorage.setItem(`session_expiry_${activeP.id}`, (Date.now() + 2 * 60 * 60 * 1000).toString());
                   }
                   setLoginState("select-profile");
                   setTempNewPassword("");
@@ -2738,8 +2983,10 @@ export default function MailingPage() {
                       socials: {
                         github: newProfileGithub,
                         linkedin: newProfileLinkedin,
-                        twitter: newProfileTwitter,
+                        about: newProfileAbout,
                       },
+                      masterPassword: "8173d2fe9bb5cd11abee60d32903b1a9fb8f3a2b55a371f93808eb896481c3f0",
+                      chatPassword: "160fba6868d2070e5ae03ce0fb9988d58231c4a56b8a94b4e9b5133cbf17d922",
                       actionButton: {
                         text: newProfileBtnText || "Contact Me",
                         href: newProfileBtnHref || "#"
@@ -2901,12 +3148,12 @@ export default function MailingPage() {
                       </div>
                       <div>
                         <label className="block text-[8px] font-semibold text-neutral-400 font-outfit uppercase tracking-wider mb-1">
-                          Portfolio
+                          About Page
                         </label>
                         <input
                           type="text"
-                          value={newProfileTwitter}
-                          onChange={(e) => setNewProfileTwitter(e.target.value)}
+                          value={newProfileAbout}
+                          onChange={(e) => setNewProfileAbout(e.target.value)}
                           className="w-full bg-neutral-950 border border-neutral-800 rounded-lg py-1.5 px-2 text-[10px] text-white focus:outline-none focus:border-purple-500 font-mono"
                           placeholder="https://yourportfolio.com"
                         />
@@ -3529,6 +3776,8 @@ export default function MailingPage() {
                 cardWidth={isMobile ? 160 : 200}
                 cardHeight={isMobile ? 285 : 356}
                 onItemClick={(idx) => setLightboxIndex(chatGalleryPage * 10 + idx)}
+                previews={chatPreviews}
+                onActiveIndexChange={(idx) => setActiveGalleryIndex(chatGalleryPage * 10 + idx)}
               />
             </div>
 
@@ -3539,7 +3788,7 @@ export default function MailingPage() {
                 <button
                   disabled={chatGalleryPage === 0}
                   onClick={() => {
-                    setChatGalleryPage(0);
+                    setChatGalleryPage(prev => Math.max(0, prev - 1));
                     if (galleryRef.current) galleryRef.current.setRotation(0);
                   }}
                   className="p-1 bg-neutral-900 border border-neutral-800 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-850 text-xs font-semibold text-neutral-300 transition cursor-pointer font-outfit shadow-md flex items-center justify-center size-8"
@@ -3548,12 +3797,12 @@ export default function MailingPage() {
                   ←
                 </button>
                 <span className="text-xs font-semibold text-neutral-400 font-outfit select-none">
-                  Page {chatGalleryPage + 1} of 2
+                  Page {chatGalleryPage + 1} of {Math.ceil(chatGalleryItems.length / 10)}
                 </span>
                 <button
-                  disabled={chatGalleryPage === 1}
+                  disabled={chatGalleryPage >= Math.ceil(chatGalleryItems.length / 10) - 1}
                   onClick={() => {
-                    setChatGalleryPage(1);
+                    setChatGalleryPage(prev => prev + 1);
                     if (galleryRef.current) galleryRef.current.setRotation(0);
                   }}
                   className="p-1 bg-neutral-900 border border-neutral-800 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-neutral-850 text-xs font-semibold text-neutral-300 transition cursor-pointer font-outfit shadow-md flex items-center justify-center size-8"
@@ -3592,13 +3841,13 @@ export default function MailingPage() {
                   <RotateCcw size={12} className="text-neutral-400" />
                   Go to Starting Point
                 </button>
-                <Link
-                  href="/mailing/full-chat"
+                <a
+                  href={`/mailing/full-chat?date=${chatGalleryItems[activeGalleryIndex]?.binomial || ""}`}
                   className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-purple-800/40 bg-purple-950/20 hover:bg-purple-900/40 hover:border-purple-500/50 text-xs font-semibold text-purple-300 transition cursor-pointer font-outfit shadow-md"
                 >
                   <MessageSquare size={12} className="text-purple-400" />
                   Full Chat
-                </Link>
+                </a>
               </div>
 
               {/* Save/Resume Toast Notification */}
@@ -3652,12 +3901,79 @@ export default function MailingPage() {
               <ChevronLeft size={20} />
             </button>
 
-            <img
-              src={chatGalleryItems[lightboxIndex].photo.url}
-              alt={chatGalleryItems[lightboxIndex].photo.text}
-              className="max-h-[84vh] max-w-full object-contain rounded-xl border border-neutral-800/80 shadow-2xl animate-fade-in"
-              onClick={(e) => e.stopPropagation()} // Prevent closing when clicking the image
-            />
+            {chatPreviews && chatPreviews[chatGalleryItems[lightboxIndex].binomial] ? (
+              <div 
+                className="w-full max-w-[340px] h-[550px] bg-[#FAF6F0] rounded-[36px] border border-neutral-800 shadow-2xl flex flex-col text-neutral-900 select-none relative animate-fade-in overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="bg-[#FAF6F0] border-b border-[#ede6df] px-4 py-3 flex items-center justify-between shrink-0 select-none z-10 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full overflow-hidden border border-[#ede6df] bg-neutral-900 flex items-center justify-center">
+                      <img src="/stamp.png" alt="Logo" className="w-full h-full object-cover p-1" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold leading-tight font-outfit text-neutral-900">Our Story'26</span>
+                      <span className="text-[8px] text-green-600 font-medium font-outfit">online</span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold text-neutral-450 uppercase tracking-wider font-outfit">
+                    {chatGalleryItems[lightboxIndex].binomial}
+                  </span>
+                </div>
+
+                {/* Chats Area */}
+                <div 
+                  className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-[#FAF6F0] scrollbar-none relative"
+                  style={{
+                    backgroundImage: "radial-gradient(rgba(176,149,129,0.06) 1.5px, transparent 1.5px)",
+                    backgroundSize: "20px 20px"
+                  }}
+                >
+                  <div className="flex justify-center my-1 select-none">
+                    <span className="px-3.5 py-1 rounded-full bg-[#ede6df]/60 border border-[#ede6df]/40 text-[9px] font-semibold text-[#8c7e74] font-outfit uppercase tracking-wider shadow-sm">
+                      {chatGalleryItems[lightboxIndex].binomial}
+                    </span>
+                  </div>
+
+                  {chatPreviews[chatGalleryItems[lightboxIndex].binomial].map((msg, mIdx) => {
+                    const isRight = msg.sender.toLowerCase().includes("sanjay");
+                    return (
+                      <div key={msg.id || mIdx} className={`flex w-full ${isRight ? "justify-end" : "justify-start"}`}>
+                        <div className={`max-w-[80%] rounded-[18px] px-3.5 py-2 text-xs font-outfit leading-relaxed shadow-sm ${
+                          isRight 
+                            ? "bg-[#b09581] text-white rounded-tr-none" 
+                            : "bg-white text-[#40352f] border border-[#ede6df] rounded-tl-none"
+                        }`}>
+                          <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                          <div className={`text-[8px] mt-1 text-right ${isRight ? "text-white/70" : "text-neutral-400"}`}>
+                            {msg.time}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Input Mockup */}
+                <div className="bg-[#FAF6F0] p-3 border-t border-[#ede6df] flex items-center gap-2 shrink-0 select-none">
+                  <div className="flex-1 bg-white rounded-full border border-[#ede6df] px-3 py-1.5 text-[10px] text-neutral-450 font-outfit flex items-center justify-between">
+                    <span>Type a message...</span>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-[#b09581] text-white flex items-center justify-center shadow-md shrink-0">
+                    <span className="text-[10px] ml-0.5">➤</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div 
+                className="w-full max-w-[340px] h-[550px] bg-[#FAF6F0] rounded-[36px] border border-neutral-800 shadow-2xl flex flex-col items-center justify-center p-4"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <img src="/loader.gif" alt="Loading..." className="w-12 h-12 object-contain" />
+                <span className="text-xs text-[#8c7e74] font-semibold font-outfit mt-2 animate-pulse uppercase tracking-wider">Loading preview...</span>
+              </div>
+            )}
 
             {/* Right Button */}
             <button
@@ -3986,7 +4302,7 @@ export default function MailingPage() {
             socialLinks={[
               { id: 'github', icon: Github, label: 'GitHub', href: loggedInUser.socials?.github || '#' },
               { id: 'linkedin', icon: Linkedin, label: 'LinkedIn', href: loggedInUser.socials?.linkedin || '#' },
-              { id: 'twitter', icon: Globe, label: 'Portfolio', href: loggedInUser.socials?.twitter || '#' },
+              { id: 'about', icon: Globe, label: 'About Page', href: loggedInUser.socials?.about || '#' },
             ]}
             actionButton={loggedInUser.actionButton}
             avatarAdjust={loggedInUser.avatarAdjust}
@@ -4006,12 +4322,14 @@ export default function MailingPage() {
                     socials: {
                       github: updatedData.socialLinks.find(l => l.id === 'github')?.href || '',
                       linkedin: updatedData.socialLinks.find(l => l.id === 'linkedin')?.href || '',
-                      twitter: updatedData.socialLinks.find(l => l.id === 'twitter')?.href || '',
+                      about: updatedData.socialLinks.find(l => l.id === 'about')?.href || '',
                     },
                     actionButton: updatedData.actionButton,
                     avatarAdjust: updatedData.avatarAdjust,
                     avatarCrop: updatedData.avatarCrop,
-                    password: hashedPassword
+                    password: hashedPassword,
+                    masterPassword: p.masterPassword || "8173d2fe9bb5cd11abee60d32903b1a9fb8f3a2b55a371f93808eb896481c3f0",
+                    chatPassword: p.chatPassword || "160fba6868d2070e5ae03ce0fb9988d58231c4a56b8a94b4e9b5133cbf17d922"
                   };
                 }
                 return p;

@@ -10,13 +10,15 @@ service cloud.firestore {
     match /config/security {
       allow read: if false;
       allow create: if !exists(/databases/$(database)/documents/config/security);
-      allow update, delete: if false;
+      allow update: if true;
+      allow delete: if false;
     }
     match /config/{document} {
       allow read, write: if document != 'security';
     }
     match /validation/{document} {
-      allow create: if request.resource.data.password == get(/databases/$(database)/documents/config/security).data.masterPassword;
+      allow create: if (request.resource.data.type == 'master' && request.resource.data.password == get(/databases/$(database)/documents/config/security).data.masterPassword) ||
+                    (request.resource.data.type == 'chat' && request.resource.data.password == get(/databases/$(database)/documents/config/security).data.chatPassword);
       allow delete: if true;
     }
   }
