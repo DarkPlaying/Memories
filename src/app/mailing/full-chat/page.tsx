@@ -211,13 +211,16 @@ export default function FullChatPage() {
     fetchDates();
   }, []);
 
-  // Fetch messages starting from a specific index
+  // Fetch messages starting from a specific index with a minimum 1-second loader duration to prevent flicker
   const fetchMessagesFromIndex = async (idxVal: number) => {
     if (loading) return;
     setLoading(true);
     setCurrentStartIndex(idxVal);
     try {
-      const res = await fetch(`/api/chat?startIndex=${idxVal}&limit=40`);
+      const [res] = await Promise.all([
+        fetch(`/api/chat?startIndex=${idxVal}&limit=40`),
+        new Promise(resolve => setTimeout(resolve, 1000))
+      ]);
       const data = await res.json();
       if (data.messages && data.messages.length > 0) {
         setMessages(data.messages);
