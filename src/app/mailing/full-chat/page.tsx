@@ -86,45 +86,56 @@ function ChatScreen({ messages, loading, hasMore, onScroll, timeStr }: ChatScree
           backgroundSize: "20px 20px"
         }}
       >
-        {renderedItems.map((item) => {
-          if (item.type === "date-separator") {
-            return (
-              <div key={item.id} className="flex justify-center my-3 select-none">
-                <span className="px-3.5 py-1 rounded-full bg-[#ede6df]/60 border border-[#ede6df]/40 text-[9px] font-semibold text-[#8c7e74] font-outfit uppercase tracking-wider shadow-sm">
-                  {item.date}
-                </span>
-              </div>
-            );
-          }
-
-          const msg = item.msg;
-          const isRight = msg.sender.toLowerCase().includes("sanjay");
-          
-          return (
-            <div 
-              key={msg.id} 
-              className={`flex w-full ${isRight ? "justify-end" : "justify-start"}`}
-            >
-              <div 
-                className={`max-w-[80%] rounded-[18px] px-3.5 py-2 text-xs font-outfit leading-relaxed shadow-sm ${
-                  isRight 
-                    ? "bg-[#b09581] text-white rounded-tr-none" 
-                    : "bg-white text-[#40352f] border border-[#ede6df] rounded-tl-none"
-                }`}
-              >
-                <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                <div className={`text-[8px] mt-1 text-right select-none ${isRight ? "text-white/70" : "text-neutral-400"}`}>
-                  {msg.time}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-
-        {loading && (
-          <div className="flex justify-center py-1">
-            <img src="/loader.gif" alt="Loading..." className="w-10 h-10 object-contain" />
+        {messages.length === 0 && loading ? (
+          <div className="h-full w-full flex flex-col items-center justify-center py-10">
+            <img src="/loader.gif" alt="Loading chat..." className="w-16 h-16 object-contain" />
+            <p className="text-[10px] text-[#8c7e74] font-semibold font-outfit mt-3 animate-pulse uppercase tracking-widest">
+              Loading chat...
+            </p>
           </div>
+        ) : (
+          <>
+            {renderedItems.map((item) => {
+              if (item.type === "date-separator") {
+                return (
+                  <div key={item.id} className="flex justify-center my-3 select-none">
+                    <span className="px-3.5 py-1 rounded-full bg-[#ede6df]/60 border border-[#ede6df]/40 text-[9px] font-semibold text-[#8c7e74] font-outfit uppercase tracking-wider shadow-sm">
+                      {item.date}
+                    </span>
+                  </div>
+                );
+              }
+
+              const msg = item.msg;
+              const isRight = msg.sender.toLowerCase().includes("sanjay");
+              
+              return (
+                <div 
+                  key={msg.id} 
+                  className={`flex w-full ${isRight ? "justify-end" : "justify-start"}`}
+                >
+                  <div 
+                    className={`max-w-[80%] rounded-[18px] px-3.5 py-2 text-xs font-outfit leading-relaxed shadow-sm ${
+                      isRight 
+                        ? "bg-[#b09581] text-white rounded-tr-none" 
+                        : "bg-white text-[#40352f] border border-[#ede6df] rounded-tl-none"
+                    }`}
+                  >
+                    <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                    <div className={`text-[8px] mt-1 text-right select-none ${isRight ? "text-white/70" : "text-neutral-400"}`}>
+                      {msg.time}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {loading && (
+              <div className="flex justify-center py-1">
+                <img src="/loader.gif" alt="Loading..." className="w-10 h-10 object-contain" />
+              </div>
+            )}
+          </>
         )}
       </div>
 
