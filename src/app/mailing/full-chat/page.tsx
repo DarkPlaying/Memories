@@ -404,14 +404,23 @@ function FullChatContent() {
   const [savedMarkedWordInfo, setSavedMarkedWordInfo] = useState<WordInfo | null>(null);
   const [scrollTargetIntent, setScrollTargetIntent] = useState<"date" | "marked-word" | null>(null);
 
+  const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
+    setIsMobile(window.innerWidth < 640);
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener("resize", handleResize);
+
     const handleOutsideClick = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
   }, []);
 
   // Firestore Reading Point Sync
@@ -1081,25 +1090,31 @@ function FullChatContent() {
     >
       <style dangerouslySetInnerHTML={{
         __html: `
+        .phone-simulator-container {
+          --scale-height: 1.0;
+          --scale-width: 1.0;
+          transform: scale(min(var(--scale-height), var(--scale-width))) !important;
+        }
         @media (max-height: 950px) {
-          .phone-simulator-container {
-            transform: scale(1.08) !important;
-          }
+          .phone-simulator-container { --scale-height: 1.05; }
         }
         @media (max-height: 850px) {
-          .phone-simulator-container {
-            transform: scale(1.0) !important;
-          }
+          .phone-simulator-container { --scale-height: 0.98; }
         }
         @media (max-height: 750px) {
-          .phone-simulator-container {
-            transform: scale(0.92) !important;
-          }
+          .phone-simulator-container { --scale-height: 0.88; }
         }
         @media (max-height: 650px) {
-          .phone-simulator-container {
-            transform: scale(0.82) !important;
-          }
+          .phone-simulator-container { --scale-height: 0.76; }
+        }
+        @media (max-width: 400px) {
+          .phone-simulator-container { --scale-width: 0.85; }
+        }
+        @media (max-width: 370px) {
+          .phone-simulator-container { --scale-width: 0.78; }
+        }
+        @media (max-width: 340px) {
+          .phone-simulator-container { --scale-width: 0.70; }
         }
       ` }} />
 
@@ -1125,10 +1140,10 @@ function FullChatContent() {
 
       {/* Main Interactive Phone Container */}
       <div
-        className="relative z-10 flex flex-col items-center justify-start pt-1 sm:pt-2 p-2 max-h-screen"
+        className="relative z-10 flex flex-col items-center justify-start pt-1 sm:pt-2 p-2 max-h-screen w-full overflow-visible"
       >
         <div
-          className="phone-simulator-container relative w-[365px] bg-[#1a1a1e] rounded-[52px] p-3 pt-12 pb-12 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.95),_0_0_50px_rgba(168,85,247,0.15)] border-[4px] border-[#2c2c2e] flex flex-col items-center justify-center scale-[0.78] min-[370px]:scale-[0.85] min-[400px]:scale-100 origin-top transition-transform"
+          className="phone-simulator-container relative w-[365px] flex-shrink-0 bg-[#1a1a1e] rounded-[52px] p-3 pt-12 pb-12 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.95),_0_0_50px_rgba(168,85,247,0.15)] border-[4px] border-[#2c2c2e] flex flex-col items-center justify-center origin-top transition-transform"
         >
           {/* Top Bezel: Camera & Speaker */}
           <div className="absolute top-4 left-0 right-0 flex flex-col items-center justify-center gap-1.5 z-20">
@@ -1263,20 +1278,22 @@ function FullChatContent() {
       <div className="absolute top-3 left-3 sm:top-8 sm:left-8 z-20 flex items-center">
         <Link
           href="/mailing?state=chat-world"
-          className="px-5 py-2.5 rounded-full bg-neutral-900/80 border border-neutral-800 backdrop-blur-md text-white font-extrabold font-outfit text-[10px] uppercase tracking-widest hover:bg-neutral-800 flex items-center gap-2 cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-lg"
+          className="px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-full bg-neutral-900/80 border border-neutral-800 backdrop-blur-md text-white font-extrabold font-outfit text-[9px] sm:text-[10px] uppercase tracking-widest hover:bg-neutral-800 flex items-center gap-1.5 sm:gap-2 cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-lg"
         >
           <ArrowLeft size={12} />
-          <span>Back to Chat World</span>
+          <span className="hidden sm:inline">Back to Chat World</span>
+          <span className="sm:hidden">Back</span>
         </Link>
       </div>
 
       {/* Profile and Session timer in top right */}
       {loggedInUser && (
-        <div className="absolute top-3 right-3 sm:top-8 sm:right-8 z-20 flex items-center gap-3">
+        <div className="absolute top-3 right-3 sm:top-8 sm:right-8 z-20 flex items-center gap-1.5 sm:gap-3">
           {sessionTimeLeft !== null && (
-            <div className="flex items-center gap-1.5 bg-neutral-950/80 border border-neutral-800 rounded-full px-3.5 py-2 text-xs sm:text-sm font-bold font-mono text-purple-300 shadow-md animate-pulse pointer-events-auto">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-ping shrink-0" />
-              <span>Session: {formatTimeLeft(sessionTimeLeft)}</span>
+            <div className="flex items-center gap-1 bg-neutral-950/80 border border-neutral-800 rounded-full px-2 py-1.5 sm:px-3.5 sm:py-2 text-[10px] sm:text-sm font-bold font-mono text-purple-300 shadow-md animate-pulse pointer-events-auto">
+              <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-purple-500 animate-ping shrink-0" />
+              <span className="hidden sm:inline">Session: </span>
+              <span>{formatTimeLeft(sessionTimeLeft)}</span>
             </div>
           )}
           <div className="pointer-events-auto">
@@ -1286,6 +1303,7 @@ function FullChatContent() {
               role={loggedInUser.title}
               socials={{ github: loggedInUser.socials?.github }}
               avatarAdjust={loggedInUser.avatarAdjust}
+              size={isMobile ? "sm" : "md"}
             />
           </div>
           <motion.button

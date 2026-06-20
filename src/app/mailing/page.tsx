@@ -2484,7 +2484,7 @@ export default function MailingPage() {
 
       {/* Top Header Bar */}
       {loggedInUser && (
-        <div className={`${pageState === "chat-world" ? "fixed" : "absolute"} top-4 sm:top-6 left-4 sm:left-8 right-4 sm:right-8 h-[52px] flex items-center justify-between z-50 pointer-events-none`}>
+        <div className={`${pageState === "chat-world" ? "fixed" : "absolute"} top-3 sm:top-6 left-3 sm:left-8 right-3 sm:right-8 h-[52px] flex items-center justify-between z-50 pointer-events-none gap-1.5 sm:gap-3`}>
           <div className="pointer-events-auto">
             {pageState === "landing" ? (
               <button 
@@ -2495,10 +2495,11 @@ export default function MailingPage() {
                   localStorage.removeItem("shared_letter_lock_time");
                   setSharedLetterLockTime(null);
                 }}
-                className="flex items-center gap-1.5 text-sm text-neutral-400 hover:text-white transition duration-200 font-outfit cursor-pointer bg-transparent border-none outline-none"
+                className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm text-neutral-400 hover:text-white transition duration-200 font-outfit cursor-pointer bg-transparent border-none outline-none"
               >
-                <ArrowLeft size={16} />
-                Back to Profiles
+                <ArrowLeft size={14} className="sm:size-4" />
+                <span className="hidden sm:inline">Back to Profiles</span>
+                <span className="sm:hidden">Profiles</span>
               </button>
             ) : (
               <button 
@@ -2506,16 +2507,17 @@ export default function MailingPage() {
                   setPageState("landing");
                   setIsViewOnlyMode(false);
                 }}
-                className="flex items-center gap-1.5 text-sm text-neutral-400 hover:text-white transition duration-200 font-outfit cursor-pointer bg-transparent border-none outline-none"
+                className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm text-neutral-400 hover:text-white transition duration-200 font-outfit cursor-pointer bg-transparent border-none outline-none"
               >
-                <ArrowLeft size={16} />
-                Back to Mailbox
+                <ArrowLeft size={14} className="sm:size-4" />
+                <span className="hidden sm:inline">Back to Mailbox</span>
+                <span className="sm:hidden">Mailbox</span>
               </button>
             )}
           </div>
 
           {pageState === "chat-world" && (
-            <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 text-center flex flex-col items-center pointer-events-auto max-w-[90vw] sm:max-w-2xl z-10">
+            <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 text-center flex-col items-center pointer-events-auto max-w-[90vw] sm:max-w-2xl z-10 hidden sm:flex">
               <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/5 border border-white/10 mb-2 shadow-[inset_0_0_8px_rgba(168,85,247,0.05)]">
                 <span className="text-[9px] sm:text-[10px] md:text-[11px] font-outfit uppercase tracking-[0.2em] text-purple-300">✦ Chat World ✦</span>
               </div>
@@ -2525,13 +2527,15 @@ export default function MailingPage() {
             </div>
           )}
           
-          <div className="flex items-center gap-3 pointer-events-auto">
+          <div className="flex items-center gap-1.5 sm:gap-3 pointer-events-auto">
             {sessionTimeLeft !== null && (
-              <div className="flex items-center gap-1.5 bg-neutral-950/80 border border-neutral-800 rounded-full px-3.5 py-2 text-xs sm:text-sm font-bold font-mono text-purple-300 shadow-md animate-pulse">
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-ping shrink-0" />
-                <span>Session: {formatTimeLeft(sessionTimeLeft)}</span>
+              <div className="flex items-center gap-1 bg-neutral-950/80 border border-neutral-800 rounded-full px-2 py-1.5 sm:px-3.5 sm:py-2 text-[10px] sm:text-sm font-bold font-mono text-purple-300 shadow-md animate-pulse">
+                <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-purple-500 animate-ping shrink-0" />
+                <span className="hidden sm:inline">Session: </span>
+                <span>{formatTimeLeft(sessionTimeLeft)}</span>
               </div>
             )}
+
             {pageState !== "chat-world" && (
               <motion.button
                 onClick={() => setPageState("chat-world")}
@@ -2567,6 +2571,7 @@ export default function MailingPage() {
               socials={{ github: loggedInUser.socials?.github }}
               avatarAdjust={loggedInUser.avatarAdjust}
               onClick={() => setIsDetailedCardOpen(true)}
+              size={isMobile ? "sm" : "md"}
             />
             <motion.button
               onClick={() => {
@@ -3933,10 +3938,10 @@ export default function MailingPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-4 mt-0.5">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mt-0.5 max-w-full px-2">
                 <button
                   onClick={handleSaveReadingPoint}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border transition cursor-pointer font-outfit shadow-md ${
+                  className={`flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-1.5 rounded-full border transition cursor-pointer font-outfit shadow-md text-[10px] sm:text-xs ${
                     savedReadingIndex !== null
                       ? "border-red-500/30 bg-red-950/20 hover:bg-red-900/40 hover:border-red-500/50 text-red-300"
                       : "border-purple-500/30 bg-purple-950/20 hover:bg-purple-900/40 hover:border-purple-500/50 text-purple-300"
@@ -3944,29 +3949,29 @@ export default function MailingPage() {
                 >
                   {savedReadingIndex !== null ? (
                     <>
-                      <Trash2 size={12} className="text-red-300" />
-                      Unmark Reading Point
+                      <Trash2 size={10} className="text-red-300 sm:size-3" />
+                      <span>Unmark Reading Point</span>
                     </>
                   ) : (
                     <>
-                      <Bookmark size={12} className="text-purple-300" />
-                      Mark Reading Point
+                      <Bookmark size={10} className="text-purple-300 sm:size-3" />
+                      <span>Mark Reading Point</span>
                     </>
                   )}
                 </button>
                 <button
                   onClick={handleGoToStart}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-neutral-800 bg-neutral-900 hover:bg-neutral-850 text-xs font-semibold text-neutral-300 transition cursor-pointer font-outfit shadow-md"
+                  className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-1.5 rounded-full border border-neutral-800 bg-neutral-900 hover:bg-neutral-850 text-[10px] sm:text-xs font-semibold text-neutral-300 transition cursor-pointer font-outfit shadow-md"
                 >
-                  <RotateCcw size={12} className="text-neutral-400" />
-                  Go to Starting Point
+                  <RotateCcw size={10} className="text-neutral-400 sm:size-3" />
+                  <span>Go to Starting Point</span>
                 </button>
                 <a
                   href={`/mailing/full-chat?date=${chatGalleryItems[activeGalleryIndex]?.binomial || ""}`}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-purple-800/40 bg-purple-950/20 hover:bg-purple-900/40 hover:border-purple-500/50 text-xs font-semibold text-purple-300 transition cursor-pointer font-outfit shadow-md"
+                  className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-1.5 rounded-full border border-purple-800/40 bg-purple-950/20 hover:bg-purple-900/40 hover:border-purple-500/50 text-[10px] sm:text-xs font-semibold text-purple-300 transition cursor-pointer font-outfit shadow-md"
                 >
-                  <MessageSquare size={12} className="text-purple-400" />
-                  Full Chat
+                  <MessageSquare size={10} className="text-purple-400 sm:size-3" />
+                  <span>Full Chat</span>
                 </a>
               </div>
 

@@ -15,6 +15,7 @@ interface SpecialCardProps {
   avatarAdjust?: { scale: number; x: number; y: number };
   onClick?: () => void;
   className?: string;
+  size?: "sm" | "md";
 }
 
 const fluidTransition = {
@@ -57,8 +58,12 @@ export default function ProfileCard({
   avatarAdjust = { scale: 1, x: 0, y: 0 },
   onClick,
   className = "",
+  size = "md",
 }: SpecialCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const isSm = size === "sm";
+  const cardWidth = isSm ? 44 : 68;
+  const cardHeight = isSm ? 44 : 68;
 
   return (
     <div className={cn("flex items-center justify-center", className)}>
@@ -69,10 +74,10 @@ export default function ProfileCard({
           "dark:bg-zinc-950/80 dark:text-zinc-50 backdrop-blur-md cursor-pointer select-none"
         )}
         layout
-        initial={{ borderRadius: 40, width: 68, height: 68 }}
+        initial={{ borderRadius: isSm ? 22 : 40, width: cardWidth, height: cardHeight }}
         animate={{
-          width: isHovered ? "auto" : 68,
-          borderRadius: 40,
+          width: isHovered ? "auto" : cardWidth,
+          borderRadius: isSm ? 22 : 40,
         }}
         transition={fluidTransition}
         onMouseEnter={() => setIsHovered(true)}
@@ -80,8 +85,8 @@ export default function ProfileCard({
         onClick={onClick}
       >
         {/* Decorative layers */}
-        <div className="absolute inset-0 z-20 rounded-[40px] border border-white/50 shadow-sm dark:border-zinc-700/40 pointer-events-none" />
-        <div className="absolute inset-0 z-0 rounded-[40px] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.55)] pointer-events-none" />
+        <div className={cn("absolute inset-0 z-20 border border-white/50 shadow-sm dark:border-zinc-700/40 pointer-events-none", isSm ? "rounded-[22px]" : "rounded-[40px]")} />
+        <div className={cn("absolute inset-0 z-0 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.55)] pointer-events-none", isSm ? "rounded-[22px]" : "rounded-[40px]")} />
 
         {/* Gradient background */}
         <div
@@ -94,11 +99,11 @@ export default function ProfileCard({
         />
 
         {/* Avatar Wrapper Wrapper (not overflow-hidden) */}
-        <div className="relative z-30 m-1.5 shrink-0">
+        <div className={cn("relative z-30 shrink-0", isSm ? "m-1" : "m-1.5")}>
           {/* Avatar Wrapper */}
           <motion.div
             layout="position"
-            className="relative h-14 w-14 overflow-hidden rounded-full"
+            className={cn("relative overflow-hidden rounded-full", isSm ? "h-8 w-8" : "h-14 w-14")}
           >
             {/* Living Ambient Glow */}
             <motion.div
@@ -119,7 +124,7 @@ export default function ProfileCard({
             <motion.img
               src={imageSrc}
               alt={name}
-              className="relative h-full w-full object-cover border-[2.5px] border-white dark:border-zinc-800 shadow-sm rounded-full"
+              className="relative h-full w-full object-cover border-[2px] border-white dark:border-zinc-800 shadow-sm rounded-full"
               style={{
                 x: avatarAdjust?.x || 0,
                 y: avatarAdjust?.y || 0,
@@ -134,7 +139,7 @@ export default function ProfileCard({
             initial={{ scale: 0 }}
             animate={{ scale: isHovered ? 1 : 0 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-zinc-800 z-40"
+            className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border border-white dark:border-zinc-800 z-40"
           />
         </div>
 
@@ -147,7 +152,7 @@ export default function ProfileCard({
                 initial="hidden"
                 animate="visible"
                 exit="exit"
-                className="flex flex-col justify-center pl-3 pr-6 min-w-[170px]"
+                className={cn("flex flex-col justify-center", isSm ? "pl-2 pr-4 min-w-[130px]" : "pl-3 pr-6 min-w-[170px]")}
               >
                 {/* Header Row: Name & Social */}
                 <div className="flex items-center justify-between gap-4 mb-0.5">
