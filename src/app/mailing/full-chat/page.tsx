@@ -1140,7 +1140,7 @@ function FullChatContent() {
 
       {/* Main Interactive Phone Container */}
       <div
-        className="relative z-10 flex flex-col items-center justify-start pt-1 sm:pt-2 p-2 max-h-screen w-full overflow-visible"
+        className="relative z-10 flex flex-col items-center justify-start pt-16 sm:pt-24 p-2 max-h-screen w-full overflow-visible"
       >
         <div
           className="phone-simulator-container relative w-[365px] flex-shrink-0 bg-[#1a1a1e] rounded-[52px] p-3 pt-12 pb-12 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.95),_0_0_50px_rgba(168,85,247,0.15)] border-[4px] border-[#2c2c2e] flex flex-col items-center justify-center origin-top transition-transform"
