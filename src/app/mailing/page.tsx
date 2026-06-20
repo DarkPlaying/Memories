@@ -572,7 +572,7 @@ export default function MailingPage() {
         return parseInt(lockTimeStr, 10);
       }
     }
-    return new Date("May 23, 2031 00:00:00").getTime();
+    return new Date("2031-05-23T00:00:00Z").getTime();
   };
 
   // Real-time synchronization of universal countdown timer from Firestore
@@ -597,7 +597,7 @@ export default function MailingPage() {
     try {
       const countdownDocRef = doc(db, "config", "countdown");
       const snapshot = await getDoc(countdownDocRef);
-      const ETERNAL_TARGET_TIME = new Date("May 23, 2031 00:00:00").getTime();
+      const ETERNAL_TARGET_TIME = new Date("2031-05-23T00:00:00Z").getTime();
       let needsNewCountdown = true;
 
       if (snapshot.exists()) {
@@ -623,7 +623,7 @@ export default function MailingPage() {
     } catch (error) {
       console.error("Error synchronizing/creating countdown in Firestore:", error);
       // Fallback to local storage if Firestore fails
-      const localTime = new Date("May 23, 2031 00:00:00").getTime();
+      const localTime = new Date("2031-05-23T00:00:00Z").getTime();
       setSharedLetterLockTime(localTime);
       localStorage.setItem("shared_letter_lock_time", localTime.toString());
     }
