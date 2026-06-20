@@ -206,10 +206,11 @@ const ChatScreen = React.forwardRef<ChatScreenRef, ChatScreenProps>(({
       <div
         ref={listRef}
         onScroll={onScroll}
-        className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-[#FAF6F0] scrollbar-none relative"
+        className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-[#FAF6F0] scrollbar-none relative scroll-smooth"
         style={{
           backgroundImage: "radial-gradient(rgba(176,149,129,0.06) 1.5px, transparent 1.5px)",
-          backgroundSize: "20px 20px"
+          backgroundSize: "20px 20px",
+          WebkitOverflowScrolling: "touch"
         }}
       >
         {messages.length === 0 ? (

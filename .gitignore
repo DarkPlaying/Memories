@@ -47,3 +47,5 @@ __pycache__/
 
 # chat cache
 scratch/chat_cache.json
+scratch/dates/
+scratch/dates_list.json

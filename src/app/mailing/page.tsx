@@ -3347,10 +3347,18 @@ export default function MailingPage() {
         {loggedInUser && (
           <>
             {/* Top Header Bar moved to outer viewport level */}
+            <AnimatePresence mode="wait">
         
         {/* LANDING STATE */}
         {pageState === "landing" && (
-          <div className="flex flex-col items-center justify-center w-full relative">
+          <motion.div
+            key="landing"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="flex flex-col items-center justify-center w-full relative"
+          >
 
             <MailboxFullState
               imageUrl="/mail/mail%20(1).gif"
@@ -3750,12 +3758,19 @@ export default function MailingPage() {
               />
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* LOADING VISIT STATE */}
         {pageState === "loading-visit" && (
-          <div className="flex flex-col items-center justify-center">
+          <motion.div
+            key="loading-visit"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="flex flex-col items-center justify-center"
+          >
             {/* Custom loader: loader.gif */}
             <img 
               src="/loader.gif" 
@@ -3765,12 +3780,19 @@ export default function MailingPage() {
             <p className="text-purple-400 text-lg font-outfit mt-4 animate-pulse uppercase tracking-widest font-semibold text-center px-4">
               Retrieving memories from the registry...
             </p>
-          </div>
+          </motion.div>
         )}
 
         {/* LETTERS DISPLAY (VISIT STATE) */}
         {pageState === "visit" && (
-          <div className="w-full flex flex-col items-center pt-20 pb-6 sm:pt-24 sm:pb-8">
+          <motion.div
+            key="visit"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full flex flex-col items-center pt-20 pb-6 sm:pt-24 sm:pb-8"
+          >
             
             {/* Gallery Header */}
             <div className="w-full max-w-4xl flex items-center justify-center mb-8 px-4">
@@ -3895,30 +3917,36 @@ export default function MailingPage() {
                 )}
               </div>
             )}
-          </div>
+          </motion.div>
         )}
 
         {/* CHAT WORLD STATE */}
         {pageState === "chat-world" && (
-          <div className="fixed inset-0 w-full h-screen bg-[#030308]/95 backdrop-blur-sm z-40 flex flex-col items-center justify-between pt-28 pb-8 px-4 overflow-hidden select-none">
+          <motion.div
+            key="chat-world"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed inset-0 w-full h-[100dvh] bg-[#030308]/95 backdrop-blur-sm z-40 flex flex-col items-center justify-between pt-20 sm:pt-28 pb-3 sm:pb-8 px-4 overflow-hidden select-none"
+          >
             
             {/* 3D Rotating Gallery taking up the middle */}
-            <div className="w-full flex-1 flex items-center justify-center overflow-visible select-none my-6 sm:my-10 min-h-0">
+            <div className="w-full flex-1 flex items-center justify-center overflow-visible select-none my-2 sm:my-10 min-h-0">
               <CircularGallery 
                 ref={galleryRef}
                 items={chatGalleryItems.slice(chatGalleryPage * 10, chatGalleryPage * 10 + 10)} 
-                radius={isMobile ? 250 : 380} 
+                radius={isMobile ? 230 : 380} 
                 autoRotateSpeed={0.015}
-                cardWidth={isMobile ? 160 : 200}
-                cardHeight={isMobile ? 285 : 356}
+                cardWidth={isMobile ? 145 : 200}
+                cardHeight={isMobile ? 258 : 356}
                 onItemClick={(idx) => setLightboxIndex(chatGalleryPage * 10 + idx)}
                 previews={chatPreviews}
                 onActiveIndexChange={(idx) => setActiveGalleryIndex(chatGalleryPage * 10 + idx)}
               />
             </div>
-
-            {/* Bottom Controls (Reading Point Actions) */}
-            <div className="flex flex-col items-center gap-3 z-50 pointer-events-auto mt-6 sm:mt-10">
+                {/* Bottom Controls (Reading Point Actions) */}
+            <div className="flex flex-col items-center gap-2 sm:gap-3 z-50 pointer-events-auto mt-2 sm:mt-10">
               {/* Pagination Controls */}
               <div className="flex items-center gap-3 mb-1">
                 <button
@@ -3947,7 +3975,7 @@ export default function MailingPage() {
                   →
                 </button>
               </div>
-
+ 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-4 mt-0.5 max-w-full px-2">
                 <button
@@ -3988,7 +4016,7 @@ export default function MailingPage() {
                   <span>Full Chat</span>
                 </a>
               </div>
-
+ 
               {/* Save/Resume Toast Notification */}
               {saveNotification && (
                 <div className="absolute bottom-24 bg-purple-900/90 border border-purple-500/30 text-purple-200 px-4 py-1.5 rounded-full text-xs font-semibold font-outfit shadow-lg animate-bounce z-50 whitespace-nowrap">
@@ -3996,35 +4024,47 @@ export default function MailingPage() {
                 </div>
               )}
             </div>
-
-          </div>
+ 
+          </motion.div>
         )}
+      </AnimatePresence>
       </>
     )}
   </div>
-
       {/* Fullscreen Lightbox Modal */}
-      {lightboxIndex !== null && (
-        <div 
-          className="fixed inset-0 bg-black/95 z-[150] flex flex-col items-center justify-center backdrop-blur-md transition-all duration-305 select-none animate-fade-in"
-          onClick={() => setLightboxIndex(null)}
-        >
-          {/* Top Panel */}
-          <div 
-            className="absolute top-0 right-0 p-6 z-[160] text-white"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {lightboxIndex !== null && (
+          <motion.div 
+            key="lightbox"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 bg-black/95 z-[150] flex flex-col items-center justify-center backdrop-blur-md select-none"
+            onClick={() => setLightboxIndex(null)}
           >
-            <button
-              onClick={() => setLightboxIndex(null)}
-              className="p-2.5 bg-neutral-900/60 border border-neutral-800 rounded-full hover:bg-neutral-800 text-white cursor-pointer transition flex items-center justify-center shadow-lg"
-              aria-label="Close Lightbox"
+            {/* Top Panel */}
+            <div 
+              className="absolute top-0 right-0 p-6 z-[160] text-white"
+              onClick={(e) => e.stopPropagation()}
             >
-              <X size={18} />
-            </button>
-          </div>
-
-          {/* Main Image Container */}
-          <div className="relative max-w-4xl max-h-[85vh] w-full px-12 flex items-center justify-center -translate-y-4">
+              <button
+                onClick={() => setLightboxIndex(null)}
+                className="p-2.5 bg-neutral-900/60 border border-neutral-800 rounded-full hover:bg-neutral-800 text-white cursor-pointer transition flex items-center justify-center shadow-lg"
+                aria-label="Close Lightbox"
+              >
+                <X size={18} />
+              </button>
+            </div>
+ 
+            {/* Main Image Container */}
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="relative max-w-4xl max-h-[85vh] w-full px-12 flex items-center justify-center -translate-y-4"
+            >
             {/* Left Button */}
             <button
               onClick={(e) => {
@@ -4063,10 +4103,11 @@ export default function MailingPage() {
 
                 {/* Chats Area */}
                 <div 
-                  className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-[#FAF6F0] scrollbar-none relative"
+                  className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-[#FAF6F0] scrollbar-none relative scroll-smooth"
                   style={{
                     backgroundImage: "radial-gradient(rgba(176,149,129,0.06) 1.5px, transparent 1.5px)",
-                    backgroundSize: "20px 20px"
+                    backgroundSize: "20px 20px",
+                    WebkitOverflowScrolling: "touch"
                   }}
                 >
                   <div className="flex justify-center my-1 select-none">
@@ -4128,7 +4169,7 @@ export default function MailingPage() {
             >
               <ChevronRight size={20} />
             </button>
-          </div>
+            </motion.div>
 
           {/* Bottom Panel Actions */}
           <div 
@@ -4220,8 +4261,9 @@ export default function MailingPage() {
               {saveNotification}
             </div>
           )}
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Create Profile Image Cropper Modal */}
       {showCreateCropModal && createUploadImageSrc && (

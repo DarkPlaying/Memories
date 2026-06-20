@@ -62,6 +62,13 @@ export default function InkReveal({
   const [isRevealed, setIsRevealed] = useState(false);
   const lastMoveTimeRef = useRef<number>(0);
   const movementStartRef = useRef<number>(0);
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
+  const touchStartTimeRef = useRef<number>(0);
+
+  const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
+  const mouseDownTimeRef = useRef<number>(0);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stampsRef = useRef<Stamp[]>([]);
@@ -70,6 +77,33 @@ export default function InkReveal({
   const dimsRef = useRef({ w: 0, h: 0 });
 
   const mc = maskColor;
+
+  const openReveal = useCallback((durationMs: number = 3000) => {
+    setIsRevealed(true);
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+    }
+    closeTimeoutRef.current = setTimeout(() => {
+      setIsRevealed(false);
+    }, durationMs);
+  }, []);
+
+  const keepRevealOpen = useCallback(() => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+    }
+    closeTimeoutRef.current = setTimeout(() => {
+      setIsRevealed(false);
+    }, 3000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const resize = useCallback(() => {
     const canvas = canvasRef.current;
@@ -210,20 +244,6 @@ export default function InkReveal({
     return () => window.removeEventListener("resize", resize);
   }, [resize]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = performance.now();
-      if (lastPosRef.current !== null) {
-        if (now - lastMoveTimeRef.current >= 300) {
-          setIsRevealed(false);
-        }
-      } else {
-        setIsRevealed(false);
-      }
-    }, 100);
-    return () => clearInterval(interval);
-  }, []);
-
   const getRelativePos = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
@@ -255,7 +275,9 @@ export default function InkReveal({
         const now = performance.now();
         lastMoveTimeRef.current = now;
         movementStartRef.current = now;
-        setIsRevealed(false);
+        if (isRevealed) {
+          keepRevealOpen();
+        }
         stampAlong(pos.x, pos.y);
         startLoop();
       }}
@@ -269,23 +291,57 @@ export default function InkReveal({
         lastMoveTimeRef.current = now;
         const elapsed = now - movementStartRef.current;
         if (elapsed >= revealDelay) {
-          setIsRevealed(true);
+          openReveal(3000);
+        } else if (isRevealed) {
+          keepRevealOpen();
         }
         stampAlong(pos.x, pos.y);
         startLoop();
       }}
       onMouseLeave={() => {
         lastPosRef.current = null;
-        setIsRevealed(false);
+        mouseDownPosRef.current = null;
+        if (isRevealed) {
+          keepRevealOpen();
+        }
+      }}
+      onMouseDown={(e) => {
+        const pos = getRelativePos(e);
+        mouseDownPosRef.current = pos;
+        mouseDownTimeRef.current = performance.now();
+      }}
+      onMouseUp={(e) => {
+        const pos = getRelativePos(e);
+        const now = performance.now();
+        const elapsed = now - mouseDownTimeRef.current;
+        let isClick = false;
+        if (elapsed < 250 && mouseDownPosRef.current) {
+          const dx = pos.x - mouseDownPosRef.current.x;
+          const dy = pos.y - mouseDownPosRef.current.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 10) {
+            isClick = true;
+          }
+        }
+        if (isClick) {
+          openReveal(3000);
+        } else if (isRevealed) {
+          keepRevealOpen();
+        }
+        mouseDownPosRef.current = null;
       }}
       onTouchStart={(e) => {
         const pos = getRelativeTouchPos(e);
         if (!pos) return;
         lastPosRef.current = pos;
+        touchStartPosRef.current = pos;
         const now = performance.now();
+        touchStartTimeRef.current = now;
         lastMoveTimeRef.current = now;
         movementStartRef.current = now;
-        setIsRevealed(false);
+        if (isRevealed) {
+          keepRevealOpen();
+        }
         stampAlong(pos.x, pos.y);
         startLoop();
       }}
@@ -300,14 +356,35 @@ export default function InkReveal({
         lastMoveTimeRef.current = now;
         const elapsed = now - movementStartRef.current;
         if (elapsed >= revealDelay) {
-          setIsRevealed(true);
+          openReveal(3000);
+        } else if (isRevealed) {
+          keepRevealOpen();
         }
         stampAlong(pos.x, pos.y);
         startLoop();
       }}
-      onTouchEnd={() => {
+      onTouchEnd={(e) => {
+        const now = performance.now();
+        const elapsed = now - touchStartTimeRef.current;
+        
+        let isTap = false;
+        if (elapsed < 250 && touchStartPosRef.current && lastPosRef.current) {
+          const dx = lastPosRef.current.x - touchStartPosRef.current.x;
+          const dy = lastPosRef.current.y - touchStartPosRef.current.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 15) {
+            isTap = true;
+          }
+        }
+        
+        if (isTap) {
+          openReveal(3000);
+        } else if (isRevealed) {
+          keepRevealOpen();
+        }
+        
         lastPosRef.current = null;
-        setIsRevealed(false);
+        touchStartPosRef.current = null;
       }}
     />
   );

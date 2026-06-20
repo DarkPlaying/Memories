@@ -42,6 +42,9 @@ const CircularGallery = React.forwardRef<CircularGalleryRef, CircularGalleryProp
   ({ items, className, radius = 600, autoRotateSpeed = 0.02, cardWidth = 300, cardHeight = 400, onItemClick, onActiveIndexChange, previews, ...props }, ref) => {
     const [rotation, setRotation] = useState(0);
     const [isScrolling, setIsScrolling] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const targetRotationRef = useRef(0);
+    const currentRotationRef = useRef(0);
     const dragDistanceRef = useRef(0);
     const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const animationFrameRef = useRef<number | null>(null);
@@ -75,16 +78,24 @@ const CircularGallery = React.forwardRef<CircularGalleryRef, CircularGalleryProp
     }, [rotation, items.length]);
 
     // Expose the rotation value and setRotation function to the parent component
+    // Keep target and current in sync initially
+    useEffect(() => {
+      targetRotationRef.current = rotation;
+      currentRotationRef.current = rotation;
+    }, []);
+
+    // Expose the rotation value and setRotation function to the parent component
     useImperativeHandle(ref, () => ({
-      getRotation: () => rotation,
+      getRotation: () => targetRotationRef.current,
       setRotation: (rot) => {
         if (typeof rot === 'function') {
-          setRotation(prev => rot(prev));
+          const next = rot(targetRotationRef.current);
+          targetRotationRef.current = next;
         } else {
-          setRotation(rot);
+          targetRotationRef.current = rot;
         }
       }
-    }), [rotation]);
+    }), []);
 
     // Handle mouse wheel scrolling for rotation on fixed viewport
     useEffect(() => {
@@ -99,8 +110,8 @@ const CircularGallery = React.forwardRef<CircularGalleryRef, CircularGalleryProp
           clearTimeout(scrollTimeoutRef.current);
         }
 
-        // Rotate -0.15 degrees per deltaY unit (scroll down -> go to left)
-        setRotation(prev => prev - e.deltaY * 0.15);
+        // Rotate -0.1 degrees per deltaY unit
+        targetRotationRef.current -= e.deltaY * 0.1;
 
         scrollTimeoutRef.current = setTimeout(() => {
           setIsScrolling(false);
@@ -113,45 +124,65 @@ const CircularGallery = React.forwardRef<CircularGalleryRef, CircularGalleryProp
       };
     }, []);
 
-    // Effect for auto-rotation when not interacting
+    // Unified animation loop for auto-rotation and smooth LERP physics
     useEffect(() => {
-      const autoRotate = () => {
-        if (!isScrolling) {
-          setRotation(prev => prev + autoRotateSpeed);
+      const updatePhysics = () => {
+        if (isDragging) {
+          // Dragging updates target and current instantly in handlePointerDown
+        } else {
+          // Auto-rotate if not scrolling
+          if (!isScrolling) {
+            targetRotationRef.current += autoRotateSpeed;
+          }
+
+          // Smoothly interpolate current rotation towards target rotation
+          const diff = targetRotationRef.current - currentRotationRef.current;
+          if (Math.abs(diff) > 0.01) {
+            currentRotationRef.current += diff * 0.12; // Easing coefficient (LERP)
+            setRotation(currentRotationRef.current);
+          } else if (currentRotationRef.current !== targetRotationRef.current) {
+            currentRotationRef.current = targetRotationRef.current;
+            setRotation(currentRotationRef.current);
+          }
         }
-        animationFrameRef.current = requestAnimationFrame(autoRotate);
+        animationFrameRef.current = requestAnimationFrame(updatePhysics);
       };
 
-      animationFrameRef.current = requestAnimationFrame(autoRotate);
+      animationFrameRef.current = requestAnimationFrame(updatePhysics);
 
       return () => {
         if (animationFrameRef.current) {
           cancelAnimationFrame(animationFrameRef.current);
         }
       };
-    }, [isScrolling, autoRotateSpeed]);
+    }, [isScrolling, isDragging, autoRotateSpeed]);
 
     // Handle touch/mouse dragging for rotation on fixed viewport
     const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
       setIsScrolling(true);
+      setIsDragging(true);
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
 
       const startX = e.clientX;
       const startY = e.clientY;
-      const startRotation = rotation;
+      const startRotation = targetRotationRef.current;
       dragDistanceRef.current = 0;
 
       const handlePointerMove = (moveEvent: PointerEvent) => {
         const dx = moveEvent.clientX - startX;
         const dy = moveEvent.clientY - startY;
         dragDistanceRef.current = Math.sqrt(dx * dx + dy * dy);
-        setRotation(startRotation + dx * 0.25); // 0.25 degrees per pixel drag
+        const nextRot = startRotation + dx * 0.25;
+        targetRotationRef.current = nextRot;
+        currentRotationRef.current = nextRot;
+        setRotation(nextRot);
       };
 
       const handlePointerUp = () => {
         setIsScrolling(false);
+        setIsDragging(false);
         document.removeEventListener('pointermove', handlePointerMove);
         document.removeEventListener('pointerup', handlePointerUp);
       };
