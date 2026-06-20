@@ -397,6 +397,7 @@ function FullChatContent() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isManualSelecting, setIsManualSelecting] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownListRef = useRef<HTMLDivElement>(null);
 
   // Word selection and scroll intent states
   const [isSelectingMarkPoint, setIsSelectingMarkPoint] = useState(false);
@@ -422,6 +423,23 @@ function FullChatContent() {
       document.removeEventListener("mousedown", handleOutsideClick);
     };
   }, []);
+
+  // Auto-scroll dropdown list to the currently selected date when opened
+  useEffect(() => {
+    if (isDropdownOpen && dropdownListRef.current && currentDateIndex >= 0) {
+      const container = dropdownListRef.current;
+      const timer = setTimeout(() => {
+        const selectedItem = container.children[currentDateIndex] as HTMLElement;
+        if (selectedItem) {
+          container.scrollTo({
+            top: selectedItem.offsetTop - container.clientHeight / 2 + selectedItem.clientHeight / 2,
+            behavior: "smooth"
+          });
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isDropdownOpen, currentDateIndex]);
 
   // Firestore Reading Point Sync
   const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null);
@@ -843,6 +861,30 @@ function FullChatContent() {
     ) {
       fetchMoreMessages();
     }
+
+    // Update currentDateIndex dynamically based on the first visible message as the user scrolls
+    if (!isManualSelecting && datesList.length > 0) {
+      const containerScrollTop = container.scrollTop;
+      const bubbleElements = container.querySelectorAll('[data-message-bubble="true"]');
+      let firstVisibleMsgId: string | null = null;
+      for (let i = 0; i < bubbleElements.length; i++) {
+        const el = bubbleElements[i] as HTMLElement;
+        if (el.offsetTop >= containerScrollTop - 15) {
+          firstVisibleMsgId = el.getAttribute('data-msg-id');
+          break;
+        }
+      }
+
+      if (firstVisibleMsgId) {
+        const msg = messages.find(m => m.id === firstVisibleMsgId);
+        if (msg && msg.date) {
+          const foundIdx = datesList.findIndex(d => d.date === msg.date);
+          if (foundIdx !== -1 && foundIdx !== currentDateIndex) {
+            setCurrentDateIndex(foundIdx);
+          }
+        }
+      }
+    }
   };
 
   // Save/Unmark Reading Point
@@ -1202,7 +1244,10 @@ function FullChatContent() {
           </button>
 
           {isDropdownOpen && (
-            <div className="absolute bottom-full mb-2 left-0 w-36 max-h-48 overflow-y-auto bg-neutral-950/95 border border-neutral-800 rounded-xl py-1 shadow-2xl z-30 scrollbar-none flex flex-col backdrop-blur-md">
+            <div 
+              ref={dropdownListRef}
+              className="absolute bottom-full mb-2 left-0 w-36 max-h-48 overflow-y-auto bg-neutral-950/95 border border-neutral-800 rounded-xl py-1 shadow-2xl z-30 scrollbar-none flex flex-col backdrop-blur-md"
+            >
               {datesList.map((item, idx) => (
                 <button
                   key={idx}
@@ -1211,8 +1256,11 @@ function FullChatContent() {
                     jumpToDateIndex(idx);
                     setIsDropdownOpen(false);
                   }}
-                  className={`w-full text-left px-3 py-1.5 text-[10px] font-outfit font-medium hover:bg-neutral-800/80 transition-colors flex items-center gap-1.5 ${idx === currentDateIndex ? "text-purple-400 bg-purple-950/20" : "text-neutral-300"
-                    }`}
+                  className={`w-full text-left px-3 py-1.5 text-[10px] font-outfit transition-all flex items-center gap-1.5 ${
+                    idx === currentDateIndex 
+                      ? "text-purple-300 bg-purple-950/60 font-bold border-l-2 border-purple-500 shadow-[inset_4px_0_12px_rgba(168,85,247,0.1)]" 
+                      : "text-neutral-300 hover:bg-neutral-800/80 font-medium"
+                  }`}
                 >
                   {item.isMatched && (
                     <span className="w-1.5 h-1.5 rounded-full bg-pink-500 shrink-0" />
