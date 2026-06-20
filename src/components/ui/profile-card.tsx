@@ -62,8 +62,8 @@ export default function ProfileCard({
 }: SpecialCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const isSm = size === "sm";
-  const cardWidth = isSm ? 44 : 68;
-  const cardHeight = isSm ? 44 : 68;
+  const cardWidth = isSm ? 40 : 52;
+  const cardHeight = isSm ? 40 : 52;
 
   return (
     <div className={cn("flex items-center justify-center", className)}>
@@ -74,10 +74,10 @@ export default function ProfileCard({
           "dark:bg-zinc-950/80 dark:text-zinc-50 backdrop-blur-md cursor-pointer select-none"
         )}
         layout
-        initial={{ borderRadius: isSm ? 22 : 40, width: cardWidth, height: cardHeight }}
+        initial={{ borderRadius: isSm ? 20 : 26, width: cardWidth, height: cardHeight }}
         animate={{
           width: isHovered ? "auto" : cardWidth,
-          borderRadius: isSm ? 22 : 40,
+          borderRadius: isSm ? 20 : 26,
         }}
         transition={fluidTransition}
         onMouseEnter={() => setIsHovered(true)}
@@ -85,8 +85,8 @@ export default function ProfileCard({
         onClick={onClick}
       >
         {/* Decorative layers */}
-        <div className={cn("absolute inset-0 z-20 border border-white/50 shadow-sm dark:border-zinc-700/40 pointer-events-none", isSm ? "rounded-[22px]" : "rounded-[40px]")} />
-        <div className={cn("absolute inset-0 z-0 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.55)] pointer-events-none", isSm ? "rounded-[22px]" : "rounded-[40px]")} />
+        <div className={cn("absolute inset-0 z-20 border border-white/50 shadow-sm dark:border-zinc-700/40 pointer-events-none", isSm ? "rounded-[20px]" : "rounded-[26px]")} />
+        <div className={cn("absolute inset-0 z-0 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.55)] pointer-events-none", isSm ? "rounded-[20px]" : "rounded-[26px]")} />
 
         {/* Gradient background */}
         <div
@@ -103,7 +103,7 @@ export default function ProfileCard({
           {/* Avatar Wrapper */}
           <motion.div
             layout="position"
-            className={cn("relative overflow-hidden rounded-full", isSm ? "h-8 w-8" : "h-14 w-14")}
+            className={cn("relative overflow-hidden rounded-full", isSm ? "h-8 w-8" : "h-10 w-10")}
           >
             {/* Living Ambient Glow */}
             <motion.div

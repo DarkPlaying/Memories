@@ -229,7 +229,6 @@ const CircularGallery = React.forwardRef<CircularGalleryRef, CircularGalleryProp
                       {/* Chats area */}
                       <div 
                         className="flex-1 min-h-0 overflow-y-auto scrollbar-none py-2 space-y-2 flex flex-col justify-start"
-                        onPointerDown={(e) => e.stopPropagation()}
                       >
                         {previews[item.binomial].slice(0, 10).map((msg, mIdx) => {
                           const isRight = msg.sender.toLowerCase().includes("sanjay");

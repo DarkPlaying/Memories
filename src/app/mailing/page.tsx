@@ -529,6 +529,17 @@ export default function MailingPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const stateParam = params.get("state");
+      const savedUserId = sessionStorage.getItem("logged_in_user_id");
+      if (stateParam === "chat-world" && savedUserId) {
+        setPageState("chat-world");
+      }
+    }
+  }, []);
+
   const [pageState, setPageState] = useState<PageState>(() => {
     if (typeof window !== "undefined") {
       const savedUserId = sessionStorage.getItem("logged_in_user_id");
@@ -561,7 +572,7 @@ export default function MailingPage() {
         return parseInt(lockTimeStr, 10);
       }
     }
-    return Date.now() + 5 * 60 * 1000;
+    return new Date("May 23, 2031 00:00:00").getTime();
   };
 
   // Real-time synchronization of universal countdown timer from Firestore
@@ -586,21 +597,21 @@ export default function MailingPage() {
     try {
       const countdownDocRef = doc(db, "config", "countdown");
       const snapshot = await getDoc(countdownDocRef);
+      const ETERNAL_TARGET_TIME = new Date("May 23, 2031 00:00:00").getTime();
       let needsNewCountdown = true;
 
       if (snapshot.exists()) {
         const data = snapshot.data();
-        if (data.targetTime && Date.now() < data.targetTime) {
+        if (data.targetTime && data.targetTime === ETERNAL_TARGET_TIME) {
           needsNewCountdown = false;
         }
       }
 
       if (needsNewCountdown) {
-        const newTargetTime = Date.now() + 5 * 60 * 1000;
-        await setDoc(countdownDocRef, { targetTime: newTargetTime }, { merge: true });
-        setSharedLetterLockTime(newTargetTime);
-        localStorage.setItem("shared_letter_lock_time", newTargetTime.toString());
-        console.log("Initialized new universal 5-minute countdown in Firestore:", newTargetTime);
+        await setDoc(countdownDocRef, { targetTime: ETERNAL_TARGET_TIME }, { merge: true });
+        setSharedLetterLockTime(ETERNAL_TARGET_TIME);
+        localStorage.setItem("shared_letter_lock_time", ETERNAL_TARGET_TIME.toString());
+        console.log("Initialized universal countdown to May 2031 in Firestore:", ETERNAL_TARGET_TIME);
       } else {
         const existingTarget = snapshot.data()?.targetTime;
         if (existingTarget) {
@@ -612,7 +623,7 @@ export default function MailingPage() {
     } catch (error) {
       console.error("Error synchronizing/creating countdown in Firestore:", error);
       // Fallback to local storage if Firestore fails
-      const localTime = Date.now() + 5 * 60 * 1000;
+      const localTime = new Date("May 23, 2031 00:00:00").getTime();
       setSharedLetterLockTime(localTime);
       localStorage.setItem("shared_letter_lock_time", localTime.toString());
     }
@@ -2529,7 +2540,7 @@ export default function MailingPage() {
           
           <div className="flex items-center gap-1.5 sm:gap-3 pointer-events-auto">
             {sessionTimeLeft !== null && (
-              <div className="flex items-center gap-1 bg-neutral-950/80 border border-neutral-800 rounded-full px-2 py-1.5 sm:px-3.5 sm:py-2 text-[10px] sm:text-sm font-bold font-mono text-purple-300 shadow-md animate-pulse">
+              <div className="h-10 sm:h-[52px] flex items-center justify-center gap-1 bg-neutral-950/80 border border-neutral-800 rounded-full px-2.5 sm:px-4 text-[10px] sm:text-sm font-bold font-mono text-purple-300 shadow-md animate-pulse">
                 <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-purple-500 animate-ping shrink-0" />
                 <span className="hidden sm:inline">Session: </span>
                 <span>{formatTimeLeft(sessionTimeLeft)}</span>
@@ -2587,10 +2598,10 @@ export default function MailingPage() {
               onMouseEnter={() => setIsLogoutHovered(true)}
               onMouseLeave={() => setIsLogoutHovered(false)}
               layout
-              initial={{ width: 52, height: 52, borderRadius: 26 }}
-              animate={{ width: isLogoutHovered ? "auto" : 52 }}
+              initial={{ width: isMobile ? 40 : 52, height: isMobile ? 40 : 52, borderRadius: isMobile ? 20 : 26 }}
+              animate={{ width: isLogoutHovered ? "auto" : (isMobile ? 40 : 52), height: isMobile ? 40 : 52, borderRadius: isMobile ? 20 : 26 }}
               transition={{ type: "spring", stiffness: 260, damping: 28 }}
-              className="h-[52px] flex items-center justify-start overflow-hidden border border-red-500/30 bg-red-950/30 hover:bg-red-900/50 hover:border-red-500/60 text-red-300 cursor-pointer shadow-lg hover:shadow-red-500/10 shrink-0 select-none pl-[17px] gap-2 rounded-full"
+              className="h-10 sm:h-[52px] flex items-center justify-start overflow-hidden border border-red-500/30 bg-red-950/30 hover:bg-red-900/50 hover:border-red-500/60 text-red-300 cursor-pointer shadow-lg hover:shadow-red-500/10 shrink-0 select-none pl-3 sm:pl-[17px] gap-2 rounded-full"
               title="Logout Profile"
             >
               <LogOut size={18} className="shrink-0" />
@@ -3938,10 +3949,10 @@ export default function MailingPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mt-0.5 max-w-full px-2">
+              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-4 mt-0.5 max-w-full px-2">
                 <button
                   onClick={handleSaveReadingPoint}
-                  className={`flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-1.5 rounded-full border transition cursor-pointer font-outfit shadow-md text-[10px] sm:text-xs ${
+                  className={`flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 sm:px-3.5 sm:py-1.5 rounded-full border transition cursor-pointer font-outfit shadow-md text-[10px] sm:text-xs ${
                     savedReadingIndex !== null
                       ? "border-red-500/30 bg-red-950/20 hover:bg-red-900/40 hover:border-red-500/50 text-red-300"
                       : "border-purple-500/30 bg-purple-950/20 hover:bg-purple-900/40 hover:border-purple-500/50 text-purple-300"
@@ -3950,25 +3961,28 @@ export default function MailingPage() {
                   {savedReadingIndex !== null ? (
                     <>
                       <Trash2 size={10} className="text-red-300 sm:size-3" />
-                      <span>Unmark Reading Point</span>
+                      <span className="hidden sm:inline">Unmark Reading Point</span>
+                      <span className="sm:hidden">Unmark Point</span>
                     </>
                   ) : (
                     <>
                       <Bookmark size={10} className="text-purple-300 sm:size-3" />
-                      <span>Mark Reading Point</span>
+                      <span className="hidden sm:inline">Mark Reading Point</span>
+                      <span className="sm:hidden">Mark Point</span>
                     </>
                   )}
                 </button>
                 <button
                   onClick={handleGoToStart}
-                  className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-1.5 rounded-full border border-neutral-800 bg-neutral-900 hover:bg-neutral-850 text-[10px] sm:text-xs font-semibold text-neutral-300 transition cursor-pointer font-outfit shadow-md"
+                  className="flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 sm:px-3.5 sm:py-1.5 rounded-full border border-neutral-800 bg-neutral-900 hover:bg-neutral-850 text-[10px] sm:text-xs font-semibold text-neutral-300 transition cursor-pointer font-outfit shadow-md"
                 >
                   <RotateCcw size={10} className="text-neutral-400 sm:size-3" />
-                  <span>Go to Starting Point</span>
+                  <span className="hidden sm:inline">Go to Starting Point</span>
+                  <span className="sm:hidden">Go to Start</span>
                 </button>
                 <a
                   href={`/mailing/full-chat?date=${chatGalleryItems[activeGalleryIndex]?.binomial || ""}`}
-                  className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-1.5 rounded-full border border-purple-800/40 bg-purple-950/20 hover:bg-purple-900/40 hover:border-purple-500/50 text-[10px] sm:text-xs font-semibold text-purple-300 transition cursor-pointer font-outfit shadow-md"
+                  className="flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 sm:px-3.5 sm:py-1.5 rounded-full border border-purple-800/40 bg-purple-950/20 hover:bg-purple-900/40 hover:border-purple-500/50 text-[10px] sm:text-xs font-semibold text-purple-300 transition cursor-pointer font-outfit shadow-md"
                 >
                   <MessageSquare size={10} className="text-purple-400 sm:size-3" />
                   <span>Full Chat</span>
@@ -4118,7 +4132,7 @@ export default function MailingPage() {
 
           {/* Bottom Panel Actions */}
           <div 
-            className="absolute bottom-6 left-0 w-full flex items-center justify-center gap-4 z-[160]"
+            className="absolute bottom-6 left-0 w-full flex flex-wrap items-center justify-center gap-1.5 sm:gap-4 px-2 z-[160]"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -4152,7 +4166,7 @@ export default function MailingPage() {
                   setTimeout(() => setSaveNotification(null), 3000);
                 }
               }}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full border transition cursor-pointer font-outfit shadow-md ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-full border transition cursor-pointer font-outfit shadow-md text-[10px] sm:text-xs ${
                 savedReadingIndex === lightboxIndex
                   ? "border-red-500/30 bg-red-950/40 hover:bg-red-900/60 hover:border-red-500/50 text-red-300"
                   : "border-purple-500/30 bg-purple-950/40 hover:bg-purple-900/60 hover:border-purple-500/50 text-purple-300"
@@ -4160,18 +4174,20 @@ export default function MailingPage() {
             >
               {savedReadingIndex === lightboxIndex ? (
                 <>
-                  <Trash2 size={12} className="text-red-300" />
-                  Unmark Reading Point
+                  <Trash2 size={10} className="text-red-300 sm:size-3" />
+                  <span className="hidden sm:inline">Unmark Reading Point</span>
+                  <span className="sm:hidden">Unmark Point</span>
                 </>
               ) : (
                 <>
-                  <Bookmark size={12} className="text-purple-300" />
-                  Mark Reading Point
+                  <Bookmark size={10} className="text-purple-300 sm:size-3" />
+                  <span className="hidden sm:inline">Mark Reading Point</span>
+                  <span className="sm:hidden">Mark Point</span>
                 </>
               )}
             </button>
 
-            <span className="text-xs font-semibold font-outfit text-neutral-400 bg-neutral-900/60 border border-neutral-800/80 px-4 py-2 rounded-full shadow-lg whitespace-nowrap select-none">
+            <span className="text-[10px] sm:text-xs font-semibold font-outfit text-neutral-400 bg-neutral-900/60 border border-neutral-800/80 px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-full shadow-lg whitespace-nowrap select-none">
               Slide {lightboxIndex + 1} of {chatGalleryItems.length}
             </span>
 
@@ -4190,10 +4206,11 @@ export default function MailingPage() {
                 setSaveNotification("Returned to Starting Point (#01)!");
                 setTimeout(() => setSaveNotification(null), 3000);
               }}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-neutral-800 bg-neutral-900/80 hover:bg-neutral-800 text-xs font-semibold text-neutral-300 transition cursor-pointer font-outfit shadow-md"
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-full border border-neutral-800 bg-neutral-900/80 hover:bg-neutral-850 text-[10px] sm:text-xs font-semibold text-neutral-300 transition cursor-pointer font-outfit shadow-md"
             >
-              <RotateCcw size={12} className="text-neutral-400" />
-              Go to Starting Point
+              <RotateCcw size={10} className="text-neutral-400 sm:size-3" />
+              <span className="hidden sm:inline">Go to Starting Point</span>
+              <span className="sm:hidden">Go to Start</span>
             </button>
           </div>
 

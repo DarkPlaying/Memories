@@ -1140,7 +1140,7 @@ function FullChatContent() {
 
       {/* Main Interactive Phone Container */}
       <div
-        className="relative z-10 flex flex-col items-center justify-start pt-16 sm:pt-24 p-2 max-h-screen w-full overflow-visible"
+        className="relative z-10 flex flex-col items-center justify-start pt-16 sm:pt-2 p-2 max-h-screen w-full overflow-visible"
       >
         <div
           className="phone-simulator-container relative w-[365px] flex-shrink-0 bg-[#1a1a1e] rounded-[52px] p-3 pt-12 pb-12 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.95),_0_0_50px_rgba(168,85,247,0.15)] border-[4px] border-[#2c2c2e] flex flex-col items-center justify-center origin-top transition-transform"
@@ -1290,7 +1290,7 @@ function FullChatContent() {
       {loggedInUser && (
         <div className="absolute top-3 right-3 sm:top-8 sm:right-8 z-20 flex items-center gap-1.5 sm:gap-3">
           {sessionTimeLeft !== null && (
-            <div className="flex items-center gap-1 bg-neutral-950/80 border border-neutral-800 rounded-full px-2 py-1.5 sm:px-3.5 sm:py-2 text-[10px] sm:text-sm font-bold font-mono text-purple-300 shadow-md animate-pulse pointer-events-auto">
+            <div className="h-10 sm:h-[52px] flex items-center justify-center gap-1 bg-neutral-950/80 border border-neutral-800 rounded-full px-2.5 sm:px-4 text-[10px] sm:text-sm font-bold font-mono text-purple-300 shadow-md animate-pulse pointer-events-auto">
               <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-purple-500 animate-ping shrink-0" />
               <span className="hidden sm:inline">Session: </span>
               <span>{formatTimeLeft(sessionTimeLeft)}</span>
@@ -1322,10 +1322,10 @@ function FullChatContent() {
             onMouseEnter={() => setIsLogoutHovered(true)}
             onMouseLeave={() => setIsLogoutHovered(false)}
             layout
-            initial={{ width: 52, height: 52, borderRadius: 26 }}
-            animate={{ width: isLogoutHovered ? "auto" : 52 }}
+            initial={{ width: isMobile ? 40 : 52, height: isMobile ? 40 : 52, borderRadius: isMobile ? 20 : 26 }}
+            animate={{ width: isLogoutHovered ? "auto" : (isMobile ? 40 : 52), height: isMobile ? 40 : 52, borderRadius: isMobile ? 20 : 26 }}
             transition={{ type: "spring", stiffness: 260, damping: 28 }}
-            className="h-[52px] flex items-center justify-start overflow-hidden border border-red-500/30 bg-red-950/30 hover:bg-red-900/50 hover:border-red-500/60 text-red-300 cursor-pointer shadow-lg hover:shadow-red-500/10 pointer-events-auto shrink-0 select-none pl-[17px] gap-2 rounded-full"
+            className="h-10 sm:h-[52px] flex items-center justify-start overflow-hidden border border-red-500/30 bg-red-950/30 hover:bg-red-900/50 hover:border-red-500/60 text-red-300 cursor-pointer shadow-lg hover:shadow-red-500/10 pointer-events-auto shrink-0 select-none pl-3 sm:pl-[17px] gap-2 rounded-full"
             title="Logout Profile"
           >
             <LogOut size={18} className="shrink-0" />
