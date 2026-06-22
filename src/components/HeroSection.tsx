@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { Heart, Sparkles, Volume2, VolumeX, SkipBack, SkipForward, Play, Pause, ChevronLeft, ChevronRight } from "lucide-react";
 import confetti from "canvas-confetti";
@@ -358,6 +358,9 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
     }
     return [];
   });
+  const wosMemories = useMemo(() => {
+    return memories.filter(img => img.toLowerCase().replace(/\\/g, "/").startsWith("wos/"));
+  }, [memories]);
   const [isPlayingMusic, setIsPlayingMusic] = useState(false);
   const [isMutedByUser, setIsMutedByUser] = useState(false);
   const [showCompletionPopup, setShowCompletionPopup] = useState(false);
@@ -764,11 +767,14 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
         const res = await fetch("/api/memories");
         const memoriesData = await res.json();
         if (Array.isArray(memoriesData)) {
-          memoriesData.slice(0, 24).forEach(img => {
-            pendingFrames.push({
-              url: `/memories/${img}`
+          memoriesData
+            .filter(img => img.toLowerCase().replace(/\\/g, "/").startsWith("wos/"))
+            .slice(0, 24)
+            .forEach(img => {
+              pendingFrames.push({
+                url: `/memories/${img}`
+              });
             });
-          });
         }
       } catch (err) {
         console.error("Failed to fetch memories in preloader:", err);
@@ -1351,7 +1357,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
               transition={{ duration: 1.0, ease: "easeOut" }}
               className="relative max-w-7xl mx-auto w-full flex flex-col items-center z-10"
             >
-              <CircularGallery images={memories.slice(10, 26)} />
+              <CircularGallery images={wosMemories.filter(img => !img.toLowerCase().endsWith(".mp4") && !img.toLowerCase().endsWith(".mov"))} />
             </motion.div>
 
             {/* Memorial Parts — interactive butterflies & 3D scrolling gallery */}
@@ -1368,9 +1374,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
                 subtitle="A dreamy collection of our most cherished moments, floating gracefully through time."
                 ctaText="Reveal Secret Memory"
                 ctaHref="/reveal"
-                images={memories
-                  .filter(img => img.toLowerCase().replace(/\\/g, "/").startsWith("wos/"))
-                  .map(img => `/memories/${img}`)}
+                images={wosMemories.map(img => `/memories/${img}`)}
               />
             </motion.div>
 
@@ -1382,7 +1386,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
               transition={{ duration: 1.0, ease: "easeOut" }}
               className="w-full relative z-10"
             >
-              <ArcGalleryHero images={memories.map(img => `/memories/${img}`)} />
+              <ArcGalleryHero images={wosMemories.map(img => `/memories/${img}`)} />
             </motion.div>
 
             {/* Footer */}

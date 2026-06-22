@@ -395,9 +395,14 @@ function GalleryScene({
 
   const normalizedImages = useMemo(
     () =>
-      images.map((img) =>
-        typeof img === "string" ? { src: img, alt: "" } : img
-      ),
+      images
+        .filter((img) => {
+          const src = typeof img === "string" ? img : img.src;
+          return !src.match(/\.(mp4|mov)$/i);
+        })
+        .map((img) =>
+          typeof img === "string" ? { src: img, alt: "" } : img
+        ),
     [images]
   );
 
@@ -602,9 +607,14 @@ function GalleryScene({
 function FallbackGallery({ images }: { images: ImageItem[] }) {
   const normalizedImages = useMemo(
     () =>
-      images.map((img) =>
-        typeof img === "string" ? { src: img, alt: "" } : img
-      ),
+      images
+        .filter((img) => {
+          const src = typeof img === "string" ? img : img.src;
+          return !src.match(/\.(mp4|mov)$/i);
+        })
+        .map((img) =>
+          typeof img === "string" ? { src: img, alt: "" } : img
+        ),
     [images]
   );
 

@@ -2,7 +2,7 @@
 
 import React, { Suspense, useEffect, useMemo, useRef, useState, createContext, useContext } from "react"
 import * as THREE from "three"
-import { Canvas, useFrame } from "@react-three/fiber"
+import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import {
   OrbitControls,
   Environment,
@@ -45,48 +45,46 @@ function useCard() {
 
 function CardProvider({ children }: { children: React.ReactNode }) {
   const [selectedCard, setSelectedCard] = useState<Card | null>(null)
-  const [cards, setCards] = useState<Card[]>(() => {
-    if (typeof window !== "undefined") {
-      const cached = localStorage.getItem("cached_memories");
-      if (cached) {
-        try {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed)) {
-            return parsed.slice(0, 50).map((img, idx) => {
-              const filenameWithExt = img.split("/").pop() || img;
-              const filenameWithoutExt = filenameWithExt.substring(0, filenameWithExt.lastIndexOf('.')) || filenameWithExt;
-              const title = filenameWithoutExt
-                .replace(/\s+/g, ' ')
-                .trim()
-                .split(' ')
-                .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(' ');
-
-              return {
-                id: String(idx + 1),
-                imageUrl: `/memories/${img}`,
-                alt: title,
-                title: title
-              };
-            });
-          }
-        } catch (e) {
-          console.error("Error parsing cached memories in CardProvider:", e);
-        }
-      }
-    }
-    return [];
-  })
+  const [cards, setCards] = useState<Card[]>([])
 
   useEffect(() => {
+    // Try to load from cache immediately on client side
+    const cached = localStorage.getItem("cached_memories");
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed)) {
+          setCards(parsed.slice(0, 100).map((img, idx) => {
+            const filenameWithExt = img.split("/").pop() || img;
+            const filenameWithoutExt = filenameWithExt.substring(0, filenameWithExt.lastIndexOf('.')) || filenameWithExt;
+            const title = filenameWithoutExt
+              .replace(/\s+/g, ' ')
+              .trim()
+              .split(' ')
+              .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ');
+
+            return {
+              id: String(idx + 1),
+              imageUrl: `/memories/${img}`,
+              alt: title,
+              title: title
+            };
+          }));
+        }
+      } catch (e) {
+        console.error("Error parsing cached memories in CardProvider:", e);
+      }
+    }
+
     async function loadCards() {
       try {
         const res = await fetch("/api/memories")
         const data = await res.json()
         if (Array.isArray(data)) {
           localStorage.setItem("cached_memories", JSON.stringify(data));
-          // Map all 50 memories dynamically to display them in our floating spherical constellation
-          const mappedCards = data.slice(0, 50).map((img, idx) => {
+          // Map memories dynamically to display them in our floating spherical constellation
+          const mappedCards = data.slice(0, 100).map((img, idx) => {
             // Extract the filename without extension to use as title dynamically
             const filenameWithExt = img.split("/").pop() || img
             const filenameWithoutExt = filenameWithExt.substring(0, filenameWithExt.lastIndexOf('.')) || filenameWithExt
@@ -252,13 +250,24 @@ function FloatingCard({
             border: hovered ? "2px solid rgba(244, 63, 94, 0.5)" : "1px solid rgba(255, 255, 255, 0.08)",
           }}
         >
-          <img
-            src={card.imageUrl || "/placeholder.svg"}
-            alt={card.alt}
-            className="w-full h-[145px] object-cover rounded-md"
-            loading="lazy"
-            draggable={false}
-          />
+          {card.imageUrl?.match(/\.(mp4|mov)$/i) ? (
+            <video
+              src={card.imageUrl}
+              className="w-full h-[145px] object-cover rounded-md"
+              autoPlay
+              loop
+              muted
+              playsInline
+            />
+          ) : (
+            <img
+              src={card.imageUrl || "/placeholder.svg"}
+              alt={card.alt}
+              className="w-full h-[145px] object-cover rounded-md"
+              loading="lazy"
+              draggable={false}
+            />
+          )}
           <div className="mt-1.5 text-center w-full">
             <p className="text-white text-[10px] font-outfit uppercase tracking-widest font-semibold truncate px-1">
               {card.title}
@@ -327,13 +336,25 @@ function CardModal() {
             onMouseLeave={handleMouseLeave}
           >
             <div className="relative w-full mb-4" style={{ aspectRatio: "3 / 4" }}>
-              <img
-                loading="lazy"
-                className="absolute inset-0 h-full w-full rounded-[18px] bg-black object-cover"
-                alt={selectedCard.alt}
-                src={selectedCard.imageUrl || "/placeholder.svg"}
-                style={{ boxShadow: "rgba(0, 0, 0, 0.4) 0px 10px 30px 0px", opacity: 1 }}
-              />
+              {selectedCard.imageUrl?.match(/\.(mp4|mov)$/i) ? (
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="absolute inset-0 h-full w-full rounded-[18px] bg-black object-cover"
+                  src={selectedCard.imageUrl}
+                  style={{ boxShadow: "rgba(0, 0, 0, 0.4) 0px 10px 30px 0px", opacity: 1 }}
+                />
+              ) : (
+                <img
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full rounded-[18px] bg-black object-cover"
+                  alt={selectedCard.alt}
+                  src={selectedCard.imageUrl || "/placeholder.svg"}
+                  style={{ boxShadow: "rgba(0, 0, 0, 0.4) 0px 10px 30px 0px", opacity: 1 }}
+                />
+              )}
             </div>
 
             <h3 className="text-white text-lg font-outfit uppercase tracking-widest font-bold mb-4 text-center">{selectedCard.title}</h3>
@@ -362,6 +383,36 @@ function CardModal() {
       </div>
     </div>
   )
+}
+
+/* =========================
+   Camera Setup (inlined)
+   ========================= */
+
+function CameraSetup() {
+  const { camera } = useThree()
+  const { cards } = useCard()
+
+  useEffect(() => {
+    if (cards.length > 0) {
+      const idx = cards.findIndex(c => c.title.toLowerCase().includes("first image edit from her"))
+      if (idx !== -1) {
+        const numCards = cards.length
+        const goldenRatio = (1 + Math.sqrt(5)) / 2
+        const y = 1 - (idx / (numCards - 1)) * 2
+        const radiusAtY = Math.sqrt(1 - y * y)
+        const theta = (2 * Math.PI * idx) / goldenRatio
+        const x = Math.cos(theta) * radiusAtY
+        const z = Math.sin(theta) * radiusAtY
+        
+        const dist = 24 // Distance slightly further to see the card clearly
+        camera.position.set(x * dist, y * dist, z * dist)
+        camera.lookAt(0, 0, 0)
+      }
+    }
+  }, [cards, camera])
+
+  return null
 }
 
 /* =========================
@@ -446,6 +497,7 @@ export default function StellarCardGallerySingle() {
           }}
         >
           <Suspense fallback={null}>
+            <CameraSetup />
             <Environment preset="night" />
             <ambientLight intensity={0.4} />
             <pointLight position={[10, 10, 10]} intensity={0.6} />

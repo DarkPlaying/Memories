@@ -10,7 +10,7 @@ export async function GET() {
     const scanDirectory = (dir: string, prefix = "") => {
       if (!fs.existsSync(dir)) return;
       const files = fs.readdirSync(dir);
-      const imageExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+      const imageExtensions = [".jpg", ".jpeg", ".png", ".webp", ".mp4", ".mov"];
 
       files.forEach((file) => {
         const fullPath = path.join(dir, file);
@@ -20,7 +20,7 @@ export async function GET() {
           scanDirectory(fullPath, prefix ? `${prefix}/${file}` : file);
         } else {
           const ext = path.extname(file).toLowerCase();
-          if (imageExtensions.includes(ext)) {
+          if (imageExtensions.includes(ext) && !file.includes("First Bite")) {
             images.push(prefix ? `${prefix}/${file}` : file);
           }
         }
