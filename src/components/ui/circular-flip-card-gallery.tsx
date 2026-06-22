@@ -203,6 +203,7 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
     "Two Souls Connected.jpeg": "An invisible string connects my soul directly to yours, forever.",
     "Wedding Dreams.jpeg": "Looking forward to the day you walk down the aisle. My ultimate dream.",
     "first image.jpeg": "Where it all began. The very first snapshot of our incredible journey.",
+    "First Bite.jpeg": "Sharing our first bite together. The sweetest taste of our beautiful forever.",
     "love birds.jpeg": "Two happy love birds, flying side by side through life's beautiful skies."
   };
 

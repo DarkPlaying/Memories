@@ -22,7 +22,7 @@ export async function GET() {
           scanDirectory(fullPath, prefix ? `${prefix}/${file}` : file);
         } else {
           const ext = path.extname(file).toLowerCase();
-          if (imageExtensions.includes(ext) && !file.includes("First Bite")) {
+          if (imageExtensions.includes(ext)) {
             images.push(prefix ? `${prefix}/${file}` : file);
           }
         }
