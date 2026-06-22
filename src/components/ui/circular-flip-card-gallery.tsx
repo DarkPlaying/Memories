@@ -91,7 +91,7 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
       setBatchIndex(prev => {
         const maxBatches = Math.ceil(images.length / 16);
         if (direction === 'next') {
-          return prev + 1;
+          return (prev + 1) % maxBatches;
         } else {
           return prev - 1 < 0 ? maxBatches - 1 : prev - 1;
         }
@@ -206,18 +206,11 @@ export default function CircularGallery({ images = [] }: CircularGalleryProps) {
     "love birds.jpeg": "Two happy love birds, flying side by side through life's beautiful skies."
   };
 
-  // Extract exactly 16 images for the current batch
+  // Extract images for the current batch without repeating/padding
   const BATCH_SIZE = 16;
-  const totalImages = images.length > 0 ? images.length : defaultImages.length;
   const currentBatchImages = images.length > 0 
-    ? images.slice((batchIndex * BATCH_SIZE) % totalImages, ((batchIndex * BATCH_SIZE) % totalImages) + BATCH_SIZE)
+    ? images.slice(batchIndex * BATCH_SIZE, batchIndex * BATCH_SIZE + BATCH_SIZE)
     : defaultImages;
-
-  // Handle wraparound if we reach the end of the array to fill the 16 slots
-  if (images.length > 0 && currentBatchImages.length < BATCH_SIZE) {
-    const deficit = BATCH_SIZE - currentBatchImages.length;
-    currentBatchImages.push(...images.slice(0, deficit));
-  }
 
   // Map dynamic images with beautiful narrative cards
   const dynamicCardData = currentBatchImages.map((img, index) => {
