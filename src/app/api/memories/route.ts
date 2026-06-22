@@ -30,6 +30,16 @@ export async function GET() {
     };
 
     scanDirectory(baseDir);
+
+    // Sort images to ensure 'First Bite' is absolutely last in all galleries
+    images.sort((a, b) => {
+      const aIsBite = a.toLowerCase().includes("first bite");
+      const bIsBite = b.toLowerCase().includes("first bite");
+      if (aIsBite && !bIsBite) return 1;
+      if (!aIsBite && bIsBite) return -1;
+      return a.localeCompare(b);
+    });
+
     return NextResponse.json(images);
   } catch (error) {
     console.error("API route error reading memories directory:", error);
