@@ -62,7 +62,8 @@ const timelineData: TimelineItem[] = [
   // --- June ---
   { date: "Jun 06", title: "First long drive to Velachery for first interview", emoji: "🚗", category: "June" },
   { date: "Jun 09", title: "First 3D model edit", emoji: "💻", category: "June" },
-  { date: "Jun 13", title: "First beach visit and second interview drive together", emoji: "🏖️", category: "June" }
+  { date: "Jun 13", title: "First beach visit and second interview drive together", emoji: "🏖️", category: "June" },
+  { date: "Jun 24", title: "Longest call (24.06.2026 at 8:15 pm to 25.06.2026 at 10:18 AM - 14hr)", emoji: "📞", category: "June" }
 ];
 
 // --- Countdown Timer Subcomponent ---
