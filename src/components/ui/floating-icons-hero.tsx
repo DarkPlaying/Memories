@@ -421,7 +421,6 @@ function GalleryScene({
       loader.load(
         encodedUrl,
         (texture) => {
-          texture.colorSpace = THREE.SRGBColorSpace;
           loadedTextures[index] = texture;
           setTextures([...loadedTextures]);
         },
