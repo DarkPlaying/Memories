@@ -416,25 +416,45 @@ function GalleryScene({
 
   useEffect(() => {
     const loader = new THREE.TextureLoader();
+    const allDomImages = Array.from(document.querySelectorAll("img"));
 
-    normalizedImages.forEach((img, index) => {
-      // encodeURI ensures paths with spaces work correctly
-      const encodedUrl = encodeURI(img.src);
-      loader.load(
-        encodedUrl,
-        (texture) => {
-          texture.colorSpace = THREE.SRGBColorSpace;
-          // Disable expensive mipmap generation to prevent GPU upload stalls
-          texture.generateMipmaps = false;
-          texture.minFilter = THREE.LinearFilter;
-          texture.needsUpdate = true;
-          texturesRef.current[index] = texture;
-        },
-        undefined,
-        (err) => {
-          console.error("Error loading texture in 3D Gallery:", img.src, err);
-        }
+    normalizedImages.forEach((imgObj, index) => {
+      const encodedUrl = encodeURI(imgObj.src);
+      
+      const applyTextureSettings = (texture: THREE.Texture) => {
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.generateMipmaps = false;
+        texture.minFilter = THREE.LinearFilter;
+        texture.needsUpdate = true;
+        texturesRef.current[index] = texture;
+      };
+
+      // Find if this image is already in the DOM (e.g. from ArcGalleryHero)
+      const domImg = allDomImages.find(
+        (img) => img.src.endsWith(encodedUrl) || img.getAttribute("src") === imgObj.src
       );
+
+      if (domImg) {
+        if (domImg.complete && domImg.naturalWidth > 0) {
+          // Create texture instantly from already-decoded bitmap memory!
+          const texture = new THREE.Texture(domImg);
+          applyTextureSettings(texture);
+        } else {
+          // Wait for the DOM image to finish loading and then instantly use its decoded bitmap
+          domImg.addEventListener("load", () => {
+            const texture = new THREE.Texture(domImg);
+            applyTextureSettings(texture);
+          }, { once: true });
+        }
+      } else {
+        // Fallback to standard Three.js loader
+        loader.load(
+          encodedUrl,
+          applyTextureSettings,
+          undefined,
+          (err) => console.error("Error loading texture in 3D Gallery:", imgObj.src, err)
+        );
+      }
     });
 
     return () => {
