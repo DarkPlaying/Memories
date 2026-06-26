@@ -358,8 +358,8 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
     }
     return [];
   });
-  const wosMemories = useMemo(() => {
-    return memories.filter(img => img.toLowerCase().replace(/\\/g, "/").startsWith("wos/"));
+  const imageMemories = useMemo(() => {
+    return memories.filter(img => !img.toLowerCase().endsWith(".mp4") && !img.toLowerCase().endsWith(".mov"));
   }, [memories]);
   const [isPlayingMusic, setIsPlayingMusic] = useState(false);
   const [isMutedByUser, setIsMutedByUser] = useState(false);
@@ -762,15 +762,15 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
         }
       });
 
-      // Push first 24 memory images from `/WOS` to preload them beforehand!
+      // Push first 24 memory images to preload them beforehand!
       try {
         const res = await fetch("/api/memories");
         const memoriesData = await res.json();
         if (Array.isArray(memoriesData)) {
           memoriesData
-            .filter(img => img.toLowerCase().replace(/\\/g, "/").startsWith("wos/"))
+            .filter((img: string) => !img.toLowerCase().endsWith(".mp4") && !img.toLowerCase().endsWith(".mov"))
             .slice(0, 24)
-            .forEach(img => {
+            .forEach((img: string) => {
               pendingFrames.push({
                 url: `/memories/${img}`
               });
@@ -1357,7 +1357,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
               transition={{ duration: 1.0, ease: "easeOut" }}
               className="relative max-w-7xl mx-auto w-full flex flex-col items-center z-10"
             >
-              <CircularGallery images={wosMemories.filter(img => !img.toLowerCase().endsWith(".mp4") && !img.toLowerCase().endsWith(".mov"))} />
+              <CircularGallery images={imageMemories} />
             </motion.div>
 
             {/* Memorial Parts — interactive butterflies & 3D scrolling gallery */}
@@ -1374,7 +1374,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
                 subtitle="A dreamy collection of our most cherished moments, floating gracefully through time."
                 ctaText="Reveal Secret Memory"
                 ctaHref="/reveal"
-                images={wosMemories.map(img => `/memories/${img}`)}
+                images={imageMemories.map(img => `/memories/${img}`)}
               />
             </motion.div>
 
@@ -1386,7 +1386,7 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
               transition={{ duration: 1.0, ease: "easeOut" }}
               className="w-full relative z-10"
             >
-              <ArcGalleryHero images={wosMemories.map(img => `/memories/${img}`)} />
+              <ArcGalleryHero images={imageMemories.map(img => `/memories/${img}`)} />
             </motion.div>
 
             {/* Footer */}
