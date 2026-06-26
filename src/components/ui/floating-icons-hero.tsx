@@ -228,9 +228,9 @@ const createClothMaterial = () => {
           vec4 blurred = vec4(0.0);
           float total = 0.0;
           
-          for (float x = -2.0; x <= 2.0; x += 1.0) {
-            for (float y = -2.0; y <= 2.0; y += 1.0) {
-              vec2 offset = vec2(x, y) * texelSize * blurAmount;
+          for (float x = -1.0; x <= 1.0; x += 1.0) {
+            for (float y = -1.0; y <= 1.0; y += 1.0) {
+              vec2 offset = vec2(x, y) * texelSize * blurAmount * 2.0;
               float weight = 1.0 / (1.0 + length(vec2(x, y)));
               blurred += texture2D(map, vUv + offset) * weight;
               total += weight;
@@ -424,6 +424,10 @@ function GalleryScene({
         encodedUrl,
         (texture) => {
           texture.colorSpace = THREE.SRGBColorSpace;
+          // Disable expensive mipmap generation to prevent GPU upload stalls
+          texture.generateMipmaps = false;
+          texture.minFilter = THREE.LinearFilter;
+          texture.needsUpdate = true;
           texturesRef.current[index] = texture;
         },
         undefined,
