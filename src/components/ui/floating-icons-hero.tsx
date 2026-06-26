@@ -243,6 +243,9 @@ const createClothMaterial = () => {
         color.rgb += vec3(curveHighlight * 0.1);
         
         gl_FragColor = vec4(color.rgb, color.a * opacity);
+        
+        // Convert from Linear back to sRGB for display to fix dark contrast!
+        gl_FragColor.rgb = pow(gl_FragColor.rgb, vec3(1.0 / 2.2));
       }
     `,
   });
@@ -251,7 +254,7 @@ const createClothMaterial = () => {
 const ImagePlane = ({
   planeIndex,
   planesData,
-  textures,
+  texturesRef,
   materials,
   depthRange,
   fadeSettings,
@@ -259,7 +262,7 @@ const ImagePlane = ({
 }: {
   planeIndex: number;
   planesData: React.MutableRefObject<PlaneData[]>;
-  textures: THREE.Texture[];
+  texturesRef: React.MutableRefObject<THREE.Texture[]>;
   materials: THREE.ShaderMaterial[];
   depthRange: number;
   fadeSettings: FadeSettings;
@@ -286,7 +289,7 @@ const ImagePlane = ({
     meshRef.current.position.set(plane.x, plane.y, worldZ);
 
     // Update scale and texture dynamically based on image loading
-    const texture = textures[plane.imageIndex];
+    const texture = texturesRef.current[plane.imageIndex];
     if (texture && texture.image) {
       meshRef.current.visible = true;
       const aspect = (texture.image as any).width / (texture.image as any).height;
@@ -409,11 +412,10 @@ function GalleryScene({
     [images]
   );
 
-  const [textures, setTextures] = useState<THREE.Texture[]>([]);
+  const texturesRef = useRef<THREE.Texture[]>([]);
 
   useEffect(() => {
     const loader = new THREE.TextureLoader();
-    const loadedTextures: THREE.Texture[] = new Array(normalizedImages.length);
 
     normalizedImages.forEach((img, index) => {
       // encodeURI ensures paths with spaces work correctly
@@ -421,8 +423,8 @@ function GalleryScene({
       loader.load(
         encodedUrl,
         (texture) => {
-          loadedTextures[index] = texture;
-          setTextures([...loadedTextures]);
+          texture.colorSpace = THREE.SRGBColorSpace;
+          texturesRef.current[index] = texture;
         },
         undefined,
         (err) => {
@@ -432,7 +434,7 @@ function GalleryScene({
     });
 
     return () => {
-      loadedTextures.forEach((t) => t?.dispose());
+      texturesRef.current.forEach((t) => t?.dispose());
     };
   }, [normalizedImages]);
 
@@ -610,17 +612,16 @@ function GalleryScene({
   return (
     <>
       {planesData.current.map((plane, i) => {
-        const texture = textures[plane.imageIndex];
         const material = materials[i];
 
-        if (!texture || !material) return null;
+        if (!material) return null;
 
         return (
           <ImagePlane
             key={plane.index}
             planeIndex={i}
             planesData={planesData}
-            textures={textures}
+            texturesRef={texturesRef}
             materials={materials}
             depthRange={depthRange}
             fadeSettings={fadeSettings}
