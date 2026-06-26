@@ -736,9 +736,9 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
       setIsPreloading(false);
 
       // Create a flat list of all remaining background frames and memories to load beforehand
-      const pendingFrames: { folder?: string; index?: number; url: string }[] = [];
+      const pendingFrames: { folder?: string; index?: number; url: string; isVideo?: boolean }[] = [];
 
-      // Push f1-f5 frames
+      // 1. Priority: Push f1-f5 frames (Story Frames)
       const folderCounts = [
         { name: "f1", count: 300 },
         { name: "f2", count: 290 },
@@ -762,17 +762,28 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
         }
       });
 
-      // Push first 24 memory images to preload them beforehand!
+      // 2 & 3. Priority: Push all images (59 images), then push videos (2 videos)
       try {
         const res = await fetch("/api/memories");
         const memoriesData = await res.json();
         if (Array.isArray(memoriesData)) {
+          // Push Images
           memoriesData
             .filter((img: string) => !img.toLowerCase().endsWith(".mp4") && !img.toLowerCase().endsWith(".mov"))
-            .slice(0, 24)
             .forEach((img: string) => {
               pendingFrames.push({
-                url: `/memories/${img}`
+                url: `/memories/${img}`,
+                isVideo: false
+              });
+            });
+            
+          // Push Videos last
+          memoriesData
+            .filter((img: string) => img.toLowerCase().endsWith(".mp4") || img.toLowerCase().endsWith(".mov"))
+            .forEach((img: string) => {
+              pendingFrames.push({
+                url: `/memories/${img}`,
+                isVideo: true
               });
             });
         }
@@ -798,6 +809,17 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
           // Fetch with AbortSignal to instantly release HTTP sockets and network when leaving the page!
           const response = await fetch(frameInfo.url, { signal });
           if (!response.ok) throw new Error("Fetch failed");
+          
+          if (frameInfo.isVideo) {
+            // For videos, fetching it into the browser cache is enough.
+            if (active && !signal.aborted) {
+              loadedBackgroundCount++;
+              setLoadedPercent(Math.round((loadedBackgroundCount / totalBackgroundFrames) * 100));
+            }
+            loadNext();
+            return;
+          }
+
           const blob = await response.blob();
           const objectUrl = URL.createObjectURL(blob);
 
