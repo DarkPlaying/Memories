@@ -215,29 +215,12 @@ const createClothMaterial = () => {
     fragmentShader: `
       uniform sampler2D map;
       uniform float opacity;
-      uniform float blurAmount;
       uniform float scrollForce;
       varying vec2 vUv;
       varying vec3 vNormal;
       
       void main() {
         vec4 color = texture2D(map, vUv);
-        
-        if (blurAmount > 0.0) {
-          vec2 texelSize = 1.0 / vec2(textureSize(map, 0));
-          vec4 blurred = vec4(0.0);
-          float total = 0.0;
-          
-          for (float x = -1.0; x <= 1.0; x += 1.0) {
-            for (float y = -1.0; y <= 1.0; y += 1.0) {
-              vec2 offset = vec2(x, y) * texelSize * blurAmount * 2.0;
-              float weight = 1.0 / (1.0 + length(vec2(x, y)));
-              blurred += texture2D(map, vUv + offset) * weight;
-              total += weight;
-            }
-          }
-          color = blurred / total;
-        }
         
         float curveHighlight = abs(scrollForce) * 0.05;
         color.rgb += vec3(curveHighlight * 0.1);
@@ -292,7 +275,10 @@ const ImagePlane = ({
     const texture = texturesRef.current[plane.imageIndex];
     if (texture && texture.image) {
       meshRef.current.visible = true;
-      const aspect = (texture.image as any).width / (texture.image as any).height;
+      const img = texture.image as any;
+      const imgWidth = img.naturalWidth || img.width;
+      const imgHeight = img.naturalHeight || img.height;
+      const aspect = imgWidth && imgHeight ? imgWidth / imgHeight : 1;
       const scale: [number, number, number] =
         aspect > 1 ? [3.8 * aspect, 3.8, 1] : [3.8, 3.8 / aspect, 1];
       meshRef.current.scale.set(...scale);
@@ -740,7 +726,8 @@ export function InfiniteGallery({
     <div className={className} style={style}>
       <Canvas
         camera={{ position: [0, 0, 0], fov: 55 }}
-        gl={{ antialias: true, alpha: true }}
+        gl={{ antialias: false, alpha: true, powerPreference: "high-performance" }}
+        dpr={[1, 1.5]}
       >
         <Suspense fallback={null}>
           <GalleryScene
