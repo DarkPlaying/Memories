@@ -288,6 +288,7 @@ const ImagePlane = ({
     // Update scale and texture dynamically based on image loading
     const texture = textures[plane.imageIndex];
     if (texture && texture.image) {
+      meshRef.current.visible = true;
       const aspect = (texture.image as any).width / (texture.image as any).height;
       const scale: [number, number, number] =
         aspect > 1 ? [3.8 * aspect, 3.8, 1] : [3.8, 3.8 / aspect, 1];
@@ -296,6 +297,8 @@ const ImagePlane = ({
       if (material.uniforms && material.uniforms.map) {
         material.uniforms.map.value = texture;
       }
+    } else {
+      meshRef.current.visible = false;
     }
 
     // Calculate opacity based on fade settings
@@ -406,7 +409,33 @@ function GalleryScene({
     [images]
   );
 
-  const textures = useTexture(normalizedImages.map((img) => img.src));
+  const [textures, setTextures] = useState<THREE.Texture[]>([]);
+
+  useEffect(() => {
+    const loader = new THREE.TextureLoader();
+    const loadedTextures: THREE.Texture[] = new Array(normalizedImages.length);
+
+    normalizedImages.forEach((img, index) => {
+      // encodeURI ensures paths with spaces work correctly
+      const encodedUrl = encodeURI(img.src);
+      loader.load(
+        encodedUrl,
+        (texture) => {
+          texture.colorSpace = THREE.SRGBColorSpace;
+          loadedTextures[index] = texture;
+          setTextures([...loadedTextures]);
+        },
+        undefined,
+        (err) => {
+          console.error("Error loading texture in 3D Gallery:", img.src, err);
+        }
+      );
+    });
+
+    return () => {
+      loadedTextures.forEach((t) => t?.dispose());
+    };
+  }, [normalizedImages]);
 
   const materials = useMemo(
     () => Array.from({ length: visibleCount }, () => createClothMaterial()),
