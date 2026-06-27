@@ -36,7 +36,7 @@ function ModelViewer({ modelName }: { modelName: string }) {
   if (modelName === "her") {
     return <GlbModel url="/3d/her.glb" color={materialColor} />;
   } else if (modelName === "keychain") {
-    return <ObjModel url="/3d/model (1).obj" color={materialColor} />;
+    return <ObjModel url="/3d/model (1).obj" color={materialColor} rotation={[0, Math.PI, 0]} />;
   } else {
     return <ObjModel url={`/3d/${modelName}.obj`} color={materialColor} />;
   }
@@ -111,7 +111,7 @@ function PlyModel({ url, color }: { url: string; color: string }) {
   );
 }
 
-function ObjModel({ url, color }: { url: string; color: string }) {
+function ObjModel({ url, color, rotation }: { url: string; color: string; rotation?: [number, number, number] }) {
   const obj = useLoader(OBJLoader, url);
 
   const cloned = useMemo(() => {
@@ -142,7 +142,11 @@ function ObjModel({ url, color }: { url: string; color: string }) {
     cloned.scale.setScalar(scale);
   }, [cloned]);
 
-  return <primitive object={cloned} />;
+  return (
+    <group rotation={rotation || [0, 0, 0]}>
+      <primitive object={cloned} />
+    </group>
+  );
 }
 
 // ============================================================================
