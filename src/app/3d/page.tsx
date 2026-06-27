@@ -46,6 +46,22 @@ function GlbModel({ url, color }: { url: string; color: string }) {
   const { scene } = useGLTF(url);
   const cloned = useMemo(() => {
     const clone = scene.clone();
+    
+    clone.scale.setScalar(1);
+    clone.position.set(0, 0, 0);
+
+    const box = new THREE.Box3().setFromObject(clone);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const scale = 5 / (maxDim || 1);
+    
+    clone.scale.setScalar(scale);
+    clone.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
+
     clone.traverse((child: any) => {
       if (child instanceof THREE.Mesh) {
         child.material = new THREE.MeshStandardMaterial({
@@ -58,19 +74,6 @@ function GlbModel({ url, color }: { url: string; color: string }) {
     });
     return clone;
   }, [scene, color]);
-
-  useEffect(() => {
-    const box = new THREE.Box3().setFromObject(cloned);
-    const center = new THREE.Vector3();
-    box.getCenter(center);
-    cloned.position.sub(center);
-
-    const size = new THREE.Vector3();
-    box.getSize(size);
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const scale = 5 / (maxDim || 1);
-    cloned.scale.setScalar(scale);
-  }, [cloned]);
 
   return <primitive object={cloned} />;
 }
@@ -116,6 +119,19 @@ function ObjModel({ url, color, rotation }: { url: string; color: string; rotati
 
   const cloned = useMemo(() => {
     const clone = obj.clone();
+    
+    const box = new THREE.Box3().setFromObject(clone);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const scale = 5 / (maxDim || 1);
+    
+    clone.scale.setScalar(scale);
+    clone.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
+    
     clone.traverse((child: any) => {
       if (child instanceof THREE.Mesh) {
         child.material = new THREE.MeshStandardMaterial({
@@ -128,19 +144,6 @@ function ObjModel({ url, color, rotation }: { url: string; color: string; rotati
     });
     return clone;
   }, [obj, color]);
-
-  useEffect(() => {
-    const box = new THREE.Box3().setFromObject(cloned);
-    const center = new THREE.Vector3();
-    box.getCenter(center);
-    cloned.position.sub(center);
-
-    const size = new THREE.Vector3();
-    box.getSize(size);
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const scale = 5 / (maxDim || 1);
-    cloned.scale.setScalar(scale);
-  }, [cloned]);
 
   return (
     <group rotation={rotation || [0, 0, 0]}>
