@@ -173,7 +173,7 @@ export default function RevealPage() {
       <img
         src="/Ourstory26.jpg"
         alt="Secret Love Memory"
-        className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none z-0"
+        className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none z-0"
       />
 
       {/* Full-Screen Scratch-Off Canvas */}
