@@ -39,7 +39,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <link rel="preload" href="/BG.jpg" as="image" />
+        <link rel="preload" href="/ourstory26.jpg" as="image" />
       </head>
       <body 
         className="min-h-full flex flex-col bg-black text-white selection:bg-rose-500 selection:text-white"
