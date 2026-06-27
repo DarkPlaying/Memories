@@ -4606,11 +4606,6 @@ export default function MailingPage() {
             onClose={() => {
               setShowNoMessageAlert(false);
             }}
-            onAction={() => {
-              setShowNoMessageAlert(false);
-              handleOpenComposer(true);
-            }}
-            actionText="Write Eternal Letter"
             className="bg-neutral-900/95 border-white/10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.85)] text-white backdrop-blur-xl"
           />
         </div>
