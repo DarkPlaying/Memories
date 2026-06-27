@@ -407,6 +407,7 @@ function FullChatContent() {
   const [scrollTargetIntent, setScrollTargetIntent] = useState<"date" | "marked-word" | null>(null);
 
   const [isMobile, setIsMobile] = useState(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setIsMobile(window.innerWidth < 640);
@@ -865,26 +866,33 @@ function FullChatContent() {
 
     // Update currentDateIndex dynamically based on the first visible message as the user scrolls
     if (!isManualSelecting && datesList.length > 0) {
-      const containerScrollTop = container.scrollTop;
-      const bubbleElements = container.querySelectorAll('[data-message-bubble="true"]');
-      let firstVisibleMsgId: string | null = null;
-      for (let i = 0; i < bubbleElements.length; i++) {
-        const el = bubbleElements[i] as HTMLElement;
-        if (el.offsetTop >= containerScrollTop - 15) {
-          firstVisibleMsgId = el.getAttribute('data-msg-id');
-          break;
-        }
-      }
+      if (scrollTimeoutRef.current) return;
+      
+      scrollTimeoutRef.current = setTimeout(() => {
+        scrollTimeoutRef.current = null;
+        if (!container) return;
 
-      if (firstVisibleMsgId) {
-        const msg = messages.find(m => m.id === firstVisibleMsgId);
-        if (msg && msg.date) {
-          const foundIdx = datesList.findIndex(d => d.date === msg.date);
-          if (foundIdx !== -1 && foundIdx !== currentDateIndex) {
-            setCurrentDateIndex(foundIdx);
+        const containerScrollTop = container.scrollTop;
+        const bubbleElements = container.querySelectorAll('[data-message-bubble="true"]');
+        let firstVisibleMsgId: string | null = null;
+        for (let i = 0; i < bubbleElements.length; i++) {
+          const el = bubbleElements[i] as HTMLElement;
+          if (el.offsetTop >= containerScrollTop - 15) {
+            firstVisibleMsgId = el.getAttribute('data-msg-id');
+            break;
           }
         }
-      }
+
+        if (firstVisibleMsgId) {
+          const msg = messages.find(m => m.id === firstVisibleMsgId);
+          if (msg && msg.date) {
+            const foundIdx = datesList.findIndex(d => d.date === msg.date);
+            if (foundIdx !== -1 && foundIdx !== currentDateIndex) {
+              setCurrentDateIndex(foundIdx);
+            }
+          }
+        }
+      }, 150);
     }
   };
 
