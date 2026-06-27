@@ -23,7 +23,7 @@ function ModelViewer({ modelName }: { modelName: string }) {
       case "me":
         return "#f59e0b"; // Gold
       case "keychain":
-        return "#111111"; // Black text
+        return "#f59e0b"; // Gold
       case "pair":
         return "#f59e0b"; // Violet
       case "toy":
@@ -308,6 +308,8 @@ function ViewerContent() {
             enablePan={true}
             enableZoom={true}
             enableRotate={true}
+            enableDamping={true}
+            dampingFactor={0.05}
             minDistance={2}
             maxDistance={15}
             makeDefault
