@@ -104,7 +104,7 @@ export default function RevealPage() {
         return (
           <div className="w-full flex flex-col items-center justify-center gap-4">
             <h3 className="text-white font-playfair font-bold text-lg md:text-xl text-center">Our First Song</h3>
-            <AudioPlayer src="/love.mp3" cover="/ourstory26.jpg" title="Our story" />
+            <AudioPlayer src="/love.mp3" cover="/Ourstory26.jpg" title="Our story" />
           </div>
         );
       case 2:
@@ -171,7 +171,7 @@ export default function RevealPage() {
     <main className="relative w-full h-screen overflow-hidden bg-black select-none">
       {/* Background Image (Revealed by scratching) */}
       <img
-        src="/ourstory26.jpg"
+        src="/Ourstory26.jpg"
         alt="Secret Love Memory"
         className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none z-0"
       />
