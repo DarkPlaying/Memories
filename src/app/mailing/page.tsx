@@ -4009,7 +4009,7 @@ export default function MailingPage() {
                   <span className="sm:hidden">Go to Start</span>
                 </button>
                 <a
-                  href={`/mailing/full-chat?date=27/12/2024`}
+                  href={`/mailing/full-chat`}
                   className="flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 sm:px-3.5 sm:py-1.5 rounded-full border border-purple-800/40 bg-purple-950/20 hover:bg-purple-900/40 hover:border-purple-500/50 text-[10px] sm:text-xs font-semibold text-purple-300 transition cursor-pointer font-outfit shadow-md"
                 >
                   <MessageSquare size={10} className="text-purple-400 sm:size-3" />
