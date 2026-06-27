@@ -23,7 +23,7 @@ function ModelViewer({ modelName }: { modelName: string }) {
       case "me":
         return "#f59e0b"; // Gold
       case "keychain":
-        return "#f59e0b"; // Gold
+        return "#111111"; // Black text
       case "pair":
         return "#f59e0b"; // Violet
       case "toy":
