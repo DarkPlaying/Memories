@@ -45,6 +45,7 @@ interface ChatScreenProps {
   savedReadingIndex: number | null;
   scrollTargetIntent: "date" | "marked-word" | null;
   currentStartIndex: number;
+  onScrollComplete?: () => void;
 }
 
 interface ChatScreenRef {
@@ -64,7 +65,8 @@ const ChatScreen = React.forwardRef<ChatScreenRef, ChatScreenProps>(({
   savedMarkedWordInfo,
   savedReadingIndex,
   scrollTargetIntent,
-  currentStartIndex
+  currentStartIndex,
+  onScrollComplete
 }, ref) => {
   const listRef = useRef<HTMLDivElement>(null);
   const hasScrolledToDateRef = useRef<string | null>(null);
@@ -123,6 +125,7 @@ const ChatScreen = React.forwardRef<ChatScreenRef, ChatScreenProps>(({
                 const scrollPos = markedMsgEl.offsetTop - 10;
                 container.scrollTo({ top: Math.max(0, scrollPos), behavior: "smooth" });
                 hasScrolledToDateRef.current = "marked-word";
+                if (onScrollComplete) onScrollComplete();
               }
             } else if (attempts < 8) {
               attempts++;
@@ -142,6 +145,7 @@ const ChatScreen = React.forwardRef<ChatScreenRef, ChatScreenProps>(({
             if (target) {
               container.scrollTo({ top: target.offsetTop - 10, behavior: "smooth" });
               hasScrolledToDateRef.current = selectedDate;
+              if (onScrollComplete) onScrollComplete();
             } else if (attempts < 8) {
               attempts++;
               setTimeout(tryScrollDate, 100);
@@ -652,10 +656,57 @@ function FullChatContent() {
           }
         }
 
-        // 2. Start initial fetch immediately if we found a local index
+        // 2. Start initial fetch immediately
         if (firestoreIndex !== null) {
           setSavedReadingIndex(firestoreIndex);
           setSavedMarkedWordInfo(firestoreWordInfo);
+        }
+
+        if (dateParam) {
+          const foundIdx = datesList.findIndex(d => d.date === dateParam);
+          if (foundIdx !== -1) {
+            setCurrentDateIndex(foundIdx);
+            setScrollTargetIntent("date");
+
+            let fetchIndex = datesList[foundIdx].index;
+            let limit = 40;
+
+            if (foundIdx > 0) {
+              fetchIndex = datesList[foundIdx - 1].index;
+              if (foundIdx + 1 < datesList.length) {
+                limit = datesList[foundIdx + 1].index - fetchIndex;
+              } else {
+                limit = 100;
+              }
+            } else {
+              if (foundIdx + 1 < datesList.length) {
+                limit = datesList[foundIdx + 1].index - fetchIndex;
+              }
+            }
+            limit = Math.max(100, limit + 50); // Large buffer
+            fetchMessagesFromIndex(fetchIndex, true, limit);
+          } else {
+            // Fallback if date not found
+            if (firestoreIndex !== null) {
+              setScrollTargetIntent("marked-word");
+              const matched = matchDateToIndex(firestoreIndex, datesList);
+              setCurrentDateIndex(matched);
+              let fetchIndex = firestoreIndex;
+              let limit = 100;
+              if (matched > 0) {
+                fetchIndex = datesList[matched - 1].index;
+                const diff = firestoreIndex - fetchIndex;
+                limit = Math.max(100, diff + 100);
+              } else {
+                limit = Math.max(100, firestoreIndex + 100);
+              }
+              fetchMessagesFromIndex(fetchIndex, true, limit);
+            } else {
+              setScrollTargetIntent(null);
+              fetchMessagesFromIndex(0, true);
+            }
+          }
+        } else if (firestoreIndex !== null) {
           setScrollTargetIntent("marked-word");
 
           const matched = matchDateToIndex(firestoreIndex, datesList);
@@ -672,38 +723,8 @@ function FullChatContent() {
           }
           fetchMessagesFromIndex(fetchIndex, true, limit);
         } else {
-          // Fallback to dateParam if present
-          if (dateParam) {
-            const foundIdx = datesList.findIndex(d => d.date === dateParam);
-            if (foundIdx !== -1) {
-              setCurrentDateIndex(foundIdx);
-              setScrollTargetIntent("date");
-
-              let fetchIndex = datesList[foundIdx].index;
-              let limit = 40;
-
-              if (foundIdx > 0) {
-                fetchIndex = datesList[foundIdx - 1].index;
-                if (foundIdx + 1 < datesList.length) {
-                  limit = datesList[foundIdx + 1].index - fetchIndex;
-                } else {
-                  limit = 100;
-                }
-              } else {
-                if (foundIdx + 1 < datesList.length) {
-                  limit = datesList[foundIdx + 1].index - fetchIndex;
-                }
-              }
-              limit = Math.max(100, limit + 50); // Large buffer
-              fetchMessagesFromIndex(fetchIndex, true, limit);
-            } else {
-              setScrollTargetIntent(null);
-              fetchMessagesFromIndex(0, true);
-            }
-          } else {
-            setScrollTargetIntent(null);
-            fetchMessagesFromIndex(0, true);
-          }
+          setScrollTargetIntent(null);
+          fetchMessagesFromIndex(0, true);
         }
 
         // 3. Query Firestore in the background for profile details and latest marked point
@@ -741,20 +762,22 @@ function FullChatContent() {
 
                     setSavedReadingIndex(fsIndex);
                     setSavedMarkedWordInfo(fsWordInfo);
-                    setScrollTargetIntent("marked-word");
-                    const matched = matchDateToIndex(fsIndex, datesList);
-                    setCurrentDateIndex(matched);
+                    if (!dateParam) {
+                      setScrollTargetIntent("marked-word");
+                      const matched = matchDateToIndex(fsIndex, datesList);
+                      setCurrentDateIndex(matched);
 
-                    let fetchIndex = fsIndex;
-                    let limit = 100;
-                    if (matched > 0) {
-                      fetchIndex = datesList[matched - 1].index;
-                      const diff = fsIndex - fetchIndex;
-                      limit = Math.max(100, diff + 100);
-                    } else {
-                      limit = Math.max(100, fsIndex + 100);
+                      let fetchIndex = fsIndex;
+                      let limit = 100;
+                      if (matched > 0) {
+                        fetchIndex = datesList[matched - 1].index;
+                        const diff = fsIndex - fetchIndex;
+                        limit = Math.max(100, diff + 100);
+                      } else {
+                        limit = Math.max(100, fsIndex + 100);
+                      }
+                      fetchMessagesFromIndex(fetchIndex, true, limit);
                     }
-                    fetchMessagesFromIndex(fetchIndex, true, limit);
                   }
                 }
               } else if (data.fullChatReadingIndex === null) {
@@ -1223,6 +1246,7 @@ function FullChatContent() {
               savedReadingIndex={savedReadingIndex}
               scrollTargetIntent={scrollTargetIntent}
               currentStartIndex={currentStartIndex}
+              onScrollComplete={() => setScrollTargetIntent(null)}
             />
           </div>
 
