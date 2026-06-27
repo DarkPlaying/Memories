@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import os from "os";
 
 function parseChatFile() {
   const filePath = path.join(process.cwd(), "WhatsApp Chat with Divya 🩶(LP).txt");
@@ -9,7 +10,8 @@ function parseChatFile() {
     return;
   }
 
-  const cacheDir = path.join(process.cwd(), "scratch");
+  const scratchDir = path.join(process.cwd(), "scratch");
+  const cacheDir = process.env.VERCEL || process.env.NODE_ENV === "production" ? path.join(os.tmpdir(), "scratch") : scratchDir;
   const datesDir = path.join(cacheDir, "dates");
   const cachePath = path.join(cacheDir, "chat_cache.json");
   const datesListPath = path.join(cacheDir, "dates_list.json");
@@ -101,7 +103,7 @@ function parseChatFile() {
   // Load matched dates from sorted_dates.txt
   const matchedDatesSet = new Set<string>();
   try {
-    const sortedDatesPath = path.join(cacheDir, "sorted_dates.txt");
+    const sortedDatesPath = path.join(scratchDir, "sorted_dates.txt");
     if (fs.existsSync(sortedDatesPath)) {
       const txtContent = fs.readFileSync(sortedDatesPath, "utf-8");
       const matches = txtContent.match(/\d{2}\/\d{2}\/\d{4}/g);
@@ -159,7 +161,7 @@ function ensureCacheInitialized() {
     return;
   }
 
-  const cacheDir = path.join(process.cwd(), "scratch");
+  const cacheDir = process.env.VERCEL || process.env.NODE_ENV === "production" ? path.join(os.tmpdir(), "scratch") : path.join(process.cwd(), "scratch");
   const datesListPath = path.join(cacheDir, "dates_list.json");
 
   let cacheStale = true;
@@ -189,7 +191,7 @@ export async function GET(request: Request) {
     if (isNaN(startIndex)) startIndex = -1;
     const action = searchParams.get("action");
 
-    const cacheDir = path.join(process.cwd(), "scratch");
+    const cacheDir = process.env.VERCEL || process.env.NODE_ENV === "production" ? path.join(os.tmpdir(), "scratch") : path.join(process.cwd(), "scratch");
     const datesListPath = path.join(cacheDir, "dates_list.json");
 
     if (action === "previews") {
@@ -203,7 +205,7 @@ export async function GET(request: Request) {
         });
       } else {
         try {
-          const sortedDatesPath = path.join(cacheDir, "sorted_dates.txt");
+          const sortedDatesPath = path.join(process.cwd(), "scratch", "sorted_dates.txt");
           if (fs.existsSync(sortedDatesPath)) {
             const content = fs.readFileSync(sortedDatesPath, "utf-8");
             const matches = content.match(/\d{2}\/\d{2}\/\d{4}/g);
