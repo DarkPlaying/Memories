@@ -127,7 +127,7 @@ export default function RevealPage() {
           <div className="w-full h-full flex flex-col items-center justify-center p-2 bg-neutral-900/10">
             <h3 className="text-white font-playfair font-bold text-lg md:text-xl mb-4 text-center">Our 3D Memories</h3>
             <ImageSwiper
-              images="/3d images/her.jpeg, /3d images/keychain.png, /3d images/me.png, /3d images/pair.png, /3d images/toy.png"
+              images="/3d images/keychain.png, /3d images/her.jpeg, /3d images/me.png, /3d images/pair.png, /3d images/toy.png"
             />
           </div>
         );
