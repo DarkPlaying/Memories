@@ -969,6 +969,31 @@ export default function MailingPage() {
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
   }, [loggedInUser]);
+
+  // Listen for password changes across devices
+  useEffect(() => {
+    if (!loggedInUser) return;
+    
+    const unsubscribe = onSnapshot(doc(db, "profiles", loggedInUser.id), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const currentSessionPassword = sessionStorage.getItem("session_password");
+        if (data.password && currentSessionPassword && data.password !== currentSessionPassword) {
+          // Password has changed on another device!
+          setLoggedInUser(null);
+          sessionStorage.removeItem("logged_in_user_id");
+          sessionStorage.removeItem("session_password");
+          localStorage.removeItem(`session_expiry_${loggedInUser.id}`);
+          setPageState("landing");
+          setLoginState("select-profile");
+          alert("Your password was changed from another device. You have been logged out.");
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [loggedInUser]);
+
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [loginState, setLoginState] = useState<"select-profile" | "enter-password" | "set-password-enter" | "set-password-confirm" | "master-password" | "add-profile" | "reset-password-master" | "reset-password-new">("select-profile");
 
@@ -1291,10 +1316,18 @@ export default function MailingPage() {
 
         // Load active session
         const savedUserId = sessionStorage.getItem("logged_in_user_id");
+        const sessionPassword = sessionStorage.getItem("session_password");
         if (savedUserId) {
           const user = fetchedProfiles.find(p => p.id === savedUserId);
-          if (user) {
+          if (user && (!sessionPassword || user.password === sessionPassword)) {
             setLoggedInUser(user);
+            if (!sessionPassword && user.password) {
+               sessionStorage.setItem("session_password", user.password);
+            }
+          } else {
+            sessionStorage.removeItem("logged_in_user_id");
+            sessionStorage.removeItem("session_password");
+            setLoggedInUser(null);
           }
         }
       } catch (error) {
@@ -1318,9 +1351,19 @@ export default function MailingPage() {
           });
           setProfiles(localParsed);
           const savedUserId = sessionStorage.getItem("logged_in_user_id");
+          const sessionPassword = sessionStorage.getItem("session_password");
           if (savedUserId) {
             const user = localParsed.find((p: any) => p.id === savedUserId);
-            if (user) setLoggedInUser(user);
+            if (user && (!sessionPassword || user.password === sessionPassword)) {
+              setLoggedInUser(user);
+              if (!sessionPassword && user.password) {
+                 sessionStorage.setItem("session_password", user.password);
+              }
+            } else {
+              sessionStorage.removeItem("logged_in_user_id");
+              sessionStorage.removeItem("session_password");
+              setLoggedInUser(null);
+            }
           }
         }
       }
@@ -2727,6 +2770,7 @@ export default function MailingPage() {
                       }
                       setLoggedInUser(profile);
                       sessionStorage.setItem("logged_in_user_id", profile.id);
+                      sessionStorage.setItem("session_password", hashedInput);
                       localStorage.setItem(`session_expiry_${profile.id}`, (Date.now() + 2 * 60 * 60 * 1000).toString());
                       await syncOrCreateCountdown();
                       setLoginPasswordInput("");
@@ -3057,6 +3101,7 @@ export default function MailingPage() {
                   if (activeP) {
                     setLoggedInUser(activeP);
                     sessionStorage.setItem("logged_in_user_id", activeP.id);
+                    sessionStorage.setItem("session_password", hashedPassword);
                     localStorage.setItem(`session_expiry_${activeP.id}`, (Date.now() + 2 * 60 * 60 * 1000).toString());
                     await syncOrCreateCountdown();
                   }
@@ -4511,7 +4556,7 @@ export default function MailingPage() {
                     actionButton: updatedData.actionButton,
                     avatarAdjust: updatedData.avatarAdjust,
                     avatarCrop: updatedData.avatarCrop,
-                    password: hashedPassword,
+                    password: hashedPassword || p.password,
                     masterPassword: p.masterPassword || "8173d2fe9bb5cd11abee60d32903b1a9fb8f3a2b55a371f93808eb896481c3f0",
                     chatPassword: p.chatPassword || "160fba6868d2070e5ae03ce0fb9988d58231c4a56b8a94b4e9b5133cbf17d922"
                   };
@@ -4529,6 +4574,7 @@ export default function MailingPage() {
               const newLoggedIn = updatedProfiles.find(p => p.id === loggedInUser.id);
               if (newLoggedIn) {
                 setLoggedInUser(newLoggedIn);
+                sessionStorage.setItem("session_password", newLoggedIn.password || "");
               }
             }}
           />

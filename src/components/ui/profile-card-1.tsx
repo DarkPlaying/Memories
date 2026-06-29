@@ -68,7 +68,7 @@ export function GlassmorphismProfileCard({
   const [posY, setPosY] = useState(avatarAdjust?.y || 0);
 
   // Profile password
-  const [profilePassword, setProfilePassword] = useState(initialPassword);
+  const [profilePassword, setProfilePassword] = useState("");
   const [showEditPassword, setShowEditPassword] = useState(false);
 
   // Crop coordinates
@@ -140,7 +140,7 @@ export function GlassmorphismProfileCard({
     setPosX(avatarAdjust?.x || 0);
     setPosY(avatarAdjust?.y || 0);
     setAvatarCrop(initialAvatarCrop);
-    setProfilePassword(initialPassword);
+    setProfilePassword("");
     setShowEditPassword(false);
     setIsEditing(false);
   };
@@ -266,16 +266,27 @@ export function GlassmorphismProfileCard({
                     type={showEditPassword ? "text" : "password"}
                     value={profilePassword}
                     onChange={(e) => setProfilePassword(e.target.value)}
-                    className="w-full bg-transparent py-1.5 px-3 pr-10 text-xs text-white focus:outline-none focus:border-purple-500 font-mono"
-                    placeholder="New Password"
+                    className="w-full bg-transparent py-1.5 px-3 pr-20 text-xs text-white focus:outline-none focus:border-purple-500 font-mono"
+                    placeholder="New Password (leave blank to keep)"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowEditPassword(!showEditPassword)}
-                    className="absolute right-2.5 text-neutral-405 hover:text-white cursor-pointer select-none border-none bg-transparent"
-                  >
-                    {showEditPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                  </button>
+                  <div className="absolute right-2.5 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowEditPassword(!showEditPassword)}
+                      className="text-neutral-405 hover:text-white cursor-pointer select-none border-none bg-transparent p-0 flex items-center justify-center"
+                    >
+                      {showEditPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                    {profilePassword.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setProfilePassword("")}
+                        className="text-red-500 hover:text-red-400 cursor-pointer select-none border-none bg-transparent flex items-center justify-center p-0"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
