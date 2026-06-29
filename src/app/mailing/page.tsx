@@ -4750,10 +4750,10 @@ export default function MailingPage() {
               </AlertDialogDescription>
             </div>
           </AlertDialogHeader>
-          <AlertDialogFooter className="sm:justify-center">
+          <AlertDialogFooter className="w-full mt-2 sm:justify-center flex-col sm:flex-col">
             <AlertDialogAction
               onClick={() => setShowLogoutAlert(false)}
-              className="bg-purple-600 hover:bg-purple-700 text-white border-0 font-outfit font-semibold px-8 rounded-full"
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white border-0 font-outfit font-bold py-3.5 text-base sm:text-lg rounded-xl transition-all"
             >
               Okay
             </AlertDialogAction>
