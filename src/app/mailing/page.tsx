@@ -986,7 +986,7 @@ export default function MailingPage() {
           localStorage.removeItem(`session_expiry_${loggedInUser.id}`);
           setPageState("landing");
           setLoginState("select-profile");
-          alert("Your password was changed from another device. You have been logged out.");
+          setShowLogoutAlert(true);
         }
       }
     });
@@ -996,6 +996,7 @@ export default function MailingPage() {
 
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [loginState, setLoginState] = useState<"select-profile" | "enter-password" | "set-password-enter" | "set-password-confirm" | "master-password" | "add-profile" | "reset-password-master" | "reset-password-new">("select-profile");
+  const [showLogoutAlert, setShowLogoutAlert] = useState(false);
 
   const [tempNewPassword, setTempNewPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -4734,6 +4735,32 @@ export default function MailingPage() {
           </div>
         </div>
       )}
+
+      {/* Remote Logout Alert */}
+      <AlertDialog open={showLogoutAlert} onOpenChange={setShowLogoutAlert}>
+        <AlertDialogContent className="bg-neutral-900 border border-neutral-800 text-white shadow-2xl p-6 sm:p-8 rounded-3xl max-w-sm">
+          <AlertDialogHeader className="mb-4 items-center gap-2 flex flex-col">
+            <div className="shrink-0 rounded-full bg-red-950 p-3 border border-red-900/30 mb-2">
+              <LogOut className="size-5 text-red-400" />
+            </div>
+            <div className="flex flex-col gap-2 text-center">
+              <AlertDialogTitle className="text-xl font-bold font-playfair text-white text-center">Session Expired</AlertDialogTitle>
+              <AlertDialogDescription className="text-sm text-neutral-400 font-outfit text-center">
+                Your password was changed from another device. You have been securely logged out of this session.
+              </AlertDialogDescription>
+            </div>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="sm:justify-center">
+            <AlertDialogAction
+              onClick={() => setShowLogoutAlert(false)}
+              className="bg-purple-600 hover:bg-purple-700 text-white border-0 font-outfit font-semibold px-8 rounded-full"
+            >
+              Okay
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </main>
   );
 }
