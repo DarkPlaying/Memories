@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Outfit, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
+import { AutoRefresh } from "@/components/AutoRefresh";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -45,6 +46,7 @@ export default function RootLayout({
         className="min-h-full flex flex-col bg-black text-white selection:bg-rose-500 selection:text-white"
         suppressHydrationWarning
       >
+        <AutoRefresh />
         {/* Background Heart Animation */}
         <div 
           className="fixed inset-0 pointer-events-none z-0"
