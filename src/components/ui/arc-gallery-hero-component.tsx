@@ -803,17 +803,32 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
 
           {timelineData.map((item, index) => {
             const isLeft = index % 2 === 0;
+            const isNewCategory = index === 0 || item.category !== timelineData[index - 1].category;
 
             return (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 35 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-80px" }}
-                transition={{ duration: 0.6, delay: Math.min(index * 0.05, 0.3), ease: "easeOut" }}
-                className={`flex flex-col md:flex-row items-center w-full relative ${isLeft ? 'md:flex-row-reverse' : ''
-                  }`}
-              >
+              <React.Fragment key={index}>
+                {isNewCategory && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-40px" }}
+                    className="w-full flex justify-center my-2 sm:my-4 relative z-40"
+                  >
+                    <div className="px-6 py-2 sm:px-8 sm:py-2.5 rounded-full bg-[#111] border-2 border-pink-500/50 text-pink-200 font-playfair font-black tracking-widest uppercase text-xs sm:text-sm md:text-base shadow-[0_0_20px_rgba(244,63,94,0.4)] backdrop-blur-xl flex items-center gap-2">
+                      <Sparkles size={14} className="text-pink-400 animate-pulse" />
+                      {item.category}
+                      <Sparkles size={14} className="text-pink-400 animate-pulse" />
+                    </div>
+                  </motion.div>
+                )}
+                <motion.div
+                  initial={{ opacity: 0, y: 35 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-80px" }}
+                  transition={{ duration: 0.6, delay: Math.min(index * 0.05, 0.3), ease: "easeOut" }}
+                  className={`flex flex-col md:flex-row items-center w-full relative ${isLeft ? 'md:flex-row-reverse' : ''
+                    }`}
+                >
 
                 {/* Central Pulse Heart Node */}
                 <div className="absolute left-1/2 -translate-x-1/2 w-7 h-7 md:w-10 md:h-10 rounded-full bg-[#1c1c1e] border border-pink-500/30 md:border-2 md:border-pink-500/50 flex items-center justify-center z-30 shadow-[0_0_12px_rgba(244,63,94,0.5)]">
@@ -876,6 +891,7 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
                 <div className="w-full md:w-1/2 hidden md:block" />
 
               </motion.div>
+              </React.Fragment>
             );
           })}
         </div>
