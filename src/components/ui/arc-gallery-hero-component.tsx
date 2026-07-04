@@ -571,6 +571,102 @@ const WeddingInvitationFooter: React.FC = () => {
 
 // (HorizontalScroller removed to support clean vertical scroll flow)
 
+const groupedTimelineData = timelineData.reduce((acc, item) => {
+  const lastGroup = acc[acc.length - 1];
+  if (lastGroup && lastGroup.category === item.category) {
+    lastGroup.items.push(item);
+  } else {
+    acc.push({ category: item.category, items: [item] });
+  }
+  return acc;
+}, [] as { category: string; items: TimelineItem[] }[]);
+
+const MonthGroup = ({ 
+  group 
+}: { 
+  group: { category: string, items: TimelineItem[] }
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <motion.div 
+      onViewportEnter={() => setIsOpen(true)} 
+      viewport={{ margin: "-30% 0px -30% 0px", once: true }}
+      className="w-full flex flex-col items-center relative"
+    >
+      {/* Category Header */}
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`px-6 py-2 sm:px-8 sm:py-2.5 rounded-full border-2 text-pink-200 font-playfair font-black tracking-widest uppercase text-xs sm:text-sm md:text-base backdrop-blur-xl flex items-center gap-2 cursor-pointer z-40 relative my-4 transition-all duration-300 hover:scale-105 ${isOpen ? 'bg-[#ff0050]/20 border-pink-500 shadow-[0_0_20px_rgba(244,63,94,0.6)]' : 'bg-[#111] border-pink-500/50 shadow-[0_0_20px_rgba(244,63,94,0.3)]'}`}
+      >
+        <Sparkles size={14} className={`text-pink-400 ${isOpen ? 'animate-pulse' : ''}`} />
+        {group.category}
+        <Sparkles size={14} className={`text-pink-400 ${isOpen ? 'animate-pulse' : ''}`} />
+      </div>
+
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full overflow-hidden"
+          >
+             <div className="w-full flex flex-col gap-6 md:gap-8 py-8 relative">
+               {/* Vertical Timeline spine for this specific month group */}
+               <div className="absolute left-1/2 top-0 bottom-0 w-0.5 md:w-1 bg-gradient-to-b from-rose-500/90 via-pink-500/40 to-rose-500/90 -translate-x-1/2 rounded-full" />
+               
+               {group.items.map((item, index) => {
+                 const isLeft = index % 2 === 0;
+                 return (
+                   <motion.div
+                     key={index}
+                     initial={{ opacity: 0, y: 35 }}
+                     whileInView={{ opacity: 1, y: 0 }}
+                     viewport={{ once: true, margin: "-80px" }}
+                     transition={{ duration: 0.6, delay: Math.min(index * 0.05, 0.3), ease: "easeOut" }}
+                     className={`flex flex-col md:flex-row items-center w-full relative ${isLeft ? 'md:flex-row-reverse' : ''}`}
+                   >
+                     {/* Central Pulse Heart Node */}
+                     <div className="absolute left-1/2 -translate-x-1/2 w-7 h-7 md:w-10 md:h-10 rounded-full bg-[#1c1c1e] border border-pink-500/30 md:border-2 md:border-pink-500/50 flex items-center justify-center z-30 shadow-[0_0_12px_rgba(244,63,94,0.5)]">
+                       <motion.div animate={{ scale: [1, 1.4, 1] }} transition={{ duration: 1.6, repeat: Infinity, delay: index * 0.12 }} className="text-rose-500 flex items-center justify-center">
+                         <Heart size={10} className="text-rose-500 md:size-[14px]" fill="currentColor" />
+                       </motion.div>
+                     </div>
+
+                     {/* Content wrapper */}
+                     <div className="w-full md:w-1/2 px-4 md:px-10 flex justify-center">
+                       <div className="w-full max-w-xl p-4 sm:p-8 rounded-xl sm:rounded-3xl bg-white/[0.03] border border-white/10 shadow-[0_20px_45px_rgba(0,0,0,0.5)] hover:border-pink-500/30 hover:shadow-[0_20px_50px_rgba(244,63,94,0.08)] transition-all duration-300 backdrop-blur-md relative overflow-hidden group" style={{ boxShadow: item.category === 'Future' ? '0 20px 50px rgba(244,63,94,0.10), inset 0 0 20px rgba(255,255,255,0.03)' : '0 20px 45px rgba(0,0,0,0.5)' }}>
+                         {item.category === 'Future' && <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/[0.06] rounded-full blur-2xl pointer-events-none" />}
+                         <div className="flex items-center justify-between mb-4">
+                           <span className={`inline-flex items-center gap-1.5 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[9px] sm:text-[11px] font-outfit uppercase tracking-widest font-semibold ${item.category === 'Future' ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30' : 'bg-white/5 text-pink-300 border border-white/10'}`}>
+                             <Calendar size={11} />
+                             {item.date}
+                           </span>
+                           <span className="text-lg sm:text-2xl select-none filter drop-shadow-[0_0_6px_rgba(244,63,94,0.5)]">{item.emoji}</span>
+                         </div>
+                         <p className={`font-outfit leading-relaxed ${item.category === 'Future' ? 'text-white font-bold text-xs sm:text-base md:text-lg' : 'text-gray-100 text-[11px] sm:text-sm md:text-base'}`}>{item.title}</p>
+                         {item.category === 'Future' && (
+                           <div className="mt-4 flex items-center gap-1.5 text-rose-300/50">
+                             <Sparkles size={12} />
+                             <span className="text-[9px] font-outfit uppercase tracking-widest font-medium">MILESTONE FOREVER</span>
+                           </div>
+                         )}
+                       </div>
+                     </div>
+                     <div className="w-full md:w-1/2 hidden md:block" />
+                   </motion.div>
+                 );
+               })}
+             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
+
 export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
   images,
   startAngle = 10,
@@ -795,105 +891,13 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
 
       {/* GORGEOUS MARRIAGE TIMELINE LISTING */}
       <div className="w-full max-w-6xl px-4 mt-8 sm:mt-12 z-20 relative flex flex-col items-center">
-
-        {/* Vertical Timeline spine */}
-        <div className="absolute left-1/2 top-0 bottom-0 w-0.5 md:w-1 bg-gradient-to-b from-rose-500/90 via-pink-500/40 to-rose-500/90 -translate-x-1/2 rounded-full" />
-
-        <div className="w-full flex flex-col gap-12 md:gap-16 relative">
-
-          {timelineData.map((item, index) => {
-            const isLeft = index % 2 === 0;
-            const isNewCategory = index === 0 || item.category !== timelineData[index - 1].category;
-
-            return (
-              <React.Fragment key={index}>
-                {isNewCategory && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-40px" }}
-                    className="w-full flex justify-center my-2 sm:my-4 relative z-40"
-                  >
-                    <div className="px-6 py-2 sm:px-8 sm:py-2.5 rounded-full bg-[#111] border-2 border-pink-500/50 text-pink-200 font-playfair font-black tracking-widest uppercase text-xs sm:text-sm md:text-base shadow-[0_0_20px_rgba(244,63,94,0.4)] backdrop-blur-xl flex items-center gap-2">
-                      <Sparkles size={14} className="text-pink-400 animate-pulse" />
-                      {item.category}
-                      <Sparkles size={14} className="text-pink-400 animate-pulse" />
-                    </div>
-                  </motion.div>
-                )}
-                <motion.div
-                  initial={{ opacity: 0, y: 35 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-80px" }}
-                  transition={{ duration: 0.6, delay: Math.min(index * 0.05, 0.3), ease: "easeOut" }}
-                  className={`flex flex-col md:flex-row items-center w-full relative ${isLeft ? 'md:flex-row-reverse' : ''
-                    }`}
-                >
-
-                {/* Central Pulse Heart Node */}
-                <div className="absolute left-1/2 -translate-x-1/2 w-7 h-7 md:w-10 md:h-10 rounded-full bg-[#1c1c1e] border border-pink-500/30 md:border-2 md:border-pink-500/50 flex items-center justify-center z-30 shadow-[0_0_12px_rgba(244,63,94,0.5)]">
-                  <motion.div
-                    animate={{ scale: [1, 1.4, 1] }}
-                    transition={{ duration: 1.6, repeat: Infinity, delay: index * 0.12 }}
-                    className="text-rose-500 flex items-center justify-center"
-                  >
-                    <Heart size={10} className="text-rose-500 md:size-[14px]" fill="currentColor" />
-                  </motion.div>
-                </div>
-
-                {/* Left/Right content wrappers */}
-                <div className="w-full md:w-1/2 px-4 md:px-10 flex justify-center">
-                  <div
-                    className="w-full max-w-xl p-4 sm:p-8 rounded-xl sm:rounded-3xl bg-white/[0.03] border border-white/10 shadow-[0_20px_45px_rgba(0,0,0,0.5)] hover:border-pink-500/30 hover:shadow-[0_20px_50px_rgba(244,63,94,0.08)] transition-all duration-300 backdrop-blur-md relative overflow-hidden group"
-                    style={{
-                      boxShadow: item.category === 'Future'
-                        ? '0 20px 50px rgba(244,63,94,0.10), inset 0 0 20px rgba(255,255,255,0.03)'
-                        : '0 20px 45px rgba(0,0,0,0.5)'
-                    }}
-                  >
-                    {item.category === 'Future' && (
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/[0.06] rounded-full blur-2xl pointer-events-none" />
-                    )}
-
-                    {/* Badge */}
-                    <div className="flex items-center justify-between mb-4">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[9px] sm:text-[11px] font-outfit uppercase tracking-widest font-semibold ${item.category === 'Future'
-                        ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
-                        : 'bg-white/5 text-pink-300 border border-white/10'
-                        }`}>
-                        <Calendar size={11} />
-                        {item.date}
-                      </span>
-                      <span className="text-lg sm:text-2xl select-none filter drop-shadow-[0_0_6px_rgba(244,63,94,0.5)]">
-                        {item.emoji}
-                      </span>
-                    </div>
-
-                    {/* Text Title */}
-                    <p className={`font-outfit leading-relaxed ${item.category === 'Future'
-                      ? 'text-white font-bold text-xs sm:text-base md:text-lg'
-                      : 'text-gray-100 text-[11px] sm:text-sm md:text-base'
-                      }`}>
-                      {item.title}
-                    </p>
-
-                    {/* Decorative star for future items */}
-                    {item.category === 'Future' && (
-                      <div className="mt-4 flex items-center gap-1.5 text-rose-300/50">
-                        <Sparkles size={12} />
-                        <span className="text-[9px] font-outfit uppercase tracking-widest font-medium">MILESTONE FOREVER</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Empty spacer block for side balancing */}
-                <div className="w-full md:w-1/2 hidden md:block" />
-
-              </motion.div>
-              </React.Fragment>
-            );
-          })}
+        <div className="w-full flex flex-col gap-2 relative">
+          {groupedTimelineData.map((group) => (
+             <MonthGroup 
+               key={group.category}
+               group={group}
+             />
+          ))}
         </div>
       </div>
 
