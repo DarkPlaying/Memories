@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useTransform, AnimatePresence, useSpring } from 'framer-motion';
 import { Heart, Calendar, Star, Sparkles, MessageCircle, X } from 'lucide-react';
 import { AnimateNumber } from '@/components/ui/animated-blur-number';
 
@@ -587,16 +587,22 @@ const MonthGroup = ({
   group: { category: string, items: TimelineItem[] }
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   return (
     <motion.div 
-      onViewportEnter={() => setIsOpen(true)} 
-      viewport={{ margin: "-30% 0px -30% 0px", once: true }}
+      onViewportEnter={() => {
+        if (!hasInteracted) setIsOpen(true);
+      }}
+      viewport={{ margin: "100% 0px 100% 0px", once: true }}
       className="w-full flex flex-col items-center relative"
     >
       {/* Category Header */}
       <div 
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          setIsOpen(!isOpen);
+          setHasInteracted(true);
+        }}
         className={`px-6 py-2 sm:px-8 sm:py-2.5 rounded-full border-2 text-pink-200 font-playfair font-black tracking-widest uppercase text-xs sm:text-sm md:text-base backdrop-blur-xl flex items-center gap-2 cursor-pointer z-40 relative my-4 transition-all duration-300 hover:scale-105 ${isOpen ? 'bg-[#ff0050]/20 border-pink-500 shadow-[0_0_20px_rgba(244,63,94,0.6)]' : 'bg-[#111] border-pink-500/50 shadow-[0_0_20px_rgba(244,63,94,0.3)]'}`}
       >
         <Sparkles size={14} className={`text-pink-400 ${isOpen ? 'animate-pulse' : ''}`} />
@@ -613,9 +619,7 @@ const MonthGroup = ({
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="w-full overflow-hidden"
           >
-             <div className="w-full flex flex-col gap-6 md:gap-8 py-8 relative">
-               {/* Vertical Timeline spine for this specific month group */}
-               <div className="absolute left-1/2 top-0 bottom-0 w-0.5 md:w-1 bg-gradient-to-b from-rose-500/90 via-pink-500/40 to-rose-500/90 -translate-x-1/2 rounded-full" />
+             <div className="w-full flex flex-col gap-6 md:gap-8 py-8 relative z-10">
                
                {group.items.map((item, index) => {
                  const isLeft = index % 2 === 0;
@@ -624,16 +628,26 @@ const MonthGroup = ({
                      key={index}
                      initial={{ opacity: 0, y: 35 }}
                      whileInView={{ opacity: 1, y: 0 }}
-                     viewport={{ once: true, margin: "-80px" }}
+                     viewport={{ once: true, margin: "-50% 0px -50% 0px" }}
                      transition={{ duration: 0.6, delay: Math.min(index * 0.05, 0.3), ease: "easeOut" }}
                      className={`flex flex-col md:flex-row items-center w-full relative ${isLeft ? 'md:flex-row-reverse' : ''}`}
                    >
                      {/* Central Pulse Heart Node */}
-                     <div className="absolute left-1/2 -translate-x-1/2 w-7 h-7 md:w-10 md:h-10 rounded-full bg-[#1c1c1e] border border-pink-500/30 md:border-2 md:border-pink-500/50 flex items-center justify-center z-30 shadow-[0_0_12px_rgba(244,63,94,0.5)]">
-                       <motion.div animate={{ scale: [1, 1.4, 1] }} transition={{ duration: 1.6, repeat: Infinity, delay: index * 0.12 }} className="text-rose-500 flex items-center justify-center">
+                     <motion.div 
+                       initial={{ scale: 1 }}
+                       whileInView={{ scale: [1, 1.6, 1] }}
+                       viewport={{ once: true, margin: "-50% 0px -50% 0px" }}
+                       transition={{ duration: 0.6, ease: "easeOut" }}
+                       className="absolute left-1/2 -translate-x-1/2 w-7 h-7 md:w-10 md:h-10 rounded-full bg-[#1c1c1e] border border-pink-500/30 md:border-2 md:border-pink-500/50 flex items-center justify-center z-30 shadow-[0_0_12px_rgba(244,63,94,0.5)]"
+                     >
+                       <motion.div 
+                         animate={{ scale: [1, 1.3, 1, 1.15, 1, 1] }} 
+                         transition={{ duration: 1.2, repeat: Infinity, times: [0, 0.15, 0.3, 0.45, 0.6, 1], delay: index * 0.1 }} 
+                         className="text-rose-500 flex items-center justify-center"
+                       >
                          <Heart size={10} className="text-rose-500 md:size-[14px]" fill="currentColor" />
                        </motion.div>
-                     </div>
+                     </motion.div>
 
                      {/* Content wrapper */}
                      <div className="w-full md:w-1/2 px-4 md:px-10 flex justify-center">
@@ -685,6 +699,14 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
   });
   const [angles, setAngles] = useState({ start: startAngle, end: endAngle });
   const [timeOffset, setTimeOffset] = useState(0);
+  
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: timelineRef,
+    offset: ["start 50%", "end 50%"]
+  });
+  const smoothProgress = useSpring(scrollYProgress, { stiffness: 50, damping: 20, restDelta: 0.001 });
+  const lineHeight = useTransform(smoothProgress, [0, 1], ["0%", "100%"]);
 
   useEffect(() => {
     let animationFrameId: number;
@@ -891,7 +913,17 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
 
       {/* GORGEOUS MARRIAGE TIMELINE LISTING */}
       <div className="w-full max-w-6xl px-4 mt-8 sm:mt-12 z-20 relative flex flex-col items-center">
-        <div className="w-full flex flex-col gap-2 relative">
+        <div ref={timelineRef} className="w-full flex flex-col gap-2 relative">
+          
+          {/* Continuous Vertical Timeline Spine Background */}
+          <div className="absolute left-1/2 top-0 bottom-0 w-0.5 md:w-1 bg-pink-500/10 rounded-full" style={{ transform: "translateX(-50%)" }} />
+          
+          {/* Continuous Vertical Timeline Spine Foreground */}
+          <motion.div 
+            style={{ height: lineHeight, x: "-50%" }}
+            className="absolute left-1/2 top-0 w-0.5 md:w-1 bg-gradient-to-b from-rose-500/90 via-pink-500/40 to-rose-500/90 rounded-full shadow-[0_0_15px_rgba(244,63,94,0.5)] z-0" 
+          />
+
           {groupedTimelineData.map((group) => (
              <MonthGroup 
                key={group.category}
