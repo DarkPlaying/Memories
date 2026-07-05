@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { motion, useScroll, useTransform, AnimatePresence, useSpring } from 'framer-motion';
+import { motion, useScroll, useTransform, AnimatePresence, useSpring, useMotionValue, useMotionValueEvent } from 'framer-motion';
 import { Heart, Calendar, Star, Sparkles, MessageCircle, X } from 'lucide-react';
 import { AnimateNumber } from '@/components/ui/animated-blur-number';
 
@@ -586,7 +586,7 @@ const MonthGroup = ({
 }: { 
   group: { category: string, items: TimelineItem[] }
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [hasInteracted, setHasInteracted] = useState(false);
 
   return (
@@ -628,15 +628,15 @@ const MonthGroup = ({
                      key={index}
                      initial={{ opacity: 0, y: 35 }}
                      whileInView={{ opacity: 1, y: 0 }}
-                     viewport={{ once: true, margin: "-50% 0px -50% 0px" }}
+                     viewport={{ once: true, margin: "0px 0px -50% 0px" }}
                      transition={{ duration: 0.6, delay: Math.min(index * 0.05, 0.3), ease: "easeOut" }}
-                     className={`flex flex-col md:flex-row items-center w-full relative ${isLeft ? 'md:flex-row-reverse' : ''}`}
+                     className={`flex flex-row items-center w-full relative ${isLeft ? '' : 'flex-row-reverse'}`}
                    >
                      {/* Central Pulse Heart Node */}
                      <motion.div 
                        initial={{ scale: 1 }}
                        whileInView={{ scale: [1, 1.6, 1] }}
-                       viewport={{ once: true, margin: "-50% 0px -50% 0px" }}
+                       viewport={{ once: true, margin: "0px 0px -50% 0px" }}
                        transition={{ duration: 0.6, ease: "easeOut" }}
                        className="absolute left-1/2 -translate-x-1/2 w-7 h-7 md:w-10 md:h-10 rounded-full bg-[#1c1c1e] border border-pink-500/30 md:border-2 md:border-pink-500/50 flex items-center justify-center z-30 shadow-[0_0_12px_rgba(244,63,94,0.5)]"
                      >
@@ -650,8 +650,8 @@ const MonthGroup = ({
                      </motion.div>
 
                      {/* Content wrapper */}
-                     <div className="w-full md:w-1/2 px-4 md:px-10 flex justify-center">
-                       <div className="w-full max-w-xl p-4 sm:p-8 rounded-xl sm:rounded-3xl bg-white/[0.03] border border-white/10 shadow-[0_20px_45px_rgba(0,0,0,0.5)] hover:border-pink-500/30 hover:shadow-[0_20px_50px_rgba(244,63,94,0.08)] transition-all duration-300 backdrop-blur-md relative overflow-hidden group" style={{ boxShadow: item.category === 'Future' ? '0 20px 50px rgba(244,63,94,0.10), inset 0 0 20px rgba(255,255,255,0.03)' : '0 20px 45px rgba(0,0,0,0.5)' }}>
+                     <div className={`w-1/2 px-3 md:px-10 flex ${isLeft ? 'justify-end' : 'justify-start'}`}>
+                       <div className="w-full max-w-xl p-3 sm:p-8 rounded-xl sm:rounded-3xl bg-white/[0.03] border border-white/10 shadow-[0_20px_45px_rgba(0,0,0,0.5)] hover:border-pink-500/30 hover:shadow-[0_20px_50px_rgba(244,63,94,0.08)] transition-all duration-300 backdrop-blur-md relative overflow-hidden group" style={{ boxShadow: item.category === 'Future' ? '0 20px 50px rgba(244,63,94,0.10), inset 0 0 20px rgba(255,255,255,0.03)' : '0 20px 45px rgba(0,0,0,0.5)' }}>
                          {item.category === 'Future' && <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/[0.06] rounded-full blur-2xl pointer-events-none" />}
                          <div className="flex items-center justify-between mb-4">
                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[9px] sm:text-[11px] font-outfit uppercase tracking-widest font-semibold ${item.category === 'Future' ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30' : 'bg-white/5 text-pink-300 border border-white/10'}`}>
@@ -669,7 +669,7 @@ const MonthGroup = ({
                          )}
                        </div>
                      </div>
-                     <div className="w-full md:w-1/2 hidden md:block" />
+                     <div className="w-1/2 block" />
                    </motion.div>
                  );
                })}
@@ -705,6 +705,7 @@ export const ArcGalleryHero: React.FC<ArcGalleryHeroProps> = ({
     target: timelineRef,
     offset: ["start 50%", "end 50%"]
   });
+  
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 50, damping: 20, restDelta: 0.001 });
   const lineHeight = useTransform(smoothProgress, [0, 1], ["0%", "100%"]);
 
