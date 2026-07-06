@@ -32,7 +32,7 @@ const FiberPath: React.FC<FiberPathProps> = ({ fiber, smoothX, smoothY, containe
     
     // Ghost cursor
     const endX = w - x;
-    const endY = (h * 1.16) - y;
+    const endY = (h * 0.76) - y;
 
     // Distance determines how tightly they are pulled
     const dist = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
@@ -83,18 +83,18 @@ export const QuantumEntanglement: React.FC<QuantumEntanglementProps> = ({ images
   const smoothX = useSpring(mouseX, springConfig);
   const smoothY = useSpring(mouseY, springConfig);
 
-  // Ghost cursor physics (mirrored across the new vertical center of 58%)
+  // Ghost cursor physics (mirrored across the new vertical center of 38%)
   const ghostX = useTransform(smoothX, x => containerSize.width - x);
-  const ghostY = useTransform(smoothY, y => (containerSize.height * 1.16) - y);
+  const ghostY = useTransform(smoothY, y => (containerSize.height * 0.76) - y);
 
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
         const { width, height } = containerRef.current.getBoundingClientRect();
         setContainerSize({ width, height });
-        // Start cursors far apart, aligned with the new 58% vertical center
+        // Start cursors far apart, aligned with the new 38% vertical center
         mouseX.set(width * 0.1);
-        mouseY.set(height * 0.58);
+        mouseY.set(height * 0.38);
       }
     };
     updateSize();
@@ -115,9 +115,9 @@ export const QuantumEntanglement: React.FC<QuantumEntanglementProps> = ({ images
     const w = containerSize.width;
     const h = containerSize.height;
     
-    // Ghost cursor is mirrored across width/2 and height*0.58
+    // Ghost cursor is mirrored across width/2 and height*0.38
     const ghostX = w - x;
-    const ghostY = (h * 1.16) - y;
+    const ghostY = (h * 0.76) - y;
     
     // Distance between user and ghost
     const dx = ghostX - x;
@@ -129,7 +129,7 @@ export const QuantumEntanglement: React.FC<QuantumEntanglementProps> = ({ images
       setIsConnected(true);
       // Force them to perfectly merge in the new center
       mouseX.set(w / 2);
-      mouseY.set(h * 0.58);
+      mouseY.set(h * 0.38);
     }
   };
 
@@ -193,8 +193,8 @@ export const QuantumEntanglement: React.FC<QuantumEntanglementProps> = ({ images
           {/* Render solid snapped string when connected */}
           {isConnected && (
             <motion.line
-              initial={{ pathLength: 0, opacity: 0, y1: containerSize.height / 2, y2: containerSize.height / 2 }}
-              animate={{ pathLength: 1, opacity: 1, y1: containerSize.height / 2, y2: containerSize.height / 2 }}
+              initial={{ pathLength: 0, opacity: 0, y1: containerSize.height * 0.38, y2: containerSize.height * 0.38 }}
+              animate={{ pathLength: 1, opacity: 1, y1: containerSize.height * 0.38, y2: containerSize.height * 0.38 }}
               transition={{ duration: 1.5, ease: "easeInOut" }}
               x1="0" x2={containerSize.width}
               stroke="#ff0050"
@@ -244,7 +244,7 @@ export const QuantumEntanglement: React.FC<QuantumEntanglementProps> = ({ images
                 if (containerRef.current) {
                   const { width, height } = containerRef.current.getBoundingClientRect();
                   mouseX.set(width * 0.1);
-                  mouseY.set(height * 0.58);
+                  mouseY.set(height * 0.38);
                 }
               }}
               className="px-4 py-1.5 rounded-full border border-white/20 bg-white/5 text-white/50 hover:text-white hover:border-white/50 hover:bg-white/10 text-[10px] uppercase tracking-[0.2em] transition-all backdrop-blur-md cursor-pointer"
@@ -265,16 +265,16 @@ export const QuantumEntanglement: React.FC<QuantumEntanglementProps> = ({ images
             >
               {/* Massive glowing orb in center */}
               <motion.div
-                initial={{ scale: 0, opacity: 0, top: '58%' }}
-                animate={{ scale: [1, 3, 2], opacity: [1, 0.8, 0], top: '50%' }}
+                initial={{ scale: 0, opacity: 0, top: '38%' }}
+                animate={{ scale: [1, 3, 2], opacity: [1, 0.8, 0], top: '38%' }}
                 transition={{ duration: 2, ease: "easeInOut" }}
                 className="absolute w-64 h-64 bg-red-500/30 rounded-full blur-3xl left-1/2 -translate-x-1/2 -translate-y-1/2"
               />
 
               {/* Horizontal Scrollable Gallery exactly on the red thread */}
               <motion.div 
-                initial={{ top: 'calc(58% + 4px)' }}
-                animate={{ top: 'calc(50% + 4px)' }}
+                initial={{ top: 'calc(38% + 4px)' }}
+                animate={{ top: 'calc(38% + 4px)' }}
                 transition={{ duration: 1.5, ease: "easeInOut" }}
                 className="absolute left-0 right-0 flex flex-row items-start gap-4 sm:gap-8 px-12 md:px-32 w-full max-w-[100vw] overflow-x-auto overflow-y-visible snap-x snap-mandatory pt-0 pb-16 pointer-events-auto z-30 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
               >
@@ -370,7 +370,7 @@ export const QuantumEntanglement: React.FC<QuantumEntanglementProps> = ({ images
                   e.stopPropagation();
                   setIsConnected(false);
                   mouseX.set(containerSize.width * 0.1);
-                  mouseY.set(containerSize.height * 0.58);
+                  mouseY.set(containerSize.height * 0.38);
                 }}
                 className="absolute bottom-12 left-1/2 -translate-x-1/2 pointer-events-auto z-50 px-6 py-2 rounded-full border border-red-500/50 bg-black/50 text-red-200/80 font-outfit text-xs tracking-[0.2em] uppercase hover:bg-red-500/20 hover:text-white hover:border-red-500 transition-all duration-300 backdrop-blur-md shadow-[0_0_15px_rgba(255,0,80,0.3)]"
               >

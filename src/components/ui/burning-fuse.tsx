@@ -337,14 +337,14 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
               disabled={historyIndex === 0}
               className="p-1 sm:p-1.5 rounded-md text-neutral-400 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"
             >
-              <Undo2 size={14} className="sm:size-16" />
+              <Undo2 size={14} className="sm:w-4 sm:h-4" />
             </button>
             <button 
               onClick={handleRedo}
               disabled={historyIndex === history.length - 1}
               className="p-1 sm:p-1.5 rounded-md text-neutral-400 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-colors"
             >
-              <Redo2 size={14} className="sm:size-16" />
+              <Redo2 size={14} className="sm:w-4 sm:h-4" />
             </button>
             <div className="w-px h-3 sm:h-4 bg-white/20 mx-0.5 sm:mx-1" />
             <button 
