@@ -8,6 +8,9 @@ import CircularGallery from "@/components/ui/circular-flip-card-gallery";
 import { ArcGalleryHero } from "@/components/ui/arc-gallery-hero-component";
 import FloatingIconsHero from "@/components/ui/floating-icons-hero";
 import Footer from "@/components/ui/footer";
+import QuantumEntanglement from "@/components/ui/quantum-entanglement";
+import BurningFuse from "@/components/ui/burning-fuse";
+import ThreadOfTime from "@/components/ui/thread-of-time";
 
 
 interface Chapter {
@@ -364,6 +367,21 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
   const [isPlayingMusic, setIsPlayingMusic] = useState(false);
   const [isMutedByUser, setIsMutedByUser] = useState(false);
   const [showCompletionPopup, setShowCompletionPopup] = useState(false);
+
+  // Extract specific images to guarantee their placement in the final gallery
+  const imageMemoriesList = imageMemories.map(img => `/memories/${img}`);
+  const butterflyImg = imageMemoriesList.find(img => img.toLowerCase().includes("butterfly pathway"));
+  const firstStoryImg = imageMemoriesList.find(img => img.toLowerCase().includes("our first story"));
+  
+  const filteredList = imageMemoriesList.filter(img => img !== butterflyImg && img !== firstStoryImg);
+  const thirdIdx = Math.ceil(filteredList.length / 3);
+  
+  const part1 = filteredList.slice(0, thirdIdx);
+  const part2 = filteredList.slice(thirdIdx, thirdIdx * 2);
+  const part3 = filteredList.slice(thirdIdx * 2);
+  
+  if (butterflyImg) part3.unshift(butterflyImg);
+  if (firstStoryImg) part3.push(firstStoryImg);
 
   // Autoplay states
   const [isAutoplay, setIsAutoplay] = useState(true);
@@ -1380,6 +1398,39 @@ export default function HeroSection({ isParentLoading = false }: HeroSectionProp
               className="relative max-w-7xl mx-auto w-full flex flex-col items-center z-10"
             >
               <CircularGallery images={imageMemories} />
+            </motion.div>
+
+            {/* Act III: Quantum Entanglement */}
+            <motion.div
+              initial={{ opacity: 0, y: 60 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 1.0, ease: "easeOut" }}
+              className="relative w-full flex flex-col items-center z-10"
+            >
+              <QuantumEntanglement images={part1} />
+            </motion.div>
+
+            {/* Act IV: Burning Fuse */}
+            <motion.div
+              initial={{ opacity: 0, y: 60 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 1.0, ease: "easeOut" }}
+              className="relative w-full flex flex-col items-center z-10"
+            >
+              <BurningFuse images={part2} />
+            </motion.div>
+
+            {/* Act VI: Thread of Time */}
+            <motion.div
+              initial={{ opacity: 0, y: 60 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 1.0, ease: "easeOut" }}
+              className="relative w-full flex flex-col items-center z-10"
+            >
+              <ThreadOfTime images={part3} />
             </motion.div>
 
             {/* Memorial Parts — interactive butterflies & 3D scrolling gallery */}

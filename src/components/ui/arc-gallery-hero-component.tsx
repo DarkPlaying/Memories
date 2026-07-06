@@ -624,19 +624,15 @@ const MonthGroup = ({
                {group.items.map((item, index) => {
                  const isLeft = index % 2 === 0;
                  return (
-                   <motion.div
+                   <div
                      key={index}
-                     initial={{ opacity: 0, y: 35 }}
-                     whileInView={{ opacity: 1, y: 0 }}
-                     viewport={{ once: true, margin: "0px 0px -50% 0px" }}
-                     transition={{ duration: 0.6, delay: Math.min(index * 0.05, 0.3), ease: "easeOut" }}
                      className={`flex flex-row items-center w-full relative ${isLeft ? '' : 'flex-row-reverse'}`}
                    >
                      {/* Central Pulse Heart Node */}
                      <motion.div 
                        initial={{ scale: 1 }}
                        whileInView={{ scale: [1, 1.6, 1] }}
-                       viewport={{ once: true, margin: "0px 0px -50% 0px" }}
+                       viewport={{ once: false, margin: "0px 0px -50% 0px" }}
                        transition={{ duration: 0.6, ease: "easeOut" }}
                        className="absolute left-1/2 -translate-x-1/2 w-7 h-7 md:w-10 md:h-10 rounded-full bg-[#1c1c1e] border border-pink-500/30 md:border-2 md:border-pink-500/50 flex items-center justify-center z-30 shadow-[0_0_12px_rgba(244,63,94,0.5)]"
                      >
@@ -651,26 +647,58 @@ const MonthGroup = ({
 
                      {/* Content wrapper */}
                      <div className={`w-1/2 px-3 md:px-10 flex ${isLeft ? 'justify-end' : 'justify-start'}`}>
-                       <div className="w-full max-w-xl p-3 sm:p-8 rounded-xl sm:rounded-3xl bg-white/[0.03] border border-white/10 shadow-[0_20px_45px_rgba(0,0,0,0.5)] hover:border-pink-500/30 hover:shadow-[0_20px_50px_rgba(244,63,94,0.08)] transition-all duration-300 backdrop-blur-md relative overflow-hidden group" style={{ boxShadow: item.category === 'Future' ? '0 20px 50px rgba(244,63,94,0.10), inset 0 0 20px rgba(255,255,255,0.03)' : '0 20px 45px rgba(0,0,0,0.5)' }}>
-                         {item.category === 'Future' && <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/[0.06] rounded-full blur-2xl pointer-events-none" />}
-                         <div className="flex items-center justify-between mb-4">
-                           <span className={`inline-flex items-center gap-1.5 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[9px] sm:text-[11px] font-outfit uppercase tracking-widest font-semibold ${item.category === 'Future' ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30' : 'bg-white/5 text-pink-300 border border-white/10'}`}>
-                             <Calendar size={11} />
-                             {item.date}
-                           </span>
-                           <span className="text-lg sm:text-2xl select-none filter drop-shadow-[0_0_6px_rgba(244,63,94,0.5)]">{item.emoji}</span>
-                         </div>
-                         <p className={`font-outfit leading-relaxed ${item.category === 'Future' ? 'text-white font-bold text-xs sm:text-base md:text-lg' : 'text-gray-100 text-[11px] sm:text-sm md:text-base'}`}>{item.title}</p>
-                         {item.category === 'Future' && (
-                           <div className="mt-4 flex items-center gap-1.5 text-rose-300/50">
-                             <Sparkles size={12} />
-                             <span className="text-[9px] font-outfit uppercase tracking-widest font-medium">MILESTONE FOREVER</span>
-                           </div>
-                         )}
-                       </div>
+                        <motion.div
+                          initial={{ opacity: 0, x: isLeft ? -50 : 50 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          viewport={{ once: false, amount: 0 }}
+                          transition={{ type: "spring", stiffness: 100, damping: 15, delay: 0.1 }}
+                          className="w-full max-w-xl"
+                        >
+                          <motion.div 
+                            initial={{ 
+                              boxShadow: item.category === 'Future' ? '0 20px 50px rgba(244,63,94,0.10), inset 0 0 20px rgba(255,255,255,0.03)' : '0 20px 45px rgba(0,0,0,0.5)',
+                              borderColor: "rgba(255,255,255,0.05)",
+                              y: 0
+                            }}
+                            animate={{ 
+                              y: [-3, 3, -3],
+                              boxShadow: item.category === 'Future' ? '0 20px 50px rgba(244,63,94,0.10), inset 0 0 20px rgba(255,255,255,0.03)' : '0 20px 45px rgba(0,0,0,0.5)',
+                              borderColor: "rgba(255,255,255,0.05)"
+                            }}
+                            transition={{ duration: 4 + (index % 3), repeat: Infinity, ease: "easeInOut" }}
+                            whileHover={{ 
+                              boxShadow: "0 0 40px 10px rgba(255, 0, 100, 0.4)",
+                              borderColor: "rgba(255, 0, 100, 0.8)",
+                              zIndex: 50 
+                            }}
+                            className="w-full h-full p-3 sm:p-8 rounded-xl sm:rounded-3xl bg-white/[0.03] border-[1.5px] backdrop-blur-md relative overflow-hidden group" 
+                          >
+                            {item.category === 'Future' && <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/[0.06] rounded-full blur-2xl pointer-events-none" />}
+                            <div className="flex items-center justify-between mb-4">
+                              <motion.span 
+                                animate={{ 
+                                  boxShadow: ["0px 0px 0px rgba(244,63,94,0)", "0px 0px 15px rgba(244,63,94,0.5)", "0px 0px 0px rgba(244,63,94,0)"]
+                                }}
+                                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[9px] sm:text-[11px] font-outfit uppercase tracking-widest font-semibold ${item.category === 'Future' ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30' : 'bg-white/5 text-pink-300 border border-white/10'}`}
+                              >
+                                <Calendar size={11} />
+                                {item.date}
+                              </motion.span>
+                              <span className="text-lg sm:text-2xl select-none filter drop-shadow-[0_0_6px_rgba(244,63,94,0.5)]">{item.emoji}</span>
+                            </div>
+                            <p className={`font-outfit leading-relaxed ${item.category === 'Future' ? 'text-white font-bold text-xs sm:text-base md:text-lg' : 'text-gray-100 text-[11px] sm:text-sm md:text-base'}`}>{item.title}</p>
+                            {item.category === 'Future' && (
+                              <div className="mt-4 flex items-center gap-1.5 text-rose-300/50">
+                                <Sparkles size={12} />
+                                <span className="text-[9px] font-outfit uppercase tracking-widest font-medium">MILESTONE FOREVER</span>
+                              </div>
+                            )}
+                          </motion.div>
+                        </motion.div>
                      </div>
                      <div className="w-1/2 block" />
-                   </motion.div>
+                   </div>
                  );
                })}
              </div>
