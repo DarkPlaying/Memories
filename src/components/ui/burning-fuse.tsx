@@ -27,6 +27,27 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
   const [history, setHistory] = useState<HistoryState[]>([{ strokes: [], usedPhotosCount: 0 }]);
   const [historyIndex, setHistoryIndex] = useState(0);
 
+  interface SavedDrawing {
+    id: number;
+    name: string;
+    history: HistoryState[];
+    historyIndex: number;
+  }
+  const [showLoadMenu, setShowLoadMenu] = useState(false);
+  const [savedDrawings, setSavedDrawings] = useState<SavedDrawing[]>([]);
+
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [saveName, setSaveName] = useState("");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("ignite-memories-gallery");
+    if (saved) {
+      try {
+        setSavedDrawings(JSON.parse(saved));
+      } catch (e) {}
+    }
+  }, []);
+
   const [currentStroke, setCurrentStroke] = useState<Point[]>([]);
   const [sparkPos, setSparkPos] = useState<Point | null>(null);
 
@@ -217,24 +238,37 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
   };
 
   const handleSaveLocally = () => {
-    localStorage.setItem("ignite-memories", JSON.stringify({ history, historyIndex }));
-    showNotification("Drawing saved locally!");
+    setSaveName(`Drawing ${savedDrawings.length + 1}`);
+    setIsSaveModalOpen(true);
   };
 
-  const handleLoadLocally = () => {
-    const saved = localStorage.getItem("ignite-memories");
-    if (saved) {
-      try {
-        const { history: savedHistory, historyIndex: savedIndex } = JSON.parse(saved);
-        setHistory(savedHistory);
-        setHistoryIndex(savedIndex);
-        showNotification("Drawing loaded successfully!");
-      } catch (e) {
-        showNotification("Failed to load drawing.");
-      }
-    } else {
-      showNotification("No saved drawing found.");
-    }
+  const confirmSave = () => {
+    if (!saveName.trim()) return;
+    const newDrawing = {
+      id: Date.now(),
+      name: saveName.trim(),
+      history,
+      historyIndex
+    };
+    const newGallery = [newDrawing, ...savedDrawings];
+    setSavedDrawings(newGallery);
+    localStorage.setItem("ignite-memories-gallery", JSON.stringify(newGallery));
+    setIsSaveModalOpen(false);
+    showNotification("Drawing saved to gallery!");
+  };
+
+  const handleLoadDrawing = (drawing: SavedDrawing) => {
+    setHistory(drawing.history);
+    setHistoryIndex(drawing.historyIndex);
+    setShowLoadMenu(false);
+    showNotification(`Loaded ${drawing.name}`);
+  };
+
+  const handleDeleteDrawing = (id: number) => {
+    if (!confirm("Delete this drawing forever?")) return;
+    const newGallery = savedDrawings.filter(d => d.id !== id);
+    setSavedDrawings(newGallery);
+    localStorage.setItem("ignite-memories-gallery", JSON.stringify(newGallery));
   };
 
   const canvasContent = (
@@ -373,13 +407,53 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
               Save
             </button>
             <div className="w-px h-3 sm:h-4 bg-white/20 mx-0.5 sm:mx-1" />
-            <button 
-              onClick={handleLoadLocally}
-              className="text-blue-400 hover:text-blue-300 text-[10px] sm:text-xs px-1 sm:px-2 py-1 font-medium transition-colors"
-              title="Load Saved Drawing"
-            >
-              Load
-            </button>
+            <div className="relative flex items-center">
+              <button 
+                onClick={() => setShowLoadMenu(!showLoadMenu)}
+                className="text-blue-400 hover:text-blue-300 text-[10px] sm:text-xs px-1 sm:px-2 py-1 font-medium transition-colors"
+                title="Load Saved Drawing"
+              >
+                Load
+              </button>
+
+              <AnimatePresence>
+                {showLoadMenu && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute top-full mt-2 right-0 sm:right-auto bg-zinc-900 border border-orange-500/30 rounded-lg p-2 w-48 shadow-2xl z-[200] max-h-48 overflow-y-auto flex flex-col gap-1"
+                  >
+                    <div className="text-[10px] text-orange-200/50 mb-1 font-outfit uppercase tracking-wider px-1">Saved Drawings</div>
+                    {savedDrawings.length === 0 ? (
+                      <div className="text-xs text-neutral-500 px-1 py-2">No drawings saved yet.</div>
+                    ) : (
+                      savedDrawings.map(d => (
+                        <div key={d.id} className="flex items-center justify-between group rounded hover:bg-white/10">
+                          <button 
+                            onClick={() => handleLoadDrawing(d)}
+                            className="text-xs text-neutral-300 hover:text-white px-2 py-1.5 w-full text-left truncate"
+                            title={d.name}
+                          >
+                            {d.name}
+                          </button>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteDrawing(d.id);
+                            }}
+                            className="text-red-500 hover:text-red-400 p-1.5 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                            title="Delete Drawing"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
           
           {/* Counter */}
@@ -528,6 +602,60 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
             </React.Fragment>
           );
         })}
+
+        {/* Save Drawing Modal */}
+        <AnimatePresence>
+          {isSaveModalOpen && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto"
+              onClick={() => setIsSaveModalOpen(false)}
+            >
+              <motion.div 
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                className="bg-zinc-900 border border-orange-500/30 p-6 rounded-2xl shadow-[0_0_40px_rgba(255,100,0,0.2)] w-full max-w-sm flex flex-col gap-4"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div>
+                  <h3 className="text-orange-100 font-playfair text-xl font-bold tracking-wide mb-1">Save Memory</h3>
+                  <p className="text-neutral-400 text-xs font-outfit uppercase tracking-wider">Give this drawing a name</p>
+                </div>
+                
+                <input 
+                  type="text"
+                  value={saveName}
+                  onChange={(e) => setSaveName(e.target.value)}
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') confirmSave();
+                    if (e.key === 'Escape') setIsSaveModalOpen(false);
+                  }}
+                  className="bg-black/50 border border-orange-500/30 rounded-lg px-4 py-2.5 text-orange-50 text-sm font-outfit outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all w-full"
+                  placeholder="Drawing Name"
+                />
+
+                <div className="flex justify-end gap-3 mt-2">
+                  <button 
+                    onClick={() => setIsSaveModalOpen(false)}
+                    className="px-4 py-2 rounded-full text-neutral-400 hover:text-white hover:bg-white/10 transition-colors text-xs font-outfit uppercase tracking-widest font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={confirmSave}
+                    className="px-6 py-2 rounded-full bg-orange-600 hover:bg-orange-500 text-white transition-colors shadow-[0_0_15px_rgba(255,100,0,0.4)] text-xs font-outfit uppercase tracking-widest font-bold"
+                  >
+                    Save
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Expanded Image Overlay */}
         <AnimatePresence>
