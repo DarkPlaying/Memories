@@ -588,6 +588,11 @@ const MonthGroup = ({
 }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <motion.div 
@@ -610,10 +615,10 @@ const MonthGroup = ({
         <Sparkles size={14} className={`text-pink-400 ${isOpen ? 'animate-pulse' : ''}`} />
       </div>
 
-      <AnimatePresence initial={false}>
+      <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
+            initial={mounted ? { height: 0, opacity: 0 } : { height: "auto", opacity: 1 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
