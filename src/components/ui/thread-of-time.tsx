@@ -11,7 +11,7 @@ interface ThreadOfTimeProps {
 
 export const ThreadOfTime: React.FC<ThreadOfTimeProps> = ({ images }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const [expandedIndices, setExpandedIndices] = useState<number[]>([]);
 
   // We make the container tall so the user scrolls down along the timeline
   const { scrollYProgress } = useScroll({
@@ -103,7 +103,7 @@ export const ThreadOfTime: React.FC<ThreadOfTimeProps> = ({ images }) => {
 
                   {/* Center Timeline Image (uses different image set) */}
                   <div 
-                    onClick={() => setExpandedIndex(expandedIndex === i ? null : i)}
+                    onClick={() => setExpandedIndices(prev => prev.includes(i) ? prev.filter(idx => idx !== i) : [...prev, i])}
                     className={`absolute top-1/2 ${isLeft ? 'right-[-2rem] sm:right-[-4rem] md:right-[-12rem] translate-x-1/2' : 'left-[-2rem] sm:left-[-4rem] md:left-[-12rem] -translate-x-1/2'} -translate-y-1/2 w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 rounded-full overflow-hidden border border-[#ff0050] md:border-2 shadow-[0_0_15px_rgba(255,0,80,0.6)] z-20 bg-neutral-900 cursor-pointer hover:scale-125 transition-transform duration-300 pointer-events-auto`}
                   >
                     <img 
@@ -115,7 +115,7 @@ export const ThreadOfTime: React.FC<ThreadOfTimeProps> = ({ images }) => {
 
                   {/* Expanded Center Image on Opposite Side (Responsive for both Mobile & Desktop) */}
                   <AnimatePresence>
-                    {expandedIndex === i && (
+                    {expandedIndices.includes(i) && (
                       <motion.div
                         initial={{ opacity: 0, x: isLeft ? -20 : 20, scale: 0.8 }}
                         animate={{ opacity: 1, x: 0, scale: 1 }}
@@ -129,7 +129,7 @@ export const ThreadOfTime: React.FC<ThreadOfTimeProps> = ({ images }) => {
                         />
                         <div 
                           className={`bg-white p-1.5 pb-4 sm:p-2 sm:pb-5 rounded-sm shadow-[0_15px_35px_rgba(0,0,0,0.8)] relative z-10 ${isLeft ? 'rotate-3' : '-rotate-3'} hover:scale-105 transition-transform cursor-pointer`} 
-                          onClick={(e) => { e.stopPropagation(); setExpandedIndex(null); }}
+                          onClick={(e) => { e.stopPropagation(); setExpandedIndices(prev => prev.filter(idx => idx !== i)); }}
                         >
                           <div className="w-16 h-24 sm:w-24 sm:h-32 md:w-32 md:h-44 bg-neutral-900 overflow-hidden relative">
                             <img 

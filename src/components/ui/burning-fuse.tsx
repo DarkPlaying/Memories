@@ -296,6 +296,17 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
 
           {/* Photo Placement Selector (Compact) */}
           <div className="flex items-center gap-2 bg-zinc-900 border border-orange-500/30 px-2 py-1 rounded-full shrink-0">
+            <label className="flex items-center gap-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={photoPlacements.length === 0}
+                onChange={(e) => {
+                  if (e.target.checked) setPhotoPlacements([]);
+                }}
+                className="accent-orange-500 w-3 h-3 cursor-pointer"
+              />
+              <span className="text-orange-200 text-[10px] sm:text-xs capitalize">N<span className="hidden sm:inline">one</span></span>
+            </label>
             {(["start", "middle", "end"] as const).map((pos) => {
               const isChecked = photoPlacements.includes(pos);
               return (
