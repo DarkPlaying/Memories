@@ -11,6 +11,7 @@ interface BurningFuseProps {
 
 export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   
@@ -271,6 +272,40 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
     localStorage.setItem("ignite-memories-gallery", JSON.stringify(newGallery));
   };
 
+  const handleExport = () => {
+    const dataStr = JSON.stringify({ history, historyIndex }, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `memory-drawing-${Date.now()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showNotification("Drawing exported!");
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const json = JSON.parse(event.target?.result as string);
+        if (json.history && json.historyIndex !== undefined) {
+          setHistory(json.history);
+          setHistoryIndex(json.historyIndex);
+          showNotification("Drawing imported successfully!");
+        } else {
+          showNotification("Invalid file format");
+        }
+      } catch (err) {
+        showNotification("Failed to parse file");
+      }
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const canvasContent = (
     <>
       {/* Done Button for Mobile Modal */}
@@ -454,6 +489,29 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
                 )}
               </AnimatePresence>
             </div>
+            <div className="w-px h-3 sm:h-4 bg-white/20 mx-0.5 sm:mx-1" />
+            <button 
+              onClick={handleExport}
+              className="text-purple-400 hover:text-purple-300 text-[10px] sm:text-xs px-1 sm:px-2 py-1 font-medium transition-colors"
+              title="Export Drawing to File"
+            >
+              Export
+            </button>
+            <div className="w-px h-3 sm:h-4 bg-white/20 mx-0.5 sm:mx-1" />
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="text-cyan-400 hover:text-cyan-300 text-[10px] sm:text-xs px-1 sm:px-2 py-1 font-medium transition-colors"
+              title="Import Drawing from File"
+            >
+              Import
+            </button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept=".json"
+              onChange={handleImport}
+            />
           </div>
           
           {/* Counter */}
