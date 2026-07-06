@@ -194,7 +194,7 @@ export const QuantumEntanglement: React.FC<QuantumEntanglementProps> = ({ images
           {isConnected && (
             <motion.line
               initial={{ pathLength: 0, opacity: 0, y1: containerSize.height * 0.55, y2: containerSize.height * 0.55 }}
-              animate={{ pathLength: 1, opacity: 1, y1: containerSize.height * 0.55, y2: containerSize.height * 0.55 }}
+              animate={{ pathLength: 1, opacity: 1, y1: containerSize.height * 0.4, y2: containerSize.height * 0.4 }}
               transition={{ duration: 1.5, ease: "easeInOut" }}
               x1="0" x2={containerSize.width}
               stroke="#ff0050"
@@ -266,7 +266,7 @@ export const QuantumEntanglement: React.FC<QuantumEntanglementProps> = ({ images
               {/* Massive glowing orb in center */}
               <motion.div
                 initial={{ scale: 0, opacity: 0, top: '55%' }}
-                animate={{ scale: [1, 3, 2], opacity: [1, 0.8, 0], top: '55%' }}
+                animate={{ scale: [1, 3, 2], opacity: [1, 0.8, 0], top: '40%' }}
                 transition={{ duration: 2, ease: "easeInOut" }}
                 className="absolute w-64 h-64 bg-red-500/30 rounded-full blur-3xl left-1/2 -translate-x-1/2 -translate-y-1/2"
               />
@@ -274,7 +274,7 @@ export const QuantumEntanglement: React.FC<QuantumEntanglementProps> = ({ images
               {/* Horizontal Scrollable Gallery exactly on the red thread */}
               <motion.div 
                 initial={{ top: 'calc(55% + 4px)' }}
-                animate={{ top: 'calc(55% + 4px)' }}
+                animate={{ top: 'calc(40% + 4px)' }}
                 transition={{ duration: 1.5, ease: "easeInOut" }}
                 className="absolute left-0 right-0 flex flex-row items-start gap-4 sm:gap-8 px-12 md:px-32 w-full max-w-[100vw] overflow-x-auto overflow-y-visible snap-x snap-mandatory pt-0 pb-16 pointer-events-auto z-30 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
               >
