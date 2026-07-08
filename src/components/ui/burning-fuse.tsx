@@ -2,8 +2,9 @@
 
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Flame, Eraser, PenTool, Undo2, Redo2 } from "lucide-react";
+import { Flame, Eraser, PenTool, Undo2, Redo2, Download } from "lucide-react";
 import { createPortal } from "react-dom";
+import { toPng, toJpeg } from 'html-to-image';
 
 interface BurningFuseProps {
   images: string[];
@@ -39,6 +40,10 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
 
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [saveName, setSaveName] = useState("");
+
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"png" | "jpg" | "json">("png");
+  const [exportTransparent, setExportTransparent] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("ignite-memories-gallery");
@@ -273,15 +278,49 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
   };
 
   const handleExport = () => {
-    const dataStr = JSON.stringify({ history, historyIndex }, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `memory-drawing-${Date.now()}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    showNotification("Drawing exported!");
+    setIsExportModalOpen(true);
+  };
+
+  const confirmExport = async () => {
+    try {
+      if (exportFormat === "json") {
+        const dataStr = JSON.stringify({ history, historyIndex }, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `memory-drawing-${Date.now()}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+      } else {
+        if (!containerRef.current) return;
+        
+        // Wait a frame to ensure any UI glitches settle
+        await new Promise(r => setTimeout(r, 50));
+        
+        const opts = {
+          backgroundColor: exportTransparent ? 'transparent' : '#000000',
+          pixelRatio: 2, // High resolution
+          style: {
+            background: exportTransparent ? 'transparent' : '#000000'
+          }
+        };
+        
+        const dataUrl = exportFormat === "png" 
+          ? await toPng(containerRef.current, opts)
+          : await toJpeg(containerRef.current, { ...opts, quality: 0.95 });
+        
+        const link = document.createElement("a");
+        link.download = `memory-drawing-${Date.now()}.${exportFormat}`;
+        link.href = dataUrl;
+        link.click();
+      }
+      setIsExportModalOpen(false);
+      showNotification("Drawing exported!");
+    } catch (e) {
+      console.error(e);
+      showNotification("Export failed.");
+    }
   };
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -708,6 +747,79 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
                     className="px-6 py-2 rounded-full bg-orange-600 hover:bg-orange-500 text-white transition-colors shadow-[0_0_15px_rgba(255,100,0,0.4)] text-xs font-outfit uppercase tracking-widest font-bold"
                   >
                     Save
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Export Drawing Modal */}
+        <AnimatePresence>
+          {isExportModalOpen && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto"
+              onClick={() => setIsExportModalOpen(false)}
+            >
+              <motion.div 
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                className="bg-zinc-900 border border-orange-500/30 p-6 rounded-2xl shadow-[0_0_40px_rgba(255,100,0,0.2)] w-full max-w-sm flex flex-col gap-4"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div>
+                  <h3 className="text-orange-100 font-playfair text-xl font-bold tracking-wide mb-1">Export Drawing</h3>
+                  <p className="text-neutral-400 text-xs font-outfit uppercase tracking-wider">Download your masterpiece</p>
+                </div>
+                
+                <div className="flex flex-col gap-3 mt-2">
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => setExportFormat("png")}
+                      className={`flex-1 py-2 rounded-lg text-sm font-outfit uppercase tracking-wider font-bold transition-all ${exportFormat === "png" ? 'bg-orange-600 text-white' : 'bg-white/5 text-neutral-400 hover:bg-white/10'}`}
+                    >PNG</button>
+                    <button 
+                      onClick={() => setExportFormat("jpg")}
+                      className={`flex-1 py-2 rounded-lg text-sm font-outfit uppercase tracking-wider font-bold transition-all ${exportFormat === "jpg" ? 'bg-orange-600 text-white' : 'bg-white/5 text-neutral-400 hover:bg-white/10'}`}
+                    >JPG</button>
+                    <button 
+                      onClick={() => setExportFormat("json")}
+                      className={`flex-1 py-2 rounded-lg text-sm font-outfit uppercase tracking-wider font-bold transition-all ${exportFormat === "json" ? 'bg-orange-600 text-white' : 'bg-white/5 text-neutral-400 hover:bg-white/10'}`}
+                    >JSON</button>
+                  </div>
+                  
+                  {exportFormat === "png" && (
+                    <label className="flex items-center gap-2 cursor-pointer mt-2 group w-fit">
+                      <div className={`w-4 h-4 rounded flex items-center justify-center transition-colors ${!exportTransparent ? 'bg-orange-500 border border-orange-500' : 'border border-neutral-500 group-hover:border-orange-500/50'}`}>
+                        {!exportTransparent && <svg viewBox="0 0 14 14" fill="none" className="w-3 h-3 text-white"><path d="M3 7.5L5.5 10L11 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        checked={!exportTransparent} 
+                        onChange={(e) => setExportTransparent(!e.target.checked)} 
+                        className="hidden"
+                      />
+                      <span className="text-neutral-300 text-xs font-outfit uppercase tracking-wider">Black Background</span>
+                    </label>
+                  )}
+                </div>
+
+                <div className="flex justify-end gap-3 mt-4">
+                  <button 
+                    onClick={() => setIsExportModalOpen(false)}
+                    className="px-4 py-2 rounded-full text-neutral-400 hover:text-white hover:bg-white/10 transition-colors text-xs font-outfit uppercase tracking-widest font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={confirmExport}
+                    className="px-6 py-2 rounded-full bg-orange-600 hover:bg-orange-500 text-white transition-colors shadow-[0_0_15px_rgba(255,100,0,0.4)] text-xs font-outfit uppercase tracking-widest font-bold flex items-center gap-2"
+                  >
+                    <Download size={14} /> Export
                   </button>
                 </div>
               </motion.div>
