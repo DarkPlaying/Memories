@@ -266,7 +266,7 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
       setIsSaveModalOpen(false);
       showNotification("Drawing saved to gallery!");
     } catch (e) {
-      console.error("Storage limit exceeded:", e);
+      console.warn("Storage limit exceeded:", e);
       setIsSaveModalOpen(false);
       setIsQuotaModalOpen(true);
     }
@@ -329,7 +329,7 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
       setIsExportModalOpen(false);
       showNotification("Drawing exported!");
     } catch (e) {
-      console.error(e);
+      console.warn("Export failed:", e);
       showNotification("Export failed.");
     }
   };
