@@ -46,6 +46,7 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
   const [exportTransparent, setExportTransparent] = useState(false);
 
   const [isQuotaModalOpen, setIsQuotaModalOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("ignite-memories-gallery");
@@ -279,10 +280,15 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
   };
 
   const handleDeleteDrawing = (id: number) => {
-    if (!confirm("Delete this drawing forever?")) return;
-    const newGallery = savedDrawings.filter(d => d.id !== id);
+    setDeleteTargetId(id);
+  };
+
+  const confirmDelete = () => {
+    if (deleteTargetId === null) return;
+    const newGallery = savedDrawings.filter(d => d.id !== deleteTargetId);
     setSavedDrawings(newGallery);
     localStorage.setItem("ignite-memories-gallery", JSON.stringify(newGallery));
+    setDeleteTargetId(null);
   };
 
   const handleExport = () => {
@@ -866,6 +872,52 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
                     className="px-6 py-2 rounded-full bg-red-600/20 hover:bg-red-600/40 text-red-100 border border-red-500/30 transition-colors text-xs font-outfit uppercase tracking-widest font-bold"
                   >
                     Understood
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Delete Confirmation Modal */}
+        <AnimatePresence>
+          {deleteTargetId !== null && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-[350] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto"
+              onClick={() => setDeleteTargetId(null)}
+            >
+              <motion.div 
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                className="bg-zinc-900 border border-red-500/30 p-6 rounded-2xl shadow-[0_0_40px_rgba(239,68,68,0.2)] w-full max-w-sm flex flex-col gap-4"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div>
+                  <h3 className="text-red-400 font-playfair text-xl font-bold tracking-wide mb-1">Delete Drawing</h3>
+                  <p className="text-neutral-300 text-sm font-outfit mt-2">
+                    Are you sure you want to permanently delete this masterpiece?
+                  </p>
+                  <p className="text-neutral-400 text-xs font-outfit mt-1">
+                    This action cannot be undone.
+                  </p>
+                </div>
+                
+                <div className="flex justify-end gap-3 mt-4">
+                  <button 
+                    onClick={() => setDeleteTargetId(null)}
+                    className="px-4 py-2 rounded-full text-neutral-400 hover:text-white hover:bg-white/10 transition-colors text-xs font-outfit uppercase tracking-widest font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={confirmDelete}
+                    className="px-6 py-2 rounded-full bg-red-600 hover:bg-red-500 text-white transition-colors shadow-[0_0_15px_rgba(239,68,68,0.4)] text-xs font-outfit uppercase tracking-widest font-bold"
+                  >
+                    Delete
                   </button>
                 </div>
               </motion.div>
