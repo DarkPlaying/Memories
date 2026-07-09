@@ -699,8 +699,9 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
             </React.Fragment>
           );
         })}
+      </div>
 
-        {/* Save Drawing Modal */}
+      {/* Save Drawing Modal */}
         <AnimatePresence>
           {isSaveModalOpen && (
             <motion.div 
@@ -862,7 +863,6 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
     </>
   );
 
