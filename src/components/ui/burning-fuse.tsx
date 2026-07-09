@@ -250,17 +250,23 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
 
   const confirmSave = () => {
     if (!saveName.trim()) return;
-    const newDrawing = {
-      id: Date.now(),
-      name: saveName.trim(),
-      history,
-      historyIndex
-    };
-    const newGallery = [newDrawing, ...savedDrawings];
-    setSavedDrawings(newGallery);
-    localStorage.setItem("ignite-memories-gallery", JSON.stringify(newGallery));
-    setIsSaveModalOpen(false);
-    showNotification("Drawing saved to gallery!");
+    try {
+      const newDrawing = {
+        id: Date.now(),
+        name: saveName.trim(),
+        history,
+        historyIndex
+      };
+      const newGallery = [newDrawing, ...savedDrawings];
+      localStorage.setItem("ignite-memories-gallery", JSON.stringify(newGallery));
+      setSavedDrawings(newGallery); // Set state only if storage succeeds
+      setIsSaveModalOpen(false);
+      showNotification("Drawing saved to gallery!");
+    } catch (e) {
+      console.error("Storage limit exceeded:", e);
+      alert("Storage limit exceeded! Your drawing is too large to save in the browser. Please use the 'Export -> JSON' feature to save it to your computer.");
+      setIsSaveModalOpen(false);
+    }
   };
 
   const handleLoadDrawing = (drawing: SavedDrawing) => {
