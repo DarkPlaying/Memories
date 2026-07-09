@@ -297,7 +297,7 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
         
         const opts = {
           backgroundColor: exportTransparent ? 'transparent' : '#000000',
-          pixelRatio: 1, // Standard resolution for faster export
+          pixelRatio: 2, // High resolution for perfect glow quality
           style: {
             background: exportTransparent ? 'transparent' : '#000000'
           }
