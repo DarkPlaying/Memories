@@ -45,6 +45,8 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
   const [exportFormat, setExportFormat] = useState<"png" | "jpg" | "json">("png");
   const [exportTransparent, setExportTransparent] = useState(false);
 
+  const [isQuotaModalOpen, setIsQuotaModalOpen] = useState(false);
+
   useEffect(() => {
     const saved = localStorage.getItem("ignite-memories-gallery");
     if (saved) {
@@ -264,8 +266,8 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
       showNotification("Drawing saved to gallery!");
     } catch (e) {
       console.error("Storage limit exceeded:", e);
-      alert("Storage limit exceeded! Your drawing is too large to save in the browser. Please use the 'Export -> JSON' feature to save it to your computer.");
       setIsSaveModalOpen(false);
+      setIsQuotaModalOpen(true);
     }
   };
 
@@ -824,6 +826,46 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
                     className="px-6 py-2 rounded-full bg-orange-600 hover:bg-orange-500 text-white transition-colors shadow-[0_0_15px_rgba(255,100,0,0.4)] text-xs font-outfit uppercase tracking-widest font-bold flex items-center gap-2"
                   >
                     <Download size={14} /> Export
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Quota Error Modal */}
+        <AnimatePresence>
+          {isQuotaModalOpen && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-[350] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto"
+              onClick={() => setIsQuotaModalOpen(false)}
+            >
+              <motion.div 
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                className="bg-zinc-900 border border-red-500/30 p-6 rounded-2xl shadow-[0_0_40px_rgba(239,68,68,0.2)] w-full max-w-sm flex flex-col gap-4"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div>
+                  <h3 className="text-red-400 font-playfair text-xl font-bold tracking-wide mb-1">Storage Limit Exceeded</h3>
+                  <p className="text-neutral-300 text-sm font-outfit mt-2">
+                    Your drawing is incredibly detailed and contains too much data to save in the browser's local memory.
+                  </p>
+                  <p className="text-neutral-400 text-xs font-outfit mt-3">
+                    Please use the <strong className="text-orange-400">Export {"->"} JSON</strong> feature from the toolbar to save this masterpiece safely to your computer instead!
+                  </p>
+                </div>
+                
+                <div className="flex justify-end mt-2">
+                  <button 
+                    onClick={() => setIsQuotaModalOpen(false)}
+                    className="px-6 py-2 rounded-full bg-red-600/20 hover:bg-red-600/40 text-red-100 border border-red-500/30 transition-colors text-xs font-outfit uppercase tracking-widest font-bold"
+                  >
+                    Understood
                   </button>
                 </div>
               </motion.div>
