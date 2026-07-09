@@ -295,12 +295,9 @@ export const BurningFuse: React.FC<BurningFuseProps> = ({ images }) => {
       } else {
         if (!containerRef.current) return;
         
-        // Wait a frame to ensure any UI glitches settle
-        await new Promise(r => setTimeout(r, 50));
-        
         const opts = {
           backgroundColor: exportTransparent ? 'transparent' : '#000000',
-          pixelRatio: 2, // High resolution
+          pixelRatio: 1, // Standard resolution for faster export
           style: {
             background: exportTransparent ? 'transparent' : '#000000'
           }
