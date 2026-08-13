@@ -24,7 +24,7 @@ interface TimelineItem {
   date: string;
   title: string;
   emoji: string;
-  category: 'February' | 'March' | 'April' | 'May' | 'June' | 'Future';
+  category: 'February' | 'March' | 'April' | 'May' | 'June' | 'August' | 'Future';
 }
 
 const timelineData: TimelineItem[] = [
@@ -64,7 +64,10 @@ const timelineData: TimelineItem[] = [
   { date: "Jun 09", title: "First 3D model edit", emoji: "💻", category: "June" },
   { date: "Jun 13", title: "First beach visit and second interview drive together", emoji: "🏖️", category: "June" },
   { date: "Jun 24", title: "Longest call (24.06.2026 at 8:15 pm to 25.06.2026 at 10:18 AM - 14hr)", emoji: "📞", category: "June" },
-  { date: "Jun 29", title: "First long drive with my bike (Amabutur estate)", emoji: "🏍️", category: "June" }
+  { date: "Jun 29", title: "First long drive with my bike (Amabutur estate)", emoji: "🏍️", category: "June" },
+
+  // --- August ---
+  { date: "Aug 11", title: "First drop ride to his home", emoji: "🛵", category: "August" }
 ];
 
 // --- Countdown Timer Subcomponent ---
